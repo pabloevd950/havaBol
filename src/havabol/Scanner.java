@@ -65,68 +65,6 @@ public class Scanner
         inp.close();
     }
 
-    public Token getNextToken() throws Exception
-    {
-        String token = "";                  // string used to create the token from the source file
-        String operator = "+-*/<>!=#^";     // list of operators
-        String separator = "():;[]";        // list of separators
-        currentToken = new Token();         // initialize currentToken to a Token object to keep track of tokens
-
-        // Automatically advance to the next source line when necessary
-        if (iColPos >= textCharM.length)
-        { // cursor position is beyond the length of the line so grab a new line
-            do
-            { // find a line that is not empty
-                if (++iSourceLineNr >= sourceLineM.size())
-                { // EOF encountered, there are no more tokens
-                    currentToken.primClassif = Token.EOF;
-                    return "";
-                }
-                textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
-                iColPos = 0;
-                // print the source line we just grabbed
-                System.out.format("  %d %s\n", iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
-            } // if the line we just grabbed is empty (no tokens) advance to next line
-            while (sourceLineM.get(iSourceLineNr).trim().length() == 0);
-        }
-
-        // trim white space at the beginning of the line starting from the cursor position
-        while (iColPos < textCharM.length && Character.isWhitespace(textCharM[iColPos]))
-            iColPos++;
-
-        // create token
-        if (textCharM[iColPos] == '"' || textCharM[iColPos] == '\'')
-        {// token contains a string
-            char quote = textCharM[iColPos++];  // save the quote so we can find the string literal terminator
-
-            // create string literal token
-            while (true)
-            { // loop until a matching quotation is found that is not escaped
-                if (textCharM[iColPos] == quote && textCharM[iColPos - 1] != '\\')
-                    break;
-                else if (iColPos >= textCharM.length - 1)
-                    // unterminated String literal encountered
-                    throw new Exception("Unterminated String Literal: (Line: " + iSourceLineNr + " Column: "
-                            + iColPos + ") Error:" + token + " >" + sourceLineM.get(iSourceLineNr));
-                token += textCharM[iColPos++];
-            }
-            // save Token attribute type as a string and advance cursor position away from quotation mark
-            iColPos++;
-            currentToken.subClassif = Token.STRING;
-        }
-        else if (delimiters.indexOf((textCharM[iColPos])) >= 0)
-            // token contains a delimiter
-            token += textCharM[iColPos++];
-        else
-            // token is an operand
-            for (; iColPos < textCharM.length; iColPos++)
-            {// build token until a delimiter is found
-                if (delimiters.indexOf((textCharM[iColPos])) >= 0)
-                    break;
-                token += textCharM[iColPos];
-            }
-    }
-
     /**
      * This method gets the next token in the source file line. If there are no more tokens, it returns
      * and empty string, otherwise it returns the token given that there were no processing errors.
