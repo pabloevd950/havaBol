@@ -88,7 +88,7 @@ public class Scanner
         String operator = "+-*/<>!=#^";     // list of operators
         String separator = "():;[]";        // list of separators
         String operations = "<>!=";         // list of potential two character operations
-
+        String escapeChars = "t\"na\\\''";
         // set currentToken to nextToken object to keep track of tokens and reset nextToken
         clone(nextToken);
         nextToken = new Token();
@@ -147,7 +147,39 @@ public class Scanner
                 else if (iColPos >= textCharM.length - 1)
                     // unterminated String literal encountered
                     throw new HBException("Unterminated String Literal", token, sourceLineM);
-                token += textCharM[iColPos++];
+                if(textCharM[iColPos] == '\\' && escapeChars.contains(String.valueOf(textCharM[iColPos+1])))// == 'n' || textCharM[iColPos+1] == 't' ))
+                {
+                    char array[] = new char[1];
+                    if(textCharM[iColPos+1] == 'n')
+                    {   //array[0] = 0x00;
+                        array[0] = 0x0a;
+                        token += String.valueOf(array);
+                    }
+                    else if (textCharM[iColPos+1] == 't')
+                    {
+                        //array[0] = 0x00;
+                        array[0] = 0x09;
+                        token += String.valueOf(array);
+                    }
+                    else if (textCharM[iColPos+1] == 'a'){
+                        //array[0] = 0x00;
+                        array[0] = 0x0A;
+                        token += String.valueOf(array);
+                    }
+                    else if (textCharM[iColPos+1] == '\\'){
+
+                        token += '\\';
+                    }
+                    else if (textCharM[iColPos+1] == '"'){
+                        token += '"';
+                    }
+                    else if (textCharM[iColPos+1] == '\''){
+                        token += '\'';
+                    }
+                    iColPos += 2;
+                }
+                else
+                    token += textCharM[iColPos++];
             }
             // save Token attribute type as a string and advance cursor position away from quotation mark
             iColPos++;
@@ -169,7 +201,6 @@ public class Scanner
             }
 
         // determine token classification
-        //if (operator.contains(token))
         if (token.chars().distinct().allMatch(ch -> operator.contains(String.valueOf((char) ch))))
             // token is an operator
             nextToken.primClassif = Token.OPERATOR;
