@@ -9,6 +9,9 @@ public class SymbolTable
     private int VAR_ARGS = -1;
     private ArrayList<String> parmArgs;
 
+    /**
+     * SymbolTable constructor
+     */
     public SymbolTable()
     {
         ht = new HashMap <String, STEntry>();

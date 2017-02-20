@@ -59,7 +59,6 @@ public class Scanner
         iSourceLineNr = 0;
         iColPos = 0;
         textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
-        currentToken = new Token();
         nextToken = new Token();
 
         // check that there is a next token, of there isn't, then source file is empty
@@ -88,6 +87,7 @@ public class Scanner
         String token = "";                  // string used to create the token from the source file
         String operator = "+-*/<>!=#^";     // list of operators
         String separator = "():;[]";        // list of separators
+        String operations = "<>!=";         // list of potential two character operations
 
         // set currentToken to nextToken object to keep track of tokens
         clone(nextToken);
@@ -106,10 +106,26 @@ public class Scanner
                     nextToken.primClassif = Token.EOF;
                     return currentToken.tokenStr;
                 }
-                textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
-                iColPos = 0;
+
                 // print the source line we just grabbed
                 System.out.format("  %d %s\n", iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
+
+                //check for comments
+                while(sourceLineM.get(iSourceLineNr).contains("//")
+                                            && sourceLineM.get(iSourceLineNr).matches("[^\"]*//[^\"]*"))
+                {
+                    int index = sourceLineM.get(iSourceLineNr).indexOf("//");
+                    if(index == 0)
+                    {//Check if whole line is comment
+                        ++iSourceLineNr;
+                        System.out.format("  %d %s\n", iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
+                    }
+                    else // throw away part of line that is comment
+                        sourceLineM.set(iSourceLineNr, sourceLineM.get(iSourceLineNr).substring(0, index-2));
+                }
+
+                textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
+                iColPos = 0;
             } // if the line we just grabbed is empty (no tokens) advance to next line
             while (sourceLineM.get(iSourceLineNr).trim().length() == 0);
         }
@@ -121,7 +137,8 @@ public class Scanner
         // create token
         if (textCharM[iColPos] == '"' || textCharM[iColPos] == '\'')
         {// token contains a string
-            char quote = textCharM[iColPos++];  // save the quote so we can find the string literal terminator
+            // save the quote so we can find the string literal terminator
+            char quote = textCharM[iColPos++];
 
             // create string literal token
             while (true)
@@ -138,8 +155,11 @@ public class Scanner
             nextToken.subClassif = Token.STRING;
         }
         else if (delimiters.indexOf((textCharM[iColPos])) >= 0)
-            // token contains a delimiter
+        {// token contains a delimiter
             token += textCharM[iColPos++];
+            if (operations.contains(token) && iColPos != textCharM.length && textCharM[iColPos] == '=')
+                token += textCharM[iColPos++];
+        }
         else
             // token is an operand
             for (; iColPos < textCharM.length; iColPos++)
@@ -156,7 +176,7 @@ public class Scanner
         else if (separator.contains(token))
             // token is a separator
             nextToken.primClassif = Token.SEPARATOR;
-        else
+        else if (symbolTable.getSymbol(token) == null)
         {   // token is an operand
             nextToken.primClassif = Token.OPERAND;
 
@@ -180,9 +200,34 @@ public class Scanner
                     // token starts with a digit but contains non-digit characters
                     throw new HBException("Invalid Numeric Constant:", token, sourceLineM);
             }
+            else if (token.equals("T") || token.equals("F"))
+                //token is a boolean (T or F)
+                nextToken.subClassif = Token.BOOLEAN;
             else
                 // token is an identifier (variable or data type)
                 nextToken.subClassif = Token.IDENTIFIER;
+        }
+        else if (symbolTable.getSymbol(token).primClassif == Token.CONTROL)
+        {// control token recognized
+            STControl entry = (STControl)symbolTable.getSymbol(token);
+            nextToken.primClassif = Token.CONTROL;
+
+            if (entry.subClassif == Token.FLOW)
+                nextToken.subClassif = Token.FLOW;
+            else if (entry.subClassif == Token.END)
+                nextToken.subClassif = Token.END;
+            else if (entry.subClassif == Token.DECLARE)
+                nextToken.subClassif = Token.DECLARE;
+        }
+        else if (symbolTable.getSymbol(token).primClassif == Token.FUNCTION)
+        {// function token recognized
+            STFunction entry = (STFunction)symbolTable.getSymbol(token);
+            nextToken.primClassif = Token.FUNCTION;
+
+            if (entry.definedBy == Token.BUILTIN)
+                nextToken.subClassif = Token.BUILTIN;
+            else if (entry.definedBy == Token.USER)
+                nextToken.subClassif = Token.USER;
         }
 
         // set nextToken to the token built and return the current token string
@@ -191,11 +236,15 @@ public class Scanner
     }
 
     /**
-     * This method clones the given Token object to the current Token object
+     * This method clones the given Token object to the currentToken object
+     * <p>
+     * tokenStr, primClassif, subClassif, iSourceLineNr, iColPos, are all copied into currentToken
+     *
      * @param token is the token in which needs to be cloned.
      */
     public void clone(Token token)
     {
+        currentToken = new Token();
         currentToken.tokenStr = token.tokenStr;
         currentToken.primClassif = token.primClassif;
         currentToken.subClassif = token.subClassif;
