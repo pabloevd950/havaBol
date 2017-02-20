@@ -112,17 +112,15 @@ public class Scanner
                 System.out.format("  %d %s\n", iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
 
                 //check for comments
-                while(sourceLineM.get(iSourceLineNr).contains("//")
-                                            && sourceLineM.get(iSourceLineNr).matches("[^\"]*//[^\"]*"))
+                if(sourceLineM.get(iSourceLineNr).contains("//")
+                                            && !sourceLineM.get(iSourceLineNr).matches("['\"]//['\"]"))
                 {
                     int index = sourceLineM.get(iSourceLineNr).indexOf("//");
                     if(index == 0)
-                    {//Check if whole line is comment
-                        ++iSourceLineNr;
-                        System.out.format("  %d %s\n", iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
-                    }
+                        //Check if whole line is comment
+                        System.out.format("  %d %s\n", ++iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
                     else // throw away part of line that is comment
-                        sourceLineM.set(iSourceLineNr, sourceLineM.get(iSourceLineNr).substring(0, index-2));
+                        sourceLineM.set(iSourceLineNr, sourceLineM.get(iSourceLineNr).substring(0, index).trim());
                 }
 
                 textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
@@ -171,7 +169,8 @@ public class Scanner
             }
 
         // determine token classification
-        if (operator.contains(token))
+        //if (operator.contains(token))
+        if (token.chars().distinct().allMatch(ch -> operator.contains(String.valueOf((char) ch))))
             // token is an operator
             nextToken.primClassif = Token.OPERATOR;
         else if (separator.contains(token))
