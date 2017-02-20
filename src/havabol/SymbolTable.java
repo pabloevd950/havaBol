@@ -10,7 +10,9 @@ public class SymbolTable
     private ArrayList<String> parmArgs;
 
     /**
-     * SymbolTable constructor
+     * SymbolTable constructor that will be used to provide methods for maintaining the global symbol tables
+     * <p>
+     * This constructor uses a hash map with a string as a key and STEntry object for the value.
      */
     public SymbolTable()
     {
@@ -18,16 +20,37 @@ public class SymbolTable
         initGlobal();
     }
 
+    /**
+     * getSymbol method returns the symbol table entry for the given symbol
+     * <p>
+     * returns the STEntry for the inputted symbol or will raise a NULL exception
+     *
+     * @param symbol string for the symbol
+     * @return STEntry which is either an Identifier, Control, or Function subclass
+     */
     public STEntry getSymbol(String symbol)
     {
         return ht.get(symbol);
     }
 
+    /**
+     * putSymbol method stores the symbol and its corresponding entry in the symbol table
+     * <p>
+     * STEntry has 3 subclasses, however we do not care which it is here
+     *
+     * @param symbol string for the symbol
+     * @param entry STEntry which is either an Identifier, Control, or Function subclass
+     */
     public void putSymbol(String symbol, STEntry entry)
     {
         ht.put(symbol, entry);
     }
 
+    /**
+     * initGlobal method inserts reserved symbol entries into the global symbol table
+     * <p>
+     * intializes builtin values for HavaBol
+     */
     private void initGlobal()
     {
         ht.put("def", new STControl("def", Token.CONTROL, Token.FLOW));

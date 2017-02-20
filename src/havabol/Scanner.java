@@ -89,8 +89,9 @@ public class Scanner
         String separator = "():;[]";        // list of separators
         String operations = "<>!=";         // list of potential two character operations
 
-        // set currentToken to nextToken object to keep track of tokens
+        // set currentToken to nextToken object to keep track of tokens and reset nextToken
         clone(nextToken);
+        nextToken = new Token();
 
         // check if we encountered EOF
         if (nextToken.primClassif == Token.EOF)
