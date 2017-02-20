@@ -14,8 +14,8 @@ public class Scanner
 {
     // public variables
     public static final String delimiters = " \t;:()\'\"=!<>+-*/[]#,^\n"; // terminate a token
-    public Token currentToken;              // the token established with the most recent call to getNext()
-    public Token nextToken;                 // the next token
+    public static Token currentToken;       // the token established with the most recent call to getNext()
+    public Token nextToken;                 // the token following the currentToken
 
     // private variables
     private String sourceFileNm;            // source code file name
@@ -59,6 +59,13 @@ public class Scanner
         iSourceLineNr = 0;
         iColPos = 0;
         textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
+        currentToken = new Token();
+        nextToken = new Token();
+
+        // check that there is a next token, of there isn't, then source file is empty
+        getNext();
+        if (nextToken.tokenStr.isEmpty())
+            throw new HBException("Empty source file:" + sourceFileNm);
 
         // print first line in the source file
         System.out.format("  %d %s\n", iSourceLineNr+1, sourceLineM.get(iSourceLineNr));
@@ -81,7 +88,13 @@ public class Scanner
         String token = "";                  // string used to create the token from the source file
         String operator = "+-*/<>!=#^";     // list of operators
         String separator = "():;[]";        // list of separators
-        currentToken = new Token();         // initialize currentToken to a Token object to keep track of tokens
+
+        // set currentToken to nextToken object to keep track of tokens
+        clone(nextToken);
+
+        // check if we encountered EOF
+        if (nextToken.primClassif == Token.EOF)
+            return "";
 
         // Automatically advance to the next source line when necessary
         if (iColPos >= textCharM.length)
@@ -90,8 +103,8 @@ public class Scanner
             { // find a line that is not empty
                 if (++iSourceLineNr >= sourceLineM.size())
                 { // EOF encountered, there are no more tokens
-                    currentToken.primClassif = Token.EOF;
-                    return "";
+                    nextToken.primClassif = Token.EOF;
+                    return currentToken.tokenStr;
                 }
                 textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
                 iColPos = 0;
@@ -117,13 +130,12 @@ public class Scanner
                     break;
                 else if (iColPos >= textCharM.length - 1)
                     // unterminated String literal encountered
-                    throw new Exception("Unterminated String Literal: (Line: " + iSourceLineNr + " Column: "
-                            + iColPos + ") Error:" + token + " >" + sourceLineM.get(iSourceLineNr));
+                    throw new HBException("Unterminated String Literal", token, sourceLineM);
                 token += textCharM[iColPos++];
             }
             // save Token attribute type as a string and advance cursor position away from quotation mark
             iColPos++;
-            currentToken.subClassif = Token.STRING;
+            nextToken.subClassif = Token.STRING;
         }
         else if (delimiters.indexOf((textCharM[iColPos])) >= 0)
             // token contains a delimiter
@@ -140,43 +152,54 @@ public class Scanner
         // determine token classification
         if (operator.contains(token))
             // token is an operator
-            currentToken.primClassif = Token.OPERATOR;
+            nextToken.primClassif = Token.OPERATOR;
         else if (separator.contains(token))
             // token is a separator
-            currentToken.primClassif = Token.SEPARATOR;
+            nextToken.primClassif = Token.SEPARATOR;
         else
         {   // token is an operand
-            currentToken.primClassif = Token.OPERAND;
+            nextToken.primClassif = Token.OPERAND;
 
             // determine sub classification of token
-            if (currentToken.subClassif == Token.STRING);
+            if (nextToken.subClassif == Token.STRING);
                 // token is a string literal which is already set
             else if (Character.isDigit(token.charAt(0)))
             {   // token starts with a digit, determine if integer or float
                 if (token.contains("."))
                 {// token is a float
                     if (token.matches("^[0-9]+\\.[0-9]*$"))
-                        currentToken.subClassif = Token.FLOAT;
+                        nextToken.subClassif = Token.FLOAT;
                     else
                         //token contains an improper floating point
-                        throw new Exception("Invalid Numeric Constant: (Line: " + iSourceLineNr + " Column: "
-                                + iColPos + ") Error:" + token + " >" + sourceLineM.get(iSourceLineNr));
+                        throw new HBException("Invalid Numeric Constant:", token, sourceLineM);
                 }
                 else if (token.matches("^[0-9]+$"))
                     // token is an int
-                    currentToken.subClassif = Token.INTEGER;
+                    nextToken.subClassif = Token.INTEGER;
                 else
                     // token starts with a digit but contains non-digit characters
-                    throw new Exception("Invalid Numeric Constant: (Line: " + iSourceLineNr + " Column: "
-                            + iColPos + ") Error:" + token + " >" + sourceLineM.get(iSourceLineNr));
+                    throw new HBException("Invalid Numeric Constant:", token, sourceLineM);
             }
             else
                 // token is an identifier (variable or data type)
-                currentToken.subClassif = Token.IDENTIFIER;
+                nextToken.subClassif = Token.IDENTIFIER;
         }
 
-        // set currentToken to the token built and return the string
-        currentToken.tokenStr = token;
+        // set nextToken to the token built and return the current token string
+        nextToken.tokenStr = token;
         return currentToken.tokenStr;
+    }
+
+    /**
+     * This method clones the given Token object to the current Token object
+     * @param token is the token in which needs to be cloned.
+     */
+    public void clone(Token token)
+    {
+        currentToken.tokenStr = token.tokenStr;
+        currentToken.primClassif = token.primClassif;
+        currentToken.subClassif = token.subClassif;
+        currentToken.iSourceLineNr = token.iSourceLineNr;
+        currentToken.iColPos = token.iColPos;
     }
 }
