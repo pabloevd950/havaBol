@@ -77,7 +77,6 @@ public class Token
 
     public void printToken()
     {
-
         String primClassifStr;
         String subClassifStr;
         // convert the primClassif to a string
@@ -186,7 +185,4 @@ public class Token
         }
         System.out.printf("\n");
     }
-
-
-
 }

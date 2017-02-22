@@ -87,8 +87,10 @@ public class Scanner
         String token = "";                  // string used to create the token from the source file
         String operator = "+-*/<>!=#^";     // list of operators
         String separator = "():;[]";        // list of separators
-        String operations = "<>!=";         // list of potential two character operations
+        String operators = "<>!=^*/";       // list of potential two character operations
+        String operations = "<=,>=,!=,==,+=,-=,*=,/=, ^=";
         String escapeChars = "t\"na\\\''";
+
         // set currentToken to nextToken object to keep track of tokens and reset nextToken
         clone(nextToken);
         nextToken = new Token();
@@ -147,35 +149,24 @@ public class Scanner
                 else if (iColPos >= textCharM.length - 1)
                     // unterminated String literal encountered
                     throw new HBException("Unterminated String Literal", token, sourceLineM);
-                if(textCharM[iColPos] == '\\' && escapeChars.contains(String.valueOf(textCharM[iColPos+1])))// == 'n' || textCharM[iColPos+1] == 't' ))
-                {
-                    char array[] = new char[1];
-                    if(textCharM[iColPos+1] == 'n')
-                    {   //array[0] = 0x00;
-                        array[0] = 0x0a;
-                        token += String.valueOf(array);
-                    }
-                    else if (textCharM[iColPos+1] == 't')
-                    {
-                        //array[0] = 0x00;
-                        array[0] = 0x09;
-                        token += String.valueOf(array);
-                    }
-                    else if (textCharM[iColPos+1] == 'a'){
-                        //array[0] = 0x00;
-                        array[0] = 0x0A;
-                        token += String.valueOf(array);
-                    }
-                    else if (textCharM[iColPos+1] == '\\'){
 
+                // determine escape character value
+                if (textCharM[iColPos] == '\\' && escapeChars.contains(String.valueOf(textCharM[iColPos+1])))
+                {// escape char found, check to see what the next char contains to determine escaped value
+                    if(textCharM[iColPos+1] == 'n')
+                        token += String.valueOf((char)0x0a);
+                    else if (textCharM[iColPos+1] == 't')
+                        token += String.valueOf((char)0x09);
+                    else if (textCharM[iColPos+1] == 'a')
+                        token += String.valueOf((char)0x0A);
+                    else if (textCharM[iColPos+1] == '\\')
                         token += '\\';
-                    }
-                    else if (textCharM[iColPos+1] == '"'){
+                    else if (textCharM[iColPos+1] == '"')
                         token += '"';
-                    }
-                    else if (textCharM[iColPos+1] == '\''){
+                    else if (textCharM[iColPos+1] == '\'')
                         token += '\'';
-                    }
+
+                    // increment iColPos to the next char after the escape values
                     iColPos += 2;
                 }
                 else
@@ -188,7 +179,7 @@ public class Scanner
         else if (delimiters.indexOf((textCharM[iColPos])) >= 0)
         {// token contains a delimiter
             token += textCharM[iColPos++];
-            if (operations.contains(token) && iColPos != textCharM.length && textCharM[iColPos] == '=')
+            if (operators.contains(token) && iColPos != textCharM.length && textCharM[iColPos] == '=')
                 token += textCharM[iColPos++];
         }
         else
@@ -201,7 +192,7 @@ public class Scanner
             }
 
         // determine token classification
-        if (token.chars().distinct().allMatch(ch -> operator.contains(String.valueOf((char) ch))))
+        if (operator.contains(token) || operations.contains(token))//bridget was here
             // token is an operator
             nextToken.primClassif = Token.OPERATOR;
         else if (separator.contains(token))
