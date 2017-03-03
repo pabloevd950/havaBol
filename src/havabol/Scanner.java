@@ -264,7 +264,8 @@ public class Scanner
     /**
      * This method clones the given Token object to the currentToken object
      * <p>
-     * tokenStr, primClassif, subClassif, iSourceLineNr, iColPos, are all copied into currentToken
+     * tokenStr, primClassif, subClassif, iSourceLineNr, iColPos, are all copied into
+     * currentToken
      *
      * @param token is the token in which needs to be cloned.
      */
