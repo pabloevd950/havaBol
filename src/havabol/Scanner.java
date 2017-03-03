@@ -6,6 +6,10 @@ package havabol;
   All errors and exceptions are thrown up to main and output to stderr from there.
  */
 
+import havabol.SymbolTable.STControl;
+import havabol.SymbolTable.STFunction;
+import havabol.SymbolTable.SymbolTable;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -87,10 +91,13 @@ public class Scanner
         String token = "";                  // string used to create the token from the source file
         String operator = "+-*/<>!=#^";     // list of operators
         String separator = "():;[]";        // list of separators
-        String operations = "<>!=";         // list of potential two character operations
+        String operators = "<>!=^*/";       // list of potential two character operations
+        String operations = "<=,>=,!=,==,+=,-=,*=,/=, ^=";
+        String escapeChars = "t\"na\\\''";
 
-        // set currentToken to nextToken object to keep track of tokens
+        // set currentToken to nextToken object to keep track of tokens and reset nextToken
         clone(nextToken);
+        nextToken = new Token();
 
         // check if we encountered EOF
         if (nextToken.primClassif == Token.EOF)
@@ -111,17 +118,15 @@ public class Scanner
                 System.out.format("  %d %s\n", iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
 
                 //check for comments
-                while(sourceLineM.get(iSourceLineNr).contains("//")
-                                            && sourceLineM.get(iSourceLineNr).matches("[^\"]*//[^\"]*"))
+                if(sourceLineM.get(iSourceLineNr).contains("//")
+                                            && !sourceLineM.get(iSourceLineNr).matches("['\"]//['\"]"))
                 {
                     int index = sourceLineM.get(iSourceLineNr).indexOf("//");
                     if(index == 0)
-                    {//Check if whole line is comment
-                        ++iSourceLineNr;
-                        System.out.format("  %d %s\n", iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
-                    }
+                        //Check if whole line is comment
+                        System.out.format("  %d %s\n", ++iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
                     else // throw away part of line that is comment
-                        sourceLineM.set(iSourceLineNr, sourceLineM.get(iSourceLineNr).substring(0, index-2));
+                        sourceLineM.set(iSourceLineNr, sourceLineM.get(iSourceLineNr).substring(0, index).trim());
                 }
 
                 textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
@@ -148,7 +153,28 @@ public class Scanner
                 else if (iColPos >= textCharM.length - 1)
                     // unterminated String literal encountered
                     throw new HBException("Unterminated String Literal", token, sourceLineM);
-                token += textCharM[iColPos++];
+
+                // determine escape character value
+                if (textCharM[iColPos] == '\\' && escapeChars.contains(String.valueOf(textCharM[iColPos+1])))
+                {// escape char found, check to see what the next char contains to determine escaped value
+                    if(textCharM[iColPos+1] == 'n')
+                        token += String.valueOf((char)0x0a);
+                    else if (textCharM[iColPos+1] == 't')
+                        token += String.valueOf((char)0x09);
+                    else if (textCharM[iColPos+1] == 'a')
+                        token += String.valueOf((char)0x0A);
+                    else if (textCharM[iColPos+1] == '\\')
+                        token += '\\';
+                    else if (textCharM[iColPos+1] == '"')
+                        token += '"';
+                    else if (textCharM[iColPos+1] == '\'')
+                        token += '\'';
+
+                    // increment iColPos to the next char after the escape values
+                    iColPos += 2;
+                }
+                else
+                    token += textCharM[iColPos++];
             }
             // save Token attribute type as a string and advance cursor position away from quotation mark
             iColPos++;
@@ -157,7 +183,7 @@ public class Scanner
         else if (delimiters.indexOf((textCharM[iColPos])) >= 0)
         {// token contains a delimiter
             token += textCharM[iColPos++];
-            if (operations.contains(token) && iColPos != textCharM.length && textCharM[iColPos] == '=')
+            if (operators.contains(token) && iColPos != textCharM.length && textCharM[iColPos] == '=')
                 token += textCharM[iColPos++];
         }
         else
@@ -170,7 +196,7 @@ public class Scanner
             }
 
         // determine token classification
-        if (operator.contains(token))
+        if (operator.contains(token) || operations.contains(token))//bridget was here
             // token is an operator
             nextToken.primClassif = Token.OPERATOR;
         else if (separator.contains(token))

@@ -1,4 +1,4 @@
-package havabol;
+package havabol.SymbolTable;
 
 public class STEntry
 {

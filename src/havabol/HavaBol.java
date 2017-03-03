@@ -17,6 +17,8 @@
  */
 package havabol;
 
+import havabol.SymbolTable.SymbolTable;
+
 public class HavaBol
 {
     public static void main(String[] args)
