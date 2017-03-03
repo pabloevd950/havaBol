@@ -6,6 +6,10 @@ package havabol;
   All errors and exceptions are thrown up to main and output to stderr from there.
  */
 
+import havabol.SymbolTable.STControl;
+import havabol.SymbolTable.STFunction;
+import havabol.SymbolTable.SymbolTable;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;

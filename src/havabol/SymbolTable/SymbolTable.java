@@ -1,4 +1,6 @@
-package havabol;
+package havabol.SymbolTable;
+
+import havabol.Token;
 
 import java.util.ArrayList;
 import java.util.HashMap;

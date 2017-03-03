@@ -1,4 +1,4 @@
-package havabol;
+package havabol.SymbolTable;
 
 import java.util.ArrayList;
 
