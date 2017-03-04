@@ -44,7 +44,7 @@ public class Scanner
      * @throws IOException Exception if there is a problem opening or reading from the source file
      */
     public Scanner(String sourceFileNm, SymbolTable symbolTable) throws Exception
-    {
+    {   //Hello
         // save source file name and symbol table object
         this.sourceFileNm = sourceFileNm;
         this.symbolTable = symbolTable;
