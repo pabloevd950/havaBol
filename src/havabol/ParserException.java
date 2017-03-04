@@ -1,4 +1,4 @@
-package havabol.SymbolTable;
+package havabol;
 
 /**
  * Created on 3/3/17.
