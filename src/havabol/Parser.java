@@ -60,7 +60,7 @@ public class Parser
         return null;
     }
 
-    public void error (String fmt, Object... varArgs)
+    public void error (String fmt, Object... varArgs) throws Exception
     {
         throw new ParserException(scan.currentToken.iSourceLineNr
                                 , String.format(fmt, varArgs)
