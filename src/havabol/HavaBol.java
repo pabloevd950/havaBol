@@ -28,15 +28,11 @@ public class HavaBol
 
         try
         {
-            // Print a column heading
-            System.out.printf("%-11s %-12s %s\n"
-                    , "primClassif"
-                    , "subClassif"
-                    , "tokenStr");
-
+            // create scanner and parser objects
             Scanner scan = new Scanner(args[0], symbolTable);
-            while (! scan.getNext().isEmpty())
-                scan.currentToken.printToken();
+            Parser parser = new Parser(symbolTable, scan);
+
+            parser.statement();
         }
         catch (Exception e)
         {
