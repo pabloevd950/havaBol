@@ -20,9 +20,9 @@ public class Scanner
     public static final String delimiters = " \t;:()\'\"=!<>+-*/[]#,^\n"; // terminate a token
     public static Token currentToken;       // the token established with the most recent call to getNext()
     public Token nextToken;                 // the token following the currentToken
+    public String sourceFileNm;            // source code file name
 
     // private variables
-    private String sourceFileNm;            // source code file name
     private ArrayList<String> sourceLineM;  // array list of source text lines
     private SymbolTable symbolTable;        // object responsible for providing symbol definitions
     private char[] textCharM;               // char [] for the current text line

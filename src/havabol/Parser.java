@@ -27,18 +27,43 @@ public class Parser
         while (! scan.getNext().isEmpty())
         {
             //scan.currentToken.printToken();
-            switch (scan.currentToken.tokenStr)
+            switch (scan.currentToken.subClassif)
             {
-                case "if":
-                    return ifStmt();
-
+                case Token.FLOW:
+                    if (scan.currentToken.tokenStr.equals("if"))
+                        ifStmt();
+                    else
+                        whileStmt();
+                case Token.IDENTIFIER:
+                    assignStmt();
+                default:
+                    throw new Exception();
 
             }
         }
     }
 
-    public void ifStmt()
+    public ResultValue assignStmt()
+    {
+    }
+
+    public ResultValue ifStmt()
     {
 
+
+
+        return null;
+    }
+
+    public ResultValue whileStmt()
+    {
+        return null;
+    }
+
+    public void error (String fmt, Object... varArgs)
+    {
+        throw new ParserException(scan.currentToken.iSourceLineNr
+                                , String.format(fmt, varArgs)
+                                , scan.sourceFileNm);
     }
 }
