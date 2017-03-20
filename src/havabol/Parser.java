@@ -45,6 +45,7 @@ public class Parser
 
     public ResultValue assignStmt()
     {
+        return null;
     }
 
     public ResultValue ifStmt()
