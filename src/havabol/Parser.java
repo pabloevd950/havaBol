@@ -9,6 +9,7 @@ import havabol.StorageManager;
  */
 public class Parser
 {
+
     public SymbolTable symbolTable;
     public StorageManager storageManager;
     public Scanner scan;
