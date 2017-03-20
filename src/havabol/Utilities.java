@@ -7,7 +7,6 @@ package havabol;
 public class Utilities
 {
 
-
     public static int addInt(int x, int y){
          return x+y;
     }
@@ -23,6 +22,7 @@ public class Utilities
     public static double subFloat(double x, double y){
         return x-y;
     }
+
     public static int divInt(int x, int y){
         return x/y;
     }
@@ -48,12 +48,25 @@ public class Utilities
     }
 
     public static  < T extends Comparable > boolean isEqual(T x, T y){
-        if(x.compareTo(y) > 0)
+        if(x.compareTo(y) == 0)
             return true;
         else
         return false;
     }
-    //public static boolean isGreat
+
+    public static <T extends Comparable > boolean isGreaterThan(T x, T y){
+        if(x.compareTo(y) > 0){
+            return true;
+        }
+        else return false;
+    }
+
+    public static <T extends Comparable > boolean isLessThan(T x, T y){
+        if(x.compareTo(y) < 0){
+            return true;
+        }
+        else return false;
+    }
 
 
 

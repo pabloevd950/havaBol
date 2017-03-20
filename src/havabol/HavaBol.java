@@ -25,12 +25,13 @@ public class HavaBol
     {
         // Create the SymbolTable
         SymbolTable symbolTable = new SymbolTable();
+        StorageManager storageManager = new StorageManager();
 
         try
         {
             // create scanner and parser objects
             Scanner scan = new Scanner(args[0], symbolTable);
-            Parser parser = new Parser(symbolTable, scan);
+            Parser parser = new Parser(symbolTable, storageManager, scan);
 
             parser.statement();
         }

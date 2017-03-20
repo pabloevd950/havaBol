@@ -123,8 +123,10 @@ public class Scanner
                 {
                     int index = sourceLineM.get(iSourceLineNr).indexOf("//");
                     if(index == 0)
+                    {
                         //Check if whole line is comment
                         System.out.format("  %d %s\n", ++iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
+                    }
                     else // throw away part of line that is comment
                         sourceLineM.set(iSourceLineNr, sourceLineM.get(iSourceLineNr).substring(0, index).trim());
                 }
