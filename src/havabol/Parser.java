@@ -100,13 +100,13 @@ public class Parser
              if(entry != null)
              {
                  switch(entry.entryType){
-                     case 2:
+                     case Token.INTEGER:
                          entry.intValue = (int) value;
-                     case 3:
+                     case Token.FLOAT:
                          entry.floatValue = (float) value;
-                     case 4:
+                     case Token.BOOLEAN:
                          entry.boolValue = (boolean) value;
-                     case 5:
+                     case Token.STRING:
                          entry.strValue = (String) value;
 
                  }
@@ -157,24 +157,20 @@ public class Parser
         switch (type)
         {
             case "Int":
-                dclType = 2;
+                dclType = Token.INTEGER;
                 break;
             case "Float":
-                dclType = 3;
+                dclType = Token.FLOAT;
                 break;
-
             case "Booelan":
-                dclType = 4;
+                dclType = Token.BOOLEAN;
                 break;
-
             case "String":
-                dclType = 5;
+                dclType = Token.STRING;
                 break;
             default:
                 System.out.print(type);
                 error("Invalid Data type", type);
-
-
         }
         //Name if declared variable
         name = scan.getNext();
