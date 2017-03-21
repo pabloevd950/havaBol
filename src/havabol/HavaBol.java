@@ -33,7 +33,7 @@ public class HavaBol
             Scanner scan = new Scanner(args[0], symbolTable);
             Parser parser = new Parser(symbolTable, storageManager, scan);
 
-            parser.statement();
+            parser.statement(true);
         }
         catch (Exception e)
         {

@@ -2,7 +2,9 @@ package havabol;
 
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
-import havabol.StorageManager;
+
+import java.util.ArrayList;
+import java.util.Stack;
 
 /**
  * Created by tkb442 on 3/3/17.
@@ -21,7 +23,7 @@ public class Parser
         this.scan = scan;
     }
 
-    public void statement() throws Exception
+    public void statement(Boolean bExec) throws Exception
     {
         // Print a column heading
         System.out.printf("%-11s %-12s %s\n"
@@ -37,9 +39,10 @@ public class Parser
 
                 case Token.FLOW:
                     if (scan.currentToken.tokenStr.equals("if"))
-                        ifStmt();
-                    else
+                        ifStmt(bExec);
+                    else if (scan.currentToken.tokenStr.equals("while"))
                         whileStmt();
+                    break;
                 case Token.IDENTIFIER:
                     assignStmt();
                     break;
@@ -52,9 +55,8 @@ public class Parser
                 case Token.SEPARATOR:
                     //scan.getNext();
                     //break;
-
                 default:
-                    System.out.println("Need to handle this");
+                    System.out.println("*************Need to handle this************");
                     System.out.println(scan.currentToken.tokenStr + " " + scan.nextToken.tokenStr);
 
                     //scan.currentToken.printToken();
@@ -63,6 +65,29 @@ public class Parser
             }
         }
     }
+
+    public ResultValue statements(Boolean bExec) throws Exception
+    {
+        ResultValue result = new ResultValue();
+        while (scan.currentToken.primClassif != Token.END)
+            statement(bExec);
+
+        result.terminatingStr = scan.currentToken.tokenStr;
+        return result;
+    }
+
+
+
+    public ResultValue expr() throws Exception
+    {
+        scan.getNext(); // get the operand
+
+
+
+        return null;
+    }
+
+
 
     private void function() throws Exception
     {
@@ -139,8 +164,51 @@ public class Parser
         return res;
     }
 
-    public ResultValue ifStmt()
+    public ResultValue ifStmt(Boolean bExec) throws Exception
     {
+        // do we need to evaluate the condition
+        if (bExec)
+        {// we are executing, not ignoring
+            ResultValue resCond = expr();
+
+            // did the condition return true?
+            if (resCond.value.equals("T"))
+            {// condition returned true, execute statements on the true part
+                statements(true);
+
+                // what ended the statements after the true part? else of endif
+                if (scan.currentToken.tokenStr.equals("else"))
+                {// has an else
+                    if (! scan.getNext().equals(":"))
+                        error("ERROR: EXPECTED ':' AFTER ELSE");
+                    statements(false);
+                }
+
+                // did we have an endif
+                if (! scan.currentToken.tokenStr.equals("endif"))
+                    error("ERROR: EXPECTED 'endif' FOR 'if' EXPRESSION");
+            }
+            else
+            {// condition returned false, ignore all statements after the if
+                statements(false);
+
+                // check for else
+                if (scan.currentToken.tokenStr.equals("else"))
+                { // if it is an 'else', execute
+                    if (! scan.getNext().equals(":"))
+                        error("ERROR: EXPECTED ':' AFTER ELSE");
+                    statements(true);
+                }
+
+                // did we have an endif
+                if (! scan.currentToken.tokenStr.equals("endif"))
+                    error("ERROR: EXPECTED 'endif' FOR 'if' EXPRESSION");
+            }
+        }
+        else
+        {// we are ignoring execution
+
+        }
 
         System.out.println("If statement here");
         return null;
@@ -226,6 +294,27 @@ public class Parser
 
         return null;
     }
+
+
+    public void infixExpr()
+    {
+        ArrayList<Token> out = new ArrayList<Token>();
+        Stack<ResultValue> stack = new Stack<ResultValue>();
+
+        /*for token from left to right
+        {
+            switch (Token.primClassif)
+        }*/
+
+
+
+
+
+    }
+
+
+
+
 
 
     public void error (String fmt, Object... varArgs) throws Exception

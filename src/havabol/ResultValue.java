@@ -28,6 +28,11 @@ public class ResultValue
         this.stucture = struct;
     }
 
+    public ResultValue()
+    {
+        this(-1, -1);
+    }
+
     /**
      * Creates a new ResultValue object
      * <p>
@@ -40,19 +45,11 @@ public class ResultValue
      * @param terminatingstr ....
      * @return         ResultValue object
      */
-    public ResultValue Resultvalue(String value, int type, int structure, String terminatingstr){
-
+    public ResultValue(String value, int type, int structure, String terminatingstr)
+    {
         this.value = value;
         this.type = type;
         this.stucture = structure;
         this.terminatingStr = terminatingstr;
-
-        return this;
     }
-
-    public ResultValue ResultValue(){
-
-        return null;
-    }
-
 }
