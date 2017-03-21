@@ -50,6 +50,8 @@ public class Parser
                     function();
                     break;
                 case Token.SEPARATOR:
+                    //scan.getNext();
+                    //break;
 
                 default:
                     System.out.println("Need to handle this");
@@ -81,47 +83,58 @@ public class Parser
     public ResultValue assignStmt() throws Exception
     {
         System.out.println("Assignment statement starts here for line " + scan.currentToken.tokenStr);
-        //Storage Entry object
-        StorageEntry entry;
-        String name = scan.currentToken.tokenStr;
         int dclType = scan.currentToken.primClassif;
-        Object value = null;
 
-        //If the next token is an '=', the one after that should be the value. Not checking for expressions yet
-        if(scan.getNext().equals("="))
-        {
-            value = scan.getNext();
+        StorageEntry entry;
+
+        ResultValue res = null;
+        String variableStr ;
+        String operatorStr;
+        ResultValue resO2;
+        ResultValue resO1;
+        Numeric nOp2;  // numeric value of second operand
+        Numeric nOp1;  // numeric value of first operand
+
+
+        if (scan.currentToken.subClassif != Token.IDENTIFIER)
+            error("expected a variable for the target of an assignment");
+
+        variableStr  = scan.currentToken.tokenStr;
+        System.out.println(variableStr);
+        scan.getNext();
+
+        if(scan.currentToken.primClassif != Token.OPERATOR)
+            error("Expected an operand");
+        operatorStr = scan.currentToken.tokenStr;
+        System.out.println(operatorStr);
+
+
+        if(operatorStr.equals("=")){
+            resO2 = expression();
+            res = assign(variableStr, resO2);  // assign to target
         }
-        //Assuming the previous token was a single value and not expression, the next token should be a ';' terminator
-         if(scan.getNext().equals(";"))
-         {
+        else{
+            error("expected assignment operator");
 
-             entry = storageManager.getEntry(name);
-             if(entry != null)
-             {
-                 switch(entry.entryType){
-                     case Token.INTEGER:
-                         entry.intValue = (int) value;
-                     case Token.FLOAT:
-                         entry.floatValue = (float) value;
-                     case Token.BOOLEAN:
-                         entry.boolValue = (boolean) value;
-                     case Token.STRING:
-                         entry.strValue = (String) value;
+        }
 
-                 }
-
-             }
-
-
-             //Get declaration in symbol table
-             //Put in storage manager
-             //scan.getNext();
-         }
+        scan.getNext();
 
 
 
-            return null;
+        return res;
+    }
+
+    private ResultValue assign(String variableStr, ResultValue resO2) throws Exception
+    {
+
+        ResultValue res = storageManager.getEntry(variableStr);
+        if(res == null){
+            error("Not declared yet");
+        }
+        res = resO2;
+        storageManager.putEntry(variableStr,res);
+        return res;
     }
 
     public ResultValue ifStmt()
@@ -146,14 +159,14 @@ public class Parser
     {
         System.out.println("Declare statement here with " + scan.currentToken.tokenStr );
         //Initialize variables for symbol table and storage manager
-        String name;
-        Object val =  null;
+        String variableStr;
         String type = scan.currentToken.tokenStr;
         int structure = 1;
         int dclType = 1;
         int parm;
         int nonLocal;
-        //Check data type. Refer to integer values from symbol table
+
+        //Check data type.
         switch (type)
         {
             case "Int":
@@ -162,9 +175,11 @@ public class Parser
             case "Float":
                 dclType = Token.FLOAT;
                 break;
+
             case "Booelan":
                 dclType = Token.BOOLEAN;
                 break;
+
             case "String":
                 dclType = Token.STRING;
                 break;
@@ -173,38 +188,40 @@ public class Parser
                 error("Invalid Data type", type);
         }
         //Name if declared variable
-        name = scan.getNext();
+        scan.getNext();
+
         //Check if name is an operand
         if(scan.currentToken.primClassif != 1)
         {
-            error("This should be an operand", name);
+            error("This should be an operand", scan.currentToken.tokenStr);
         }
-        //Check if variable is being initialized
+        variableStr = scan.currentToken.tokenStr;
+
+        //Put in symbol table and storage manager
+        STIdentifier symbolEntry = new STIdentifier(variableStr, scan.currentToken.primClassif , dclType,
+                1, 1, 1);
+        symbolTable.putSymbol(variableStr, symbolEntry);
+        ResultValue variableEntry =  new ResultValue(dclType, structure);
+        storageManager.putEntry(variableStr,variableEntry);
+        //scan.getNext();
+
         if(scan.nextToken.tokenStr.equals("="))
         {
-            assignStmt();
-            //We should call assignment here
-            //val = scan.getNext();
+            ResultValue res = assignStmt();
+
         }
-        //Check for finished declaration and enter into symboltablez
+        //Check for finished declaration and enter into symboltable
         else if(scan.nextToken.tokenStr.equals(";"))
         {
             scan.getNext();
-            //Put in symbol table and storage manager
-            STIdentifier symbolEntry = new STIdentifier(name, scan.currentToken.primClassif , dclType,
-                    1, 1, 1);
-            symbolTable.putSymbol(name, symbolEntry);
-            StorageEntry variableEntry =  new StorageEntry(name, dclType);
-            storageManager.putEntry(name,variableEntry);
-
         }
 
         return null;
     }
 
-    public void expression(){
+    public ResultValue expression(){
 
-
+        return null;
     }
 
 

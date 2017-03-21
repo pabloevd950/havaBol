@@ -7,11 +7,19 @@ public class ResultValue
 {
 
     String value;
-    String type;
-    String stucture;
     String terminatingStr;
+    int stucture;
+    int type;
 
-    public ResultValue Resultvalue(String value, String type, String structure, String terminatingstr){
+
+
+    public ResultValue(int dclType, int struct)
+    {
+        this.type = dclType;
+        this.stucture = struct;
+    }
+
+    public ResultValue Resultvalue(String value, int type, int structure, String terminatingstr){
 
         this.value = value;
         this.type = type;

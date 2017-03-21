@@ -9,24 +9,25 @@ import java.util.HashMap;
 
 public class StorageManager
 {
-    HashMap <String, StorageEntry> sT;
+    HashMap <String, ResultValue> sT;
 
     public StorageManager(){
-        sT = new HashMap <String, StorageEntry>();
+        sT = new HashMap <String, ResultValue>();
     }
 
 
-    public StorageEntry getEntry(String key)
+    public ResultValue getEntry(String key)
     {
         return sT.get(key);
     }
 
 
 
-    public void putEntry(String key, StorageEntry entry)
+    public void putEntry(String key, ResultValue entry)
     {
         sT.put(key, entry);
     }
+
 
 
     //We should check if variable already exists here.
