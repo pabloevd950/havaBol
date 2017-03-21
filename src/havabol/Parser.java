@@ -127,12 +127,14 @@ public class Parser
 
     private ResultValue assign(String variableStr, ResultValue resO2) throws Exception
     {
-
+        //Get entry from storage manager
         ResultValue res = storageManager.getEntry(variableStr);
-        if(res == null){
+        //Make sure entry was in table
+        if(res == null)
             error("Not declared yet");
-        }
+
         res = resO2;
+        //Replace old value in the same key
         storageManager.putEntry(variableStr,res);
         return res;
     }
@@ -158,11 +160,10 @@ public class Parser
     public ResultValue declareStmt() throws Exception
     {
         System.out.println("Declare statement here with " + scan.currentToken.tokenStr );
-        //Initialize variables for symbol table and storage manager
         String variableStr;
         String type = scan.currentToken.tokenStr;
-        int structure = 1;
-        int dclType = 1;
+        int structure = -1;
+        int dclType = -1;
         int parm;
         int nonLocal;
 
@@ -187,7 +188,7 @@ public class Parser
                 System.out.print(type);
                 error("Invalid Data type", type);
         }
-        //Name if declared variable
+        //Advance to next token which should be variable name
         scan.getNext();
 
         //Check if name is an operand
@@ -195,27 +196,29 @@ public class Parser
         {
             error("This should be an operand", scan.currentToken.tokenStr);
         }
+        //Since current token is operan, set value to variableStr
         variableStr = scan.currentToken.tokenStr;
 
         //Put in symbol table and storage manager
-        STIdentifier symbolEntry = new STIdentifier(variableStr, scan.currentToken.primClassif , dclType,
-                1, 1, 1);
+        //Create an STIdentifier symbol table entry
+        STIdentifier symbolEntry = new STIdentifier(variableStr, scan.currentToken.primClassif , dclType, 1, 1, 1);
         symbolTable.putSymbol(variableStr, symbolEntry);
+
+        //Create new Storage manager Resultvalue entry
         ResultValue variableEntry =  new ResultValue(dclType, structure);
         storageManager.putEntry(variableStr,variableEntry);
         //scan.getNext();
 
+        //If the next token is '=' call assignStmt to assign value to operand
         if(scan.nextToken.tokenStr.equals("="))
         {
             ResultValue res = assignStmt();
-
         }
-        //Check for finished declaration and enter into symboltable
+        //Else check if statement is finished
         else if(scan.nextToken.tokenStr.equals(";"))
         {
             scan.getNext();
         }
-
         return null;
     }
 
