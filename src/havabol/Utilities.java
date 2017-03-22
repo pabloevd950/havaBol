@@ -61,8 +61,22 @@ public class Utilities
         else return false;
     }
 
+    public static <T extends Comparable > boolean isGreaterThanorEq(T x, T y){
+        if((x.compareTo(y) > 0) || x.compareTo(y) == 0){
+            return true;
+        }
+        else return false;
+    }
+
     public static <T extends Comparable > boolean isLessThan(T x, T y){
         if(x.compareTo(y) < 0){
+            return true;
+        }
+        else return false;
+    }
+
+    public static <T extends Comparable > boolean isLessThanorEq(T x, T y){
+        if((x.compareTo(y) < 0) || x.compareTo(y) == 0){
             return true;
         }
         else return false;

@@ -169,8 +169,12 @@ public class Parser
         switch (scan.currentToken.tokenStr)
         {
             case "=":
-                if (bExec)
-                    return assign(variableStr, expr());
+                if (bExec){
+                    ResultValue res1 = assign(variableStr, expr());
+                    System.out.println("Variable name " + variableStr +  " Value is " + res1.value + " Type is " + res1.type);
+                    return res1;
+
+                }
                 else
                     skipTo(scan.currentToken.tokenStr, ";");
                 break;
@@ -208,6 +212,7 @@ public class Parser
         int secondOperandSubClassif;
         int firstOperandType;
         int secondOperandType;
+        String terminatingStr;
         String firstValue ="";
         String secondValue ="";
         int currentType= -1;
@@ -215,6 +220,7 @@ public class Parser
         Boolean isNegative = false;
         double finalValue;
         int finalValueInt;
+        boolean finalValueBool;
 
         scan.getNext(); // get the operand
         if (scan.currentToken.tokenStr.equals("-"))
@@ -254,12 +260,13 @@ public class Parser
             }
             isNegative = false;
         }
-
+        currentType = scan.currentToken.subClassif;
         String operator = scan.getNext();
         if(operator.equals(";")){
             currentValue = firstValue;
-            currentType = scan.currentToken.subClassif;
+//            currentType = scan.currentToken.subClassif;
             ResultValue res = new ResultValue(currentValue, currentType,1,";");
+//            System.out.println("Res type " + res.type + " Current Value " + res.value);
             return res;
         }
 
@@ -312,8 +319,30 @@ public class Parser
                 break;
 
             case "*":
+                if(firstOperandType == Token.INTEGER){
+                    finalValueInt = Utilities.mulInt((int) Double.parseDouble(firstValue), (int) Double.parseDouble(secondValue));
+                    currentValue = Integer.toString(finalValueInt);
+                    currentType = firstOperandType;
+                }
+                else if(firstOperandType ==  Token.FLOAT){
+                    finalValue = Utilities.mulFloat(Double.parseDouble(firstValue), Double.parseDouble(secondValue));
+                    currentValue = Double.toString(finalValue);
+                    currentType = firstOperandType;
+                }
+                break;
 
             case "/":
+                if(firstOperandType == Token.INTEGER){
+                    finalValueInt = Utilities.divInt(Integer.parseInt(firstValue), Integer.parseInt(secondValue));
+                    currentValue = Integer.toString(finalValueInt);
+                    currentType = firstOperandType;
+                }
+                else if(firstOperandType ==  Token.FLOAT){
+                    finalValue = Utilities.divFloat(Double.parseDouble(firstValue), Double.parseDouble(secondValue));
+                    currentValue = Double.toString(finalValue);
+                    currentType = firstOperandType;
+                }
+                break;
 
             case "^":
                 if(firstOperandType == Token.INTEGER){
@@ -327,10 +356,53 @@ public class Parser
                     currentType = firstOperandType;
                 }
                 break;
+            case "<":
+                finalValueBool = Utilities.isLessThan(firstValue,secondValue);
+                if(Boolean.toString(finalValueBool).equals("true"))
+                    currentValue = "T";
+                else if(Boolean.toString(finalValueBool).equals("false"))
+                    currentValue = "F";
+                currentType = Token.BOOLEAN;
+                break;
+            case ">":
+                finalValueBool = Utilities.isGreaterThan(firstValue,secondValue);
+                if(Boolean.toString(finalValueBool).equals("true"))
+                    currentValue = "T";
+                else if(Boolean.toString(finalValueBool).equals("false"))
+                    currentValue = "F";
+                currentType = Token.BOOLEAN;
+                break;
+            case "<=":
+                finalValueBool = Utilities.isLessThanorEq(firstValue,secondValue);
+                if(Boolean.toString(finalValueBool).equals("true"))
+                    currentValue = "T";
+                else if(Boolean.toString(finalValueBool).equals("false"))
+                    currentValue = "F";
+                currentType = Token.BOOLEAN;
+                break;
+            case ">=":
+                finalValueBool = Utilities.isGreaterThanorEq(firstValue,secondValue);
+                if(Boolean.toString(finalValueBool).equals("true"))
+                    currentValue = "T";
+                else if(Boolean.toString(finalValueBool).equals("false"))
+                    currentValue = "F";
+                currentType = Token.BOOLEAN;
+                break;
+            case "==":
+                finalValueBool = Utilities.isEqual(firstValue,secondValue);
+                if(Boolean.toString(finalValueBool).equals("true"))
+                    currentValue = "T";
+                else if(Boolean.toString(finalValueBool).equals("false"))
+                    currentValue = "F";
+                currentType = Token.BOOLEAN;
+                break;
+
+
 
         }
-
-        ResultValue res = new ResultValue(currentValue, currentType,1,";");
+        terminatingStr = scan.nextToken.tokenStr;
+        ResultValue res = new ResultValue(currentValue, currentType,1,terminatingStr);
+//        System.out.println("Res type " + res.type + " Current type " + currentType + " Value " + res.value + " termStr is " + terminatingStr);
         return res;
     }
 
@@ -371,9 +443,8 @@ public class Parser
         if (bExec)
         {// we are executing, not ignoring
             // advance token and evaluate expression
-            scan.getNext();
+            //scan.getNext();
             resCond = expr();
-
             // did the condition return true?
             if (resCond.value.equals("T"))
             {// condition returned true, execute statements on the true part
@@ -459,7 +530,7 @@ public class Parser
             int iSourceLineNr = scan.currentToken.iSourceLineNr;
             int iColPos = scan.currentToken.iColPos;
             Token nextToken = scan.nextToken;
-            scan.getNext();
+            //scan.getNext();
 
             resCond = expr();
             while (resCond.value.equals("T"))
