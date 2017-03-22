@@ -74,9 +74,9 @@ public class Parser
                 case Token.OPERATOR:
                 case Token.SEPARATOR:
                     break;
+                // should never hit this, otherwise MAJOR FUCK UP
                 default:
-                    System.out.println("*************Need to handle this************");
-                    System.out.println(scan.currentToken.tokenStr + " " + scan.nextToken.tokenStr);
+                    error("INTERNAL ERROR CAUSED BY %s", scan.currentToken.tokenStr);
             }
         }
 
@@ -105,7 +105,7 @@ public class Parser
             case "Float":
                 dclType = Token.FLOAT;
                 break;
-            case "Boolean":
+            case "Bool":
                 dclType = Token.BOOLEAN;
                 break;
             case "String":
@@ -513,9 +513,8 @@ public class Parser
             if(scan.getNext().equals("("))
             {
                 String printingLine = scan.getNext();
-                if((scan.getNext().equals(")"))&& scan.getNext().equals(";")){
+                if((scan.getNext().equals(")"))&& scan.getNext().equals(";"))
                     System.out.println(printingLine);
-                }
             }
 
         }
