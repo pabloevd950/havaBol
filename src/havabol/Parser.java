@@ -3,6 +3,7 @@ package havabol;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
+import javax.xml.transform.Result;
 import java.util.ArrayList;
 import java.util.Stack;
 
@@ -16,14 +17,21 @@ public class Parser
     public StorageManager storageManager;
     public Scanner scan;
 
+    private ArrayList<Boolean> bControl;
+    private ArrayList<String> szControl;
+    private int i;
+
     public Parser (SymbolTable symbolTable, StorageManager storageManager, Scanner scan)
     {
         this.symbolTable = symbolTable;
         this.storageManager = storageManager;
         this.scan = scan;
+        this.bControl = new ArrayList<Boolean>();
+        this.szControl = new ArrayList<String>();
+        this.i = -1;
     }
 
-    public void statement(Boolean bExec) throws Exception
+    public ResultValue statement(Boolean bExec) throws Exception
     {
         while (! scan.getNext().isEmpty())
         {
@@ -41,9 +49,17 @@ public class Parser
                             if (scan.currentToken.tokenStr.equals("if"))
                                 ifStmt(bExec);
                             else if (scan.currentToken.tokenStr.equals("while"))
-                                whileStmt();
+                                whileStmt(bExec);
                             break;
                         case Token.END:
+                            // was an end token expected?
+                            if (i >= 0 && !bControl.get(i))
+                                error("ERROR: UNEXPECTED CONTROL END TOKEN %s"
+                                         , scan.currentToken.tokenStr);
+                            // end token was expected so return
+                            return new ResultValue(szControl.get(i), Token.END
+                                    , ResultValue.primitive, scan.currentToken.tokenStr);
+                        // should never hit this, otherwise MAJOR FUCK UP
                         default:
                             error("ERROR: UNIDENTIFIED CONTROL VARIABLE %s"
                                 , scan.currentToken.tokenStr);
@@ -63,6 +79,8 @@ public class Parser
                     System.out.println(scan.currentToken.tokenStr + " " + scan.nextToken.tokenStr);
             }
         }
+
+        return null;
     }
 
     /**
@@ -71,7 +89,7 @@ public class Parser
      * @throws Exception
      * @param bExec
      */
-    public void declareStmt(Boolean bExec) throws Exception
+    public ResultValue declareStmt(Boolean bExec) throws Exception
     {
         System.out.println("Declare statement here with " + scan.currentToken.tokenStr );
         
@@ -95,7 +113,7 @@ public class Parser
                 break;
             default:
                 System.out.print(scan.currentToken.tokenStr);
-                error("Invalid Data type", scan.currentToken.tokenStr);
+                error("ERROR: INVALID DATA TYPE %s", scan.currentToken.tokenStr);
         }
 
         // advance to the next token
@@ -103,7 +121,7 @@ public class Parser
 
         // the next token should of been a variable name, otherwise error
         if(scan.currentToken.primClassif != Token.OPERAND)
-            error("This should be an operand", scan.currentToken.tokenStr);
+            error("ERROR: %s SHOULD BE AN OPERAND", scan.currentToken.tokenStr);
 
         if (bExec)
         {// we are executing, not ignoring
@@ -113,7 +131,6 @@ public class Parser
             symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
                                                 , scan.currentToken.primClassif, dclType
                                                 , 1, 1, 1));
-
             storageManager.putEntry(variableStr, new ResultValue(dclType, structure));
         }
 
@@ -123,10 +140,12 @@ public class Parser
         // else check if it is an operator, because that is an error
         else if (scan.nextToken.primClassif == Token.OPERATOR)
             error("ERROR: CANNOT PERFORM %s OPERATION BEFORE INITIALIZATION"
-                                        , scan.nextToken.tokenStr);
+                        , scan.nextToken.tokenStr);
         // else check for statement terminating ';'
         else if(! scan.getNext().equals(";"))
             error("ERROR: UNTERMINATED DECLARATION STATEMENT, ';' EXPECTED");
+
+        return null;
     }
 
     public ResultValue assignStmt(Boolean bExec) throws Exception
@@ -137,8 +156,7 @@ public class Parser
         Numeric nOp1;  // numeric value of first operand
         ResultValue res = null;
         ResultValue resExpr;
-        String variableStr ;
-        String operatorStr;
+        String variableStr;
 
         // make sure current token is an identifier to properly assign
         if (scan.currentToken.subClassif != Token.IDENTIFIER)
@@ -151,15 +169,14 @@ public class Parser
 
         // make sure current token is an operator
         if (scan.currentToken.primClassif != Token.OPERATOR)
-            error("Expected an operand");
-        operatorStr = scan.currentToken.tokenStr;
+            error("ERROR: EXPECTED AN OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
 
         // determine what kind of operation to execute
         switch (scan.currentToken.tokenStr)
         {
             case "=":
                 if (bExec)
-                    res = assign(variableStr, expression());
+                    res = assign(variableStr, expr());
                 else
                     skipTo(scan.currentToken.tokenStr, ";");
                 break;
@@ -188,19 +205,6 @@ public class Parser
         storageManager.putEntry(variableStr,resExpr);
         return resExpr;
     }
-
-    public ResultValue statements(Boolean bExec) throws Exception
-    {
-        ResultValue result = new ResultValue();
-        while (scan.currentToken.primClassif != Token.END)
-            statement(bExec);
-
-        result.terminatingStr = scan.currentToken.tokenStr;
-        return result;
-    }
-
-
-
 
     public ResultValue expr() throws Exception
     {
@@ -262,6 +266,172 @@ public class Parser
         return res;
     }
 
+    public void skipTo(String start, String end) throws Exception
+    {
+        // for error purposes
+        int iColPos = scan.currentToken.iColPos;
+        int iSourceLineNr = scan.currentToken.iSourceLineNr;
+
+        while (! scan.currentToken.tokenStr.equals(end)
+                && scan.currentToken.primClassif != Token.EOF)
+            scan.getNext();
+
+        if (scan.currentToken.primClassif == Token.EOF)
+        {// the while loop exited on an EOF, not a matching token
+            error("ERROR: LINE %d POSITION %d" +
+                            "\n\t%s DID NOT HAVE SEPARATOR, %s"
+                    , iSourceLineNr, iColPos, start, end);
+        }
+
+        // we found a match, so we will return with no error
+        return;
+    }
+
+    public ResultValue ifStmt(Boolean bExec) throws Exception
+    {
+        System.out.println("If statement here");
+
+        ResultValue resCond;
+
+        // add to arraylists
+        this.bControl.add(true);
+        this.szControl.add("if");
+        this.i++;
+
+        // do we need to evaluate the condition
+        if (bExec)
+        {// we are executing, not ignoring
+            // advance token and evaluate expression
+            scan.getNext();
+            resCond = expr();
+
+            // did the condition return true?
+            if (resCond.value.equals("T"))
+            {// condition returned true, execute statements on the true part
+                resCond = statements(true);
+
+                // what ended the statements after the true part? else of endif
+                if (resCond.terminatingStr.equals("else"))
+                {// has an else
+                    if (! scan.getNext().equals(":"))
+                        error("ERROR: EXPECTED ':' AFTER ELSE");
+                    resCond = statements(false);
+                }
+            }
+            else
+            {// condition returned false, ignore all statements after the if
+                resCond = statements(false);
+
+                // check for else
+                if (resCond.terminatingStr.equals("else"))
+                { // if it is an 'else', execute
+                    if (! scan.getNext().equals(":"))
+                        error("ERROR: EXPECTED ':' AFTER ELSE");
+                    resCond = statements(true);
+                }
+            }
+        }
+        else
+        {// we are ignoring execution, so ignore conditional, true and false part
+            // ignore conditional
+            skipTo("if", ":");
+
+            // ignore true part
+            resCond = statements(false);
+
+            // if the statements terminated with an 'else', we need to parse statements
+            if (resCond.terminatingStr.equals("else"))
+            { // it is an else, so we need to skip statements
+                if (! scan.getNext().equals(":"))
+                    error("ERROR: EXPECTED ':' AFTER ELSE");
+
+                // ignore false part
+                resCond = statements(false);
+            }
+        }
+
+        // did we have an endif; *this was after all the else checks
+        if (!resCond.terminatingStr.equals("endif") || !scan.getNext().equals(";"))
+            error("ERROR: EXPECTED 'endif;' FOR 'if' EXPRESSION");
+
+        // remove from array list
+        this.bControl.remove(i);
+        this.szControl.remove(i);
+        this.i--;
+
+        return null;
+    }
+
+    public ResultValue statements(Boolean bExec) throws Exception
+    {
+        ResultValue result = new ResultValue();
+        while (scan.currentToken.primClassif != Token.END)
+            statement(bExec);
+
+        result.terminatingStr = scan.currentToken.tokenStr;
+        return result;
+    }
+
+    public ResultValue whileStmt(Boolean bExec) throws Exception
+    {
+        System.out.println("While statement here");
+
+        ResultValue resCond;
+
+        // add to arraylists
+        this.bControl.add(true);
+        this.szControl.add("while");
+        this.i++;
+
+        // do we need to evaluate the condition
+        if (bExec)
+        {// we are executing, not ignoring
+            // save location and advance token before evaluating condition
+            int iSourceLineNr = scan.currentToken.iSourceLineNr;
+            int iColPos = scan.currentToken.iColPos;
+            Token nextToken = scan.nextToken;
+            scan.getNext();
+
+            resCond = expr();
+            while (resCond.value.equals("T"))
+            {// did the condition return true?
+                resCond = statements(true);
+
+                // did statements() end on an endwhile;?
+                if (! resCond.terminatingStr.equals("endwhile") || ! scan.getNext().equals(";"))
+                    error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
+
+                // reset scanner cursor and check while condition again
+                scan.iSourceLineNr = iSourceLineNr;
+                scan.iColPos = iColPos;
+                scan.nextToken = nextToken;
+                scan.getNext();
+                resCond = expr();
+            }
+
+            // expr() returned false, so skip ahead to the end of the while
+            resCond = statements(false);
+        }
+        else
+        {// we are ignoring execution, so ignore conditional, true and false part
+            // ignore conditional
+            skipTo("while", ":");
+
+            // ignore statements
+            resCond = statements(false);
+        }
+
+        // did we have an endwhile;
+        if (! resCond.terminatingStr.equals("endwhile") || ! scan.getNext().equals(";"))
+            error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
+
+        // remove from array list
+        this.bControl.remove(i);
+        this.szControl.remove(i);
+        this.i--;
+
+        return null;
+    }
 
 
     private void function() throws Exception
@@ -279,112 +449,6 @@ public class Parser
 
 
     }
-
-    public void skipTo(String start, String end) throws Exception
-    {
-        // for error purposes
-        int iColPos = scan.currentToken.iColPos;
-        int iSourceLineNr = scan.currentToken.iSourceLineNr;
-
-        while (! scan.currentToken.tokenStr.equals(end)
-              && scan.currentToken.primClassif != Token.EOF)
-            scan.getNext();
-
-        if (scan.currentToken.primClassif == Token.EOF)
-        {// the while loop exited on an EOF, not a matching token
-            error("ERROR: LINE %d POSITION %d" +
-                       "\n\t%s DID NOT HAVE SEPARATOR, %s"
-                 , iSourceLineNr, iColPos, start, end);
-        }
-
-        // we found a match, so we will return with no error
-        return;
-    }
-
-    public ResultValue ifStmt(Boolean bExec) throws Exception
-    {
-        System.out.println("If statement here");
-
-        // do we need to evaluate the condition
-        if (bExec)
-        {// we are executing, not ignoring
-            ResultValue resCond = expr();
-
-            // did the condition return true?
-            if (resCond.value.equals("T"))
-            {// condition returned true, execute statements on the true part
-                resCond = statements(true);
-
-                // what ended the statements after the true part? else of endif
-                if (resCond.terminatingStr.equals("else"))
-                {// has an else
-                    if (! scan.getNext().equals(":"))
-                        error("ERROR: EXPECTED ':' AFTER ELSE");
-                    resCond = statements(false);
-                }
-
-                // did we have an endif
-                if (! resCond.terminatingStr.equals("endif"))
-                    error("ERROR: EXPECTED 'endif' FOR 'if' EXPRESSION");
-            }
-            else
-            {// condition returned false, ignore all statements after the if
-                resCond = statements(false);
-
-                // check for else
-                if (resCond.terminatingStr.equals("else"))
-                { // if it is an 'else', execute
-                    if (! scan.getNext().equals(":"))
-                        error("ERROR: EXPECTED ':' AFTER ELSE");
-                    resCond = statements(true);
-                }
-
-                // did we have an endif;
-                if (!resCond.terminatingStr.equals("endif") || !scan.getNext().equals(";"))
-                    error("ERROR: EXPECTED 'endif' FOR 'if' EXPRESSION");
-            }
-        }
-        else
-        {// we are ignoring execution, so ignore conditional, true and false part
-            // ignore conditional
-            skipTo("if", ":");
-
-            // ignore true part
-            ResultValue resCond = statements(false);
-
-            // if the statements terminated with an 'else', we need to parse statements
-            if (resCond.terminatingStr.equals("else"))
-            { // it is an else, so we need to skip statements
-                if (! scan.getNext().equals(":"))
-                    error("ERROR: EXPECTED ':' AFTER ELSE");
-
-                // ignore false part
-                resCond = statements(false);
-            }
-
-            // did we have an endif;
-            if (!resCond.terminatingStr.equals("endif") || !scan.getNext().equals(";"))
-                error("ERROR: EXPECTED 'endif' FOR 'if' EXPRESSION");
-
-
-        }
-
-        return null;
-    }
-
-    public ResultValue whileStmt()
-    {
-        System.out.println("While statement here");
-        return null;
-    }
-
-
-
-    public ResultValue expression(){
-
-        return null;
-    }
-
 
     public void infixExpr()
     {

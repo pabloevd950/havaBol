@@ -19,6 +19,8 @@ public class Scanner
     // public variables
     public static final String delimiters = " \t;:()\'\"=!<>+-*/[]#,^\n"; // terminate a token
     public static Token currentToken;       // the token established with the most recent call to getNext()
+    public int iSourceLineNr;              // line number in sourceLineM for current text line
+    public int iColPos;                    // column position within the current text line
     public Token nextToken;                 // the token following the currentToken
     public String sourceFileNm;            // source code file name
 
@@ -26,8 +28,6 @@ public class Scanner
     private ArrayList<String> sourceLineM;  // array list of source text lines
     private SymbolTable symbolTable;        // object responsible for providing symbol definitions
     private char[] textCharM;               // char [] for the current text line
-    private int iSourceLineNr;              // line number in sourceLineM for current text line
-    private int iColPos;                    // column position within the current text line
 
     /**
      * Scanner constructor that takes in the source file name and simple table as

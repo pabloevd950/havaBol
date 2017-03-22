@@ -5,14 +5,15 @@ package havabol;
  */
 public class ResultValue
 {
-    public final int primitive = 1;
-    public final int fixedArray = 2;
-    public final int unboundedArray = 3;
+    // structure constants for ResultValue
+    public static final int primitive = 1;
+    public static final int fixedArray = 2;
+    public static final int unboundedArray = 3;
 
     String value;
-    String terminatingStr;
-    int stucture;
     int type;
+    int stucture;
+    String terminatingStr;
 
     /**
      * Creates a new ResultValue object
