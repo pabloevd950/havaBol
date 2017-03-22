@@ -70,6 +70,12 @@ public class Scanner
         if (nextToken.tokenStr.isEmpty())
             throw new HBException("Empty source file:" + sourceFileNm);
 
+        // Print a column heading
+        System.out.printf("%-11s %-12s %s\n"
+                , "primClassif"
+                , "subClassif"
+                , "tokenStr");
+
         // print first line in the source file
         System.out.format("  %d %s\n", iSourceLineNr+1, sourceLineM.get(iSourceLineNr));
         inp.close();
@@ -141,6 +147,10 @@ public class Scanner
         while (iColPos < textCharM.length && Character.isWhitespace(textCharM[iColPos]))
             iColPos++;
 
+        // set line and position number for the next token
+        nextToken.iSourceLineNr = iSourceLineNr;
+        nextToken.iColPos = iColPos;
+
         // create token
         if (textCharM[iColPos] == '"' || textCharM[iColPos] == '\'')
         {// token contains a string
@@ -204,7 +214,8 @@ public class Scanner
         else if (separator.contains(token))
             // token is a separator
             nextToken.primClassif = Token.SEPARATOR;
-        else if (symbolTable.getSymbol(token) == null)
+        else if (  symbolTable.getSymbol(token) == null
+                || symbolTable.getSymbol(token).primClassif == Token.OPERAND)
         {   // token is an operand
             nextToken.primClassif = Token.OPERAND;
 

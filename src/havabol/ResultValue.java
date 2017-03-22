@@ -42,14 +42,14 @@ public class ResultValue
      * @param type  declare type of variable
      * @param structure   type of data structure for the variable
      * @param value    The value to assign to the variable
-     * @param terminatingstr ....
+     * @param terminatingStr ....
      * @return         ResultValue object
      */
-    public ResultValue(String value, int type, int structure, String terminatingstr)
+    public ResultValue(String value, int type, int structure, String terminatingStr)
     {
         this.value = value;
         this.type = type;
         this.stucture = structure;
-        this.terminatingStr = terminatingstr;
+        this.terminatingStr = terminatingStr;
     }
 }

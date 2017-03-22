@@ -25,45 +25,110 @@ public class Parser
 
     public void statement(Boolean bExec) throws Exception
     {
-        // Print a column heading
-        System.out.printf("%-11s %-12s %s\n"
-                , "primClassif"
-                , "subClassif"
-                , "tokenStr");
-
         while (! scan.getNext().isEmpty())
         {
             scan.currentToken.printToken();
-            switch (scan.currentToken.subClassif)
-            {
 
-                case Token.FLOW:
-                    if (scan.currentToken.tokenStr.equals("if"))
-                        ifStmt(bExec);
-                    else if (scan.currentToken.tokenStr.equals("while"))
-                        whileStmt();
+            switch (scan.currentToken.primClassif)
+            {
+                case Token.CONTROL:
+                    switch (scan.currentToken.subClassif)
+                    {
+                        case Token.DECLARE:
+                            declareStmt(bExec);
+                            break;
+                        case Token.FLOW:
+                            if (scan.currentToken.tokenStr.equals("if"))
+                                ifStmt(bExec);
+                            else if (scan.currentToken.tokenStr.equals("while"))
+                                whileStmt();
+                            break;
+                        case Token.END:
+                        default:
+                            error("ERROR: UNIDENTIFIED CONTROL VARIABLE %s"
+                                , scan.currentToken.tokenStr);
+                    }
                     break;
-                case Token.IDENTIFIER:
+                case Token.OPERAND:
                     assignStmt();
                     break;
-                case Token.DECLARE:
-                    declareStmt();
-                    break;
-                case Token.BUILTIN:
+                case Token.FUNCTION:
                     function();
                     break;
+                case Token.OPERATOR:
                 case Token.SEPARATOR:
-                    //scan.getNext();
-                    //break;
+                    break;
                 default:
                     System.out.println("*************Need to handle this************");
                     System.out.println(scan.currentToken.tokenStr + " " + scan.nextToken.tokenStr);
-
-                    //scan.currentToken.printToken();
-//                    throw new Exception();
-
             }
         }
+    }
+
+    /**
+     *
+     * @return
+     * @throws Exception
+     * @param bExec
+     */
+    public ResultValue declareStmt(Boolean bExec) throws Exception
+    {
+        System.out.println("Declare statement here with " + scan.currentToken.tokenStr );
+        
+        int structure = -1;
+        int dclType = -1;
+
+        switch (scan.currentToken.tokenStr)
+        {// check data type of the current token
+            case "Int":
+                dclType = Token.INTEGER;
+                break;
+            case "Float":
+                dclType = Token.FLOAT;
+                break;
+            case "Boolean":
+                dclType = Token.BOOLEAN;
+                break;
+            case "String":
+                dclType = Token.STRING;
+                break;
+            default:
+                System.out.print(scan.currentToken.tokenStr);
+                error("Invalid Data type", scan.currentToken.tokenStr);
+        }
+
+        // advance to the next token
+        scan.getNext();
+
+        // the next token should of been a variable name, otherwise error
+        if(scan.currentToken.primClassif != Token.OPERAND)
+            error("This should be an operand", scan.currentToken.tokenStr);
+
+        if (bExec)
+        {// we are executing, not ignoring
+            // put declaration into symbol table and storage manager
+            String variableStr = scan.currentToken.tokenStr;
+
+            symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
+                                                , scan.currentToken.primClassif, dclType
+                                                , 1, 1, 1));
+
+            storageManager.putEntry(variableStr, new ResultValue(dclType, structure));
+        }
+
+
+        //scan.getNext
+
+        //If the next token is '=' call assignStmt to assign value to operand
+        if(scan.nextToken.tokenStr.equals("="))
+        {
+            ResultValue res = assignStmt();
+        }
+        //Else check if statement is finished
+        else if(scan.nextToken.tokenStr.equals(";"))
+            scan.getNext();
+
+        return null;
     }
 
     public ResultValue statements(Boolean bExec) throws Exception
@@ -75,6 +140,7 @@ public class Parser
         result.terminatingStr = scan.currentToken.tokenStr;
         return result;
     }
+
 
 
 
@@ -164,8 +230,31 @@ public class Parser
         return res;
     }
 
+    public void skipTo(String start, String end) throws Exception
+    {
+        // for error purposes
+        int iColPos = scan.currentToken.iColPos;
+        int iSourceLineNr = scan.currentToken.iSourceLineNr;
+
+        while (! scan.currentToken.tokenStr.equals(end)
+              && scan.currentToken.primClassif != Token.EOF)
+            scan.getNext();
+
+        if (scan.currentToken.primClassif == Token.EOF)
+        {// the while loop exited on an EOF, not a matching token
+            error("ERROR: LINE %d POSITION %d" +
+                       "\n\t%s DID NOT HAVE SEPARATOR, %s"
+                 , iSourceLineNr, iColPos, start, end);
+        }
+
+        // we found a match, so we will return with no error
+        return;
+    }
+
     public ResultValue ifStmt(Boolean bExec) throws Exception
     {
+        System.out.println("If statement here");
+
         // do we need to evaluate the condition
         if (bExec)
         {// we are executing, not ignoring
@@ -174,43 +263,62 @@ public class Parser
             // did the condition return true?
             if (resCond.value.equals("T"))
             {// condition returned true, execute statements on the true part
-                statements(true);
+                resCond = statements(true);
 
                 // what ended the statements after the true part? else of endif
-                if (scan.currentToken.tokenStr.equals("else"))
+                if (resCond.terminatingStr.equals("else"))
                 {// has an else
                     if (! scan.getNext().equals(":"))
                         error("ERROR: EXPECTED ':' AFTER ELSE");
-                    statements(false);
+                    resCond = statements(false);
                 }
 
                 // did we have an endif
-                if (! scan.currentToken.tokenStr.equals("endif"))
+                if (! resCond.terminatingStr.equals("endif"))
                     error("ERROR: EXPECTED 'endif' FOR 'if' EXPRESSION");
             }
             else
             {// condition returned false, ignore all statements after the if
-                statements(false);
+                resCond = statements(false);
 
                 // check for else
-                if (scan.currentToken.tokenStr.equals("else"))
+                if (resCond.terminatingStr.equals("else"))
                 { // if it is an 'else', execute
                     if (! scan.getNext().equals(":"))
                         error("ERROR: EXPECTED ':' AFTER ELSE");
-                    statements(true);
+                    resCond = statements(true);
                 }
 
-                // did we have an endif
-                if (! scan.currentToken.tokenStr.equals("endif"))
+                // did we have an endif;
+                if (!resCond.terminatingStr.equals("endif") || !scan.getNext().equals(";"))
                     error("ERROR: EXPECTED 'endif' FOR 'if' EXPRESSION");
             }
         }
         else
-        {// we are ignoring execution
+        {// we are ignoring execution, so ignore conditional, true and false part
+            // ignore conditional
+            skipTo("if", ":");
+
+            // ignore true part
+            ResultValue resCond = statements(false);
+
+            // if the statements terminated with an 'else', we need to parse statements
+            if (resCond.terminatingStr.equals("else"))
+            { // it is an else, so we need to skip statements
+                if (! scan.getNext().equals(":"))
+                    error("ERROR: EXPECTED ':' AFTER ELSE");
+
+                // ignore false part
+                resCond = statements(false);
+            }
+
+            // did we have an endif;
+            if (!resCond.terminatingStr.equals("endif") || !scan.getNext().equals(";"))
+                error("ERROR: EXPECTED 'endif' FOR 'if' EXPRESSION");
+
 
         }
 
-        System.out.println("If statement here");
         return null;
     }
 
@@ -220,75 +328,7 @@ public class Parser
         return null;
     }
 
-    /**
-     *
-     * @return
-     * @throws Exception
-     */
-    public ResultValue declareStmt() throws Exception
-    {
-        System.out.println("Declare statement here with " + scan.currentToken.tokenStr );
-        String variableStr;
-        String type = scan.currentToken.tokenStr;
-        int structure = -1;
-        int dclType = -1;
-        int parm;
-        int nonLocal;
 
-        //Check data type.
-        switch (type)
-        {
-            case "Int":
-                dclType = Token.INTEGER;
-                break;
-            case "Float":
-                dclType = Token.FLOAT;
-                break;
-
-            case "Booelan":
-                dclType = Token.BOOLEAN;
-                break;
-
-            case "String":
-                dclType = Token.STRING;
-                break;
-            default:
-                System.out.print(type);
-                error("Invalid Data type", type);
-        }
-        //Advance to next token which should be variable name
-        scan.getNext();
-
-        //Check if name is an operand
-        if(scan.currentToken.primClassif != 1)
-        {
-            error("This should be an operand", scan.currentToken.tokenStr);
-        }
-        //Since current token is operan, set value to variableStr
-        variableStr = scan.currentToken.tokenStr;
-
-        //Put in symbol table and storage manager
-        //Create an STIdentifier symbol table entry
-        STIdentifier symbolEntry = new STIdentifier(variableStr, scan.currentToken.primClassif , dclType, 1, 1, 1);
-        symbolTable.putSymbol(variableStr, symbolEntry);
-
-        //Create new Storage manager Resultvalue entry
-        ResultValue variableEntry =  new ResultValue(dclType, structure);
-        storageManager.putEntry(variableStr,variableEntry);
-        //scan.getNext();
-
-        //If the next token is '=' call assignStmt to assign value to operand
-        if(scan.nextToken.tokenStr.equals("="))
-        {
-            ResultValue res = assignStmt();
-        }
-        //Else check if statement is finished
-        else if(scan.nextToken.tokenStr.equals(";"))
-        {
-            scan.getNext();
-        }
-        return null;
-    }
 
     public ResultValue expression(){
 
