@@ -33,52 +33,47 @@ public class Parser
 
     public ResultValue statement(Boolean bExec) throws Exception
     {
-        while (! scan.getNext().isEmpty())
-        {
-            scan.currentToken.printToken();
+        // advance token
+        scan.getNext();
+        scan.currentToken.printToken();
 
-            switch (scan.currentToken.primClassif)
-            {
-                case Token.CONTROL:
-                    switch (scan.currentToken.subClassif)
-                    {
-                        case Token.DECLARE:
-                            declareStmt(bExec);
-                            break;
-                        case Token.FLOW:
-                            if (scan.currentToken.tokenStr.equals("if"))
-                                ifStmt(bExec);
-                            else if (scan.currentToken.tokenStr.equals("while"))
-                                whileStmt(bExec);
-                            break;
-                        case Token.END:
-                            // was an end token expected?
-                            if (i >= 0 && !bControl.get(i))
-                                error("ERROR: UNEXPECTED CONTROL END TOKEN %s"
-                                         , scan.currentToken.tokenStr);
-                            // end token was expected so return
-                            return new ResultValue(szControl.get(i), Token.END
-                                    , ResultValue.primitive, scan.currentToken.tokenStr);
-                        // should never hit this, otherwise MAJOR FUCK UP
-                        default:
-                            error("ERROR: UNIDENTIFIED CONTROL VARIABLE %s"
+        switch (scan.currentToken.primClassif)
+        {
+            case Token.CONTROL:
+                switch (scan.currentToken.subClassif)
+                {
+                    case Token.DECLARE:
+                        return declareStmt(bExec);
+                    case Token.FLOW:
+                        if (scan.currentToken.tokenStr.equals("if"))
+                            return ifStmt(bExec);
+                        else if (scan.currentToken.tokenStr.equals("while"))
+                            return whileStmt(bExec);
+                    case Token.END:
+                        // was an end token expected?
+                        if (i >= 0 && !bControl.get(i))
+                            error("ERROR: UNEXPECTED CONTROL END TOKEN %s"
+                                    , scan.currentToken.tokenStr);
+                        // end token was expected so return
+                        return new ResultValue(szControl.get(i), Token.END
+                                , ResultValue.primitive, scan.currentToken.tokenStr);
+                    // should never hit this, otherwise MAJOR FUCK UP
+                    default:
+                        error("ERROR: UNIDENTIFIED CONTROL VARIABLE %s"
                                 , scan.currentToken.tokenStr);
-                    }
-                    break;
-                case Token.OPERAND:
-                    assignStmt(bExec);
-                    break;
-                case Token.FUNCTION:
-                    function();
-                    break;
-                case Token.OPERATOR:
-                case Token.SEPARATOR:
-                    break;
-                // should never hit this, otherwise MAJOR FUCK UP
-                default:
-                    error("INTERNAL ERROR CAUSED BY %s", scan.currentToken.tokenStr);
+                }
+                break;
+            case Token.OPERAND:
+                return assignStmt(bExec);
+            case Token.FUNCTION:
+                return function();
+            case Token.OPERATOR:
+            case Token.SEPARATOR:
+                break;
+            // should never hit this, otherwise MAJOR FUCK UP
+            default:
+                error("INTERNAL ERROR CAUSED BY %s", scan.currentToken.tokenStr);
             }
-        }
 
         return null;
     }
@@ -507,7 +502,7 @@ public class Parser
     }
 
 
-    private void function() throws Exception
+    private ResultValue function() throws Exception
     {
         if(scan.currentToken.tokenStr.equals("print")){
             if(scan.getNext().equals("("))
@@ -519,7 +514,7 @@ public class Parser
 
         }
 
-
+        return null;
     }
 
     public void infixExpr()
