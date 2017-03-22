@@ -66,7 +66,7 @@ public class Parser
             case Token.OPERAND:
                 return assignStmt(bExec);
             case Token.FUNCTION:
-                return function();
+                return function(bExec);
             case Token.OPERATOR:
             case Token.SEPARATOR:
                 break;
@@ -90,7 +90,6 @@ public class Parser
         
         int structure = -1;
         int dclType = -1;
-        ResultValue resultValue;
 
         switch (scan.currentToken.tokenStr)
         {// check data type of the current token
@@ -107,7 +106,6 @@ public class Parser
                 dclType = Token.STRING;
                 break;
             default:
-                System.out.print(scan.currentToken.tokenStr);
                 error("ERROR: INVALID DATA TYPE %s", scan.currentToken.tokenStr);
         }
 
@@ -131,7 +129,7 @@ public class Parser
 
         // if the next token is '=' call assignStmt to assign value to operand
         if(scan.nextToken.tokenStr.equals("="))
-            assignStmt(bExec);
+            return assignStmt(bExec);
         // else check if it is an operator, because that is an error
         else if (scan.nextToken.primClassif == Token.OPERATOR)
             error("ERROR: CANNOT PERFORM %s OPERATION BEFORE INITIALIZATION"
@@ -140,7 +138,8 @@ public class Parser
         else if(! scan.getNext().equals(";"))
             error("ERROR: UNTERMINATED DECLARATION STATEMENT, ';' EXPECTED");
 
-        return null;
+        return new ResultValue("", Token.VOID, ResultValue.primitive
+                                                        , scan.currentToken.tokenStr);
     }
 
     public ResultValue assignStmt(Boolean bExec) throws Exception
@@ -171,7 +170,7 @@ public class Parser
         {
             case "=":
                 if (bExec)
-                    res = assign(variableStr, expr());
+                    return assign(variableStr, expr());
                 else
                     skipTo(scan.currentToken.tokenStr, ";");
                 break;
@@ -186,7 +185,9 @@ public class Parser
                 error("expected assignment operator");
         }
 
-        return res;
+        // if we ever hit this line, bExec is false
+        return new ResultValue("", Token.VOID, ResultValue.primitive
+                                                        , scan.currentToken.tokenStr);
     }
 
     private ResultValue assign(String variableStr, ResultValue resExpr) throws Exception
@@ -197,7 +198,7 @@ public class Parser
             error("ERROR: %s HAS NOT BEEN DECLARED YET", variableStr);
 
         // assign value to the variable and return result value
-        storageManager.putEntry(variableStr,resExpr);
+        storageManager.putEntry(variableStr, resExpr);
         return resExpr;
     }
 
@@ -502,16 +503,42 @@ public class Parser
     }
 
 
-    private ResultValue function() throws Exception
+    private ResultValue function(Boolean bExec) throws Exception
     {
-        if(scan.currentToken.tokenStr.equals("print")){
-            if(scan.getNext().equals("("))
-            {
-                String printingLine = scan.getNext();
-                if((scan.getNext().equals(")"))&& scan.getNext().equals(";"))
-                    System.out.println(printingLine);
-            }
-
+        switch (scan.currentToken.subClassif)
+        {// determine if function is built in, or user defined
+            case Token.BUILTIN:
+                //do shit only for print
+                if (scan.currentToken.tokenStr.equals("print"))
+                {
+                    String printLine = "";
+                    while ( !scan.getNext().equals(")"))
+                    {
+                        switch (scan.currentToken.subClassif)
+                        {
+                            case Token.STRING:
+                                printLine += scan.currentToken.tokenStr;
+                                break;
+                            case Token.INTEGER:
+                            case Token.FLOAT:
+                            case Token.BOOLEAN:
+                            case Token.DATE:
+                                printLine +=
+                                        storageManager.getEntry(scan.currentToken.tokenStr).value;
+                        }
+                    }
+                    System.out.println(printLine);
+                }
+                else// for right now, any other function gets skipped
+                    skipTo(scan.currentToken.tokenStr,";");
+                break;
+            case Token.USER:
+                // do other shit later
+                skipTo(scan.currentToken.tokenStr, ";");
+                break;
+            default:// should never hit this, otherwise MAJOR FUCK UP
+                error("INTERNAL ERROR: %s NOT A RECOGNIZED FUNCTION"
+                           , scan.currentToken.tokenStr);
         }
 
         return null;

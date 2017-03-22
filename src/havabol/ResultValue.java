@@ -27,7 +27,7 @@ public class ResultValue
      * @param terminatingStr ....
      * @return         ResultValue object
      */
-    public ResultValue(String value, int type, int structure, String terminatingStr)
+    public ResultValue(String value, int type, int structure , String terminatingStr)
     {
         this.value = value;
         this.type = type;
