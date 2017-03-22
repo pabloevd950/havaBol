@@ -1,6 +1,8 @@
 package havabol;
 
 
+import havabol.SymbolTable.SymbolTable;
+
 import java.util.HashMap;
 /**
  * Created by pablovalero on 3/6/17.

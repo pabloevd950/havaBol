@@ -204,11 +204,62 @@ public class Parser
 
     public ResultValue expr() throws Exception
     {
+//        while(!scan.currentToken.tokenStr.equals(";"))
+//        {
+        String currentValue ="";
+        int currentType= -1;
+
+        Boolean isNegative = false;
         scan.getNext(); // get the operand
+        if (scan.currentToken.tokenStr.equals("-"))
+        {
+            isNegative = true;
+            scan.getNext();
+        }
+        String operator = scan.nextToken.tokenStr;
+        switch (operator){
+            case ";":
+            {
+                currentValue = scan.currentToken.tokenStr;
+                currentType = scan.currentToken.subClassif;
+                if(isNegative == true)
+                {
+                    System.out.println(currentType+ "Current type");
+                    switch (currentType)
+                    {
+                        case Token.INTEGER:
+                            int x = Integer.parseInt(currentValue);
+                            x*= -1;
+                            currentValue = String.valueOf(x);
+                            break;
+                        case Token.FLOAT:
+                            double y = Double.parseDouble(currentValue);
+                            y = y * -1;
+                            currentValue = String.valueOf(y);
+                        case Token.STRING:
+                            //Check if its a float or int represented as string?
+                        case Token.BOOLEAN:
+                    }
+                }
+            }
+            case "+":
+
+            case "-":
+
+            case "*":
+
+            case "/":
+
+            case "^":
 
 
 
-        return null;
+        }
+
+//        }
+
+        ResultValue res = new ResultValue(currentValue, currentType,1,";");
+        return res;
     }
 
 
