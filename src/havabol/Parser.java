@@ -50,7 +50,7 @@ public class Parser
                     }
                     break;
                 case Token.OPERAND:
-                    assignStmt();
+                    assignStmt(bExec);
                     break;
                 case Token.FUNCTION:
                     function();
@@ -71,12 +71,13 @@ public class Parser
      * @throws Exception
      * @param bExec
      */
-    public ResultValue declareStmt(Boolean bExec) throws Exception
+    public void declareStmt(Boolean bExec) throws Exception
     {
         System.out.println("Declare statement here with " + scan.currentToken.tokenStr );
         
         int structure = -1;
         int dclType = -1;
+        ResultValue resultValue;
 
         switch (scan.currentToken.tokenStr)
         {// check data type of the current token
@@ -116,19 +117,76 @@ public class Parser
             storageManager.putEntry(variableStr, new ResultValue(dclType, structure));
         }
 
-
-        //scan.getNext
-
-        //If the next token is '=' call assignStmt to assign value to operand
+        // if the next token is '=' call assignStmt to assign value to operand
         if(scan.nextToken.tokenStr.equals("="))
-        {
-            ResultValue res = assignStmt();
-        }
-        //Else check if statement is finished
-        else if(scan.nextToken.tokenStr.equals(";"))
-            scan.getNext();
+            assignStmt(bExec);
+        // else check if it is an operator, because that is an error
+        else if (scan.nextToken.primClassif == Token.OPERATOR)
+            error("ERROR: CANNOT PERFORM %s OPERATION BEFORE INITIALIZATION"
+                                        , scan.nextToken.tokenStr);
+        // else check for statement terminating ';'
+        else if(! scan.getNext().equals(";"))
+            error("ERROR: UNTERMINATED DECLARATION STATEMENT, ';' EXPECTED");
+    }
 
-        return null;
+    public ResultValue assignStmt(Boolean bExec) throws Exception
+    {
+        System.out.println("Assignment statement starts here for line " + scan.currentToken.tokenStr);
+
+        Numeric nOp2;  // numeric value of second operand
+        Numeric nOp1;  // numeric value of first operand
+        ResultValue res = null;
+        ResultValue resExpr;
+        String variableStr ;
+        String operatorStr;
+
+        // make sure current token is an identifier to properly assign
+        if (scan.currentToken.subClassif != Token.IDENTIFIER)
+            error("ERROR: %s IS NOT A VALID TARGET VARIABLE FOR ASSIGNMENT"
+                                                    , scan.currentToken.tokenStr);
+        variableStr = scan.currentToken.tokenStr;
+
+        // advance to the next token
+        scan.getNext();
+
+        // make sure current token is an operator
+        if (scan.currentToken.primClassif != Token.OPERATOR)
+            error("Expected an operand");
+        operatorStr = scan.currentToken.tokenStr;
+
+        // determine what kind of operation to execute
+        switch (scan.currentToken.tokenStr)
+        {
+            case "=":
+                if (bExec)
+                    res = assign(variableStr, expression());
+                else
+                    skipTo(scan.currentToken.tokenStr, ";");
+                break;
+            // see parsing part 2
+            case "+=":
+            case "-=":
+            case "*=":
+            case "/=":
+            case "^=":
+                break;
+            default:
+                error("expected assignment operator");
+        }
+
+        return res;
+    }
+
+    private ResultValue assign(String variableStr, ResultValue resExpr) throws Exception
+    {
+        // get entry from storage manager and make sure it is in the table
+        ResultValue res = storageManager.getEntry(variableStr);
+        if(res == null)
+            error("ERROR: %s HAS NOT BEEN DECLARED YET", variableStr);
+
+        // assign value to the variable and return result value
+        storageManager.putEntry(variableStr,resExpr);
+        return resExpr;
     }
 
     public ResultValue statements(Boolean bExec) throws Exception
@@ -169,65 +227,6 @@ public class Parser
         }
 
 
-    }
-
-    public ResultValue assignStmt() throws Exception
-    {
-        System.out.println("Assignment statement starts here for line " + scan.currentToken.tokenStr);
-        int dclType = scan.currentToken.primClassif;
-
-        StorageEntry entry;
-
-        ResultValue res = null;
-        String variableStr ;
-        String operatorStr;
-        ResultValue resO2;
-        ResultValue resO1;
-        Numeric nOp2;  // numeric value of second operand
-        Numeric nOp1;  // numeric value of first operand
-
-
-        if (scan.currentToken.subClassif != Token.IDENTIFIER)
-            error("expected a variable for the target of an assignment");
-
-        variableStr  = scan.currentToken.tokenStr;
-        System.out.println(variableStr);
-        scan.getNext();
-
-        if(scan.currentToken.primClassif != Token.OPERATOR)
-            error("Expected an operand");
-        operatorStr = scan.currentToken.tokenStr;
-        System.out.println(operatorStr);
-
-
-        if(operatorStr.equals("=")){
-            resO2 = expression();
-            res = assign(variableStr, resO2);  // assign to target
-        }
-        else{
-            error("expected assignment operator");
-
-        }
-
-        scan.getNext();
-
-
-
-        return res;
-    }
-
-    private ResultValue assign(String variableStr, ResultValue resO2) throws Exception
-    {
-        //Get entry from storage manager
-        ResultValue res = storageManager.getEntry(variableStr);
-        //Make sure entry was in table
-        if(res == null)
-            error("Not declared yet");
-
-        res = resO2;
-        //Replace old value in the same key
-        storageManager.putEntry(variableStr,res);
-        return res;
     }
 
     public void skipTo(String start, String end) throws Exception
