@@ -126,4 +126,5 @@ while i < 5:
     print("\tbottom of while, i=", i, "j=", j);
     i = i + 1;
 endwhile;
+y = 5;
 print("\tAfter outer while");

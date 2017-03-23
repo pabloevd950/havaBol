@@ -145,6 +145,7 @@ public class Parser
     public ResultValue assignStmt(Boolean bExec) throws Exception
     {
         System.out.println("Assignment statement starts here for line " + scan.currentToken.tokenStr);
+        System.out.println(bExec);
 
         Numeric nOp2;  // numeric value of second operand
         Numeric nOp1;  // numeric value of first operand
@@ -208,6 +209,9 @@ public class Parser
 
     public ResultValue expr() throws Exception
     {
+
+        ResultValue res, firstResValue, secondResValue, finalValueBool;
+
         int firstOperandSubClassif;
         int secondOperandSubClassif;
         int firstOperandType;
@@ -220,7 +224,7 @@ public class Parser
         Boolean isNegative = false;
         double finalValue;
         int finalValueInt;
-        boolean finalValueBool;
+
 
         scan.getNext(); // get the operand
         if (scan.currentToken.tokenStr.equals("-"))
@@ -265,7 +269,7 @@ public class Parser
         if(operator.equals(";")){
             currentValue = firstValue;
 //            currentType = scan.currentToken.subClassif;
-            ResultValue res = new ResultValue(currentValue, currentType,1,";");
+             res = new ResultValue(currentValue, currentType,1,";");
 //            System.out.println("Res type " + res.type + " Current Value " + res.value);
             return res;
         }
@@ -289,7 +293,8 @@ public class Parser
             secondValue = scan.currentToken.tokenStr;
             secondOperandType = scan.currentToken.subClassif;
         }
-
+        firstResValue = new ResultValue(firstValue, firstOperandType);
+        secondResValue =  new ResultValue(secondValue, secondOperandType);
 
         switch (operator){
             case "+":
@@ -357,42 +362,43 @@ public class Parser
                 }
                 break;
             case "<":
-                finalValueBool = Utilities.isLessThan(firstValue,secondValue);
-                if(Boolean.toString(finalValueBool).equals("true"))
+                finalValueBool = Utilities.isLessThan(this, firstResValue, secondResValue);
+                if(finalValueBool.value.equals("T"))
                     currentValue = "T";
-                else if(Boolean.toString(finalValueBool).equals("false"))
+                else if(finalValueBool.value.equals("F"))
                     currentValue = "F";
                 currentType = Token.BOOLEAN;
                 break;
             case ">":
-                finalValueBool = Utilities.isGreaterThan(firstValue,secondValue);
-                if(Boolean.toString(finalValueBool).equals("true"))
+                System.out.println("About to compare  " + firstValue +" and  " + secondValue);
+                finalValueBool = Utilities.isGreaterThan(this, firstResValue, secondResValue);
+                if(finalValueBool.value.equals("T"))
                     currentValue = "T";
-                else if(Boolean.toString(finalValueBool).equals("false"))
+                else if(finalValueBool.value.equals("F"))
                     currentValue = "F";
                 currentType = Token.BOOLEAN;
                 break;
             case "<=":
-                finalValueBool = Utilities.isLessThanorEq(firstValue,secondValue);
-                if(Boolean.toString(finalValueBool).equals("true"))
+                finalValueBool = Utilities.isLessThanorEq(this, firstResValue, secondResValue);
+                if(finalValueBool.value.equals("T"))
                     currentValue = "T";
-                else if(Boolean.toString(finalValueBool).equals("false"))
+                else if(finalValueBool.value.equals("F"))
                     currentValue = "F";
                 currentType = Token.BOOLEAN;
                 break;
             case ">=":
-                finalValueBool = Utilities.isGreaterThanorEq(firstValue,secondValue);
-                if(Boolean.toString(finalValueBool).equals("true"))
+                finalValueBool = Utilities.isGreaterThanorEq(this, firstResValue, secondResValue);
+                if(finalValueBool.value.equals("T"))
                     currentValue = "T";
-                else if(Boolean.toString(finalValueBool).equals("false"))
+                else if(finalValueBool.value.equals("F"))
                     currentValue = "F";
                 currentType = Token.BOOLEAN;
                 break;
             case "==":
-                finalValueBool = Utilities.isEqual(firstValue,secondValue);
-                if(Boolean.toString(finalValueBool).equals("true"))
+                finalValueBool = Utilities.isEqual(this, firstResValue, secondResValue);
+                if(finalValueBool.value.equals("T"))
                     currentValue = "T";
-                else if(Boolean.toString(finalValueBool).equals("false"))
+                else if(finalValueBool.value.equals("F"))
                     currentValue = "F";
                 currentType = Token.BOOLEAN;
                 break;
@@ -401,11 +407,17 @@ public class Parser
 
         }
         terminatingStr = scan.nextToken.tokenStr;
-        ResultValue res = new ResultValue(currentValue, currentType,1,terminatingStr);
-//        System.out.println("Res type " + res.type + " Current type " + currentType + " Value " + res.value + " termStr is " + terminatingStr);
+        res = new ResultValue(currentValue, currentType,1,terminatingStr);
+        System.out.println("Res type " + res.type + " Current type " + currentType + " Value " + res.value + " termStr is " + terminatingStr);
         return res;
     }
 
+
+    public ResultValue expression(Boolean bExec){
+//
+
+       return null;
+    }
 
     public void skipTo(String start, String end) throws Exception
     {
@@ -445,6 +457,8 @@ public class Parser
             // advance token and evaluate expression
             //scan.getNext();
             resCond = expr();
+
+            System.out.println(">>expr was " + resCond.value);
             // did the condition return true?
             if (resCond.value.equals("T"))
             {// condition returned true, execute statements on the true part

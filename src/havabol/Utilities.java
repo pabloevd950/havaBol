@@ -8,7 +8,7 @@ public class Utilities
 {
 
     public static int addInt(int x, int y){
-         return x+y;
+        return x+y;
     }
 
     public static double addFloat(double x, double y){
@@ -47,39 +47,435 @@ public class Utilities
         return Math.pow(x,y);
     }
 
-    public static  < T extends Comparable > boolean isEqual(T x, T y){
-        if(x.compareTo(y) == 0)
-            return true;
+    /**
+     * Evaluate a less than comparison on two ResultValues
+     *
+     * @param parser
+     * @param operandOne
+     * @param operandTwo
+     * @return
+     * @throws ParserException
+     */
+    public static ResultValue isLessThan(Parser parser, ResultValue operandOne, ResultValue operandTwo) throws ParserException
+    {
+
+        ResultValue res = new ResultValue(Token.BOOLEAN, -1);
+        String temp;
+
+        switch (operandOne.type)
+        {
+            case Token.INTEGER:
+                temp = Utilities.toInteger(parser, operandTwo);
+                int iOp1 = Integer.parseInt(operandOne.value);
+                int iOp2 = Integer.parseInt(temp);
+                if (iOp1 < iOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.FLOAT:
+                temp = Utilities.toFloat(parser, operandTwo);
+                double fOp1 = Double.parseDouble(operandOne.value);
+                double fOp2 = Double.parseDouble(temp);
+                if (fOp1 < fOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.STRING:
+                int comResult = operandOne.value.compareTo(operandTwo.value);
+                if (comResult < 0)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.BOOLEAN:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Can not apply comparison '<' to type '" + Token.BOOLEAN + "'"
+                        , parser.scan.sourceFileNm);
+            case Token.DATE:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "DATE type not implemented '" + operandOne.value + "'"
+                        , parser.scan.sourceFileNm);
+            default:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Unknown type '" + operandOne.type + "'"
+                        , parser.scan.sourceFileNm);
+
+        }
+        return res;
+    }
+
+
+    /**
+     * Evaluate a greater than comparison on two ResultValues
+     *
+     * @param parser
+     * @param operandOne
+     * @param operandTwo
+     * @return
+     * @throws ParserException
+     */
+    public static ResultValue isGreaterThan(Parser parser, ResultValue operandOne, ResultValue operandTwo) throws ParserException
+    {
+
+        ResultValue res = new ResultValue(Token.BOOLEAN, -1);
+        String temp;
+
+        switch (operandOne.type)
+        {
+            case Token.INTEGER:
+                temp = Utilities.toInteger(parser, operandTwo);
+                int iOp1 = Integer.parseInt(operandOne.value);
+                int iOp2 = Integer.parseInt(temp);
+                if (iOp1 > iOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.FLOAT:
+                temp = Utilities.toFloat(parser, operandTwo);
+                double fOp1 = Double.parseDouble(operandOne.value);
+                double fOp2 = Double.parseDouble(temp);
+                if (fOp1 > fOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.STRING:
+                int comResult = operandOne.value.compareTo(operandTwo.value);
+                if (comResult > 0)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.BOOLEAN:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Can not apply comparison '>' to type '" + Token.BOOLEAN + "'"
+                        , parser.scan.sourceFileNm);
+            case Token.DATE:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "DATE type not implemented '" + operandOne.value + "'"
+                        , parser.scan.sourceFileNm);
+            default:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Unknown type '" + operandOne.type + "'"
+                        , parser.scan.sourceFileNm);
+
+        }
+        return res;
+    }
+
+    /**
+     * Evaluate a equal to comparison on two ResultValues
+     *
+     * @param parser
+     * @param operandOne
+     * @param operandTwo
+     * @return
+     * @throws ParserException
+     */
+    public static ResultValue isEqual(Parser parser, ResultValue operandOne, ResultValue operandTwo) throws ParserException
+    {
+
+        ResultValue res = new ResultValue(Token.BOOLEAN, -1);
+        String temp;
+
+        switch (operandOne.type)
+        {
+            case Token.INTEGER:
+                temp = Utilities.toInteger(parser, operandTwo);
+                int iOp1 = Integer.parseInt(operandOne.value);
+                int iOp2 = Integer.parseInt(temp);
+                if (iOp1 == iOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.FLOAT:
+                temp = Utilities.toFloat(parser, operandTwo);
+                double fOp1 = Double.parseDouble(operandOne.value);
+                double fOp2 = Double.parseDouble(temp);
+                if (fOp1 == fOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.BOOLEAN: // In this case bool is the same as string
+            case Token.STRING:
+                int comResult = operandOne.value.compareTo(operandTwo.value);
+                if (comResult == 0)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.DATE:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "DATE type not implemented '" + operandOne.value + "'"
+                        , parser.scan.sourceFileNm);
+            default:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Unknown type '" + operandOne.type + "'"
+                        , parser.scan.sourceFileNm);
+
+        }
+        return res;
+    }
+
+    /**
+     * Evaluate a less than or equal to comparison on two ResultValues
+     *
+     * @param parser
+     * @param operandOne
+     * @param operandTwo
+     * @return
+     * @throws ParserException
+     */
+    public static ResultValue isLessThanorEq(Parser parser, ResultValue operandOne, ResultValue operandTwo) throws ParserException
+    {
+
+        ResultValue res = new ResultValue(Token.BOOLEAN, -1);
+        String temp;
+
+        switch (operandOne.type)
+        {
+            case Token.INTEGER:
+                temp = Utilities.toInteger(parser, operandTwo);
+                int iOp1 = Integer.parseInt(operandOne.value);
+                int iOp2 = Integer.parseInt(temp);
+                if (iOp1 <= iOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.FLOAT:
+                temp = Utilities.toFloat(parser, operandTwo);
+                double fOp1 = Double.parseDouble(operandOne.value);
+                double fOp2 = Double.parseDouble(temp);
+                if (fOp1 <= fOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.STRING:
+                int comResult = operandOne.value.compareTo(operandTwo.value);
+                if (comResult <= 0)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.BOOLEAN:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Can not apply comparison '<=' to type '" + Token.BOOLEAN + "'"
+                        , parser.scan.sourceFileNm);
+            case Token.DATE:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "DATE type not implemented '" + operandOne.value + "'"
+                        , parser.scan.sourceFileNm);
+            default:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Unknown type '" + operandOne.type + "'"
+                        , parser.scan.sourceFileNm);
+
+        }
+        return res;
+    }
+
+    /**
+     * Evaluate a less than or equal to comparison on two ResultValues
+     *
+     * @param parser
+     * @param operandOne
+     * @param operandTwo
+     * @return
+     * @throws ParserException
+     */
+    public static ResultValue isGreaterThanorEq(Parser parser, ResultValue operandOne, ResultValue operandTwo) throws ParserException
+    {
+
+        ResultValue res = new ResultValue(Token.BOOLEAN, -1);
+        String temp;
+
+        switch (operandOne.type)
+        {
+            case Token.INTEGER:
+                temp = Utilities.toInteger(parser, operandTwo);
+                int iOp1 = Integer.parseInt(operandOne.value);
+                int iOp2 = Integer.parseInt(temp);
+                if (iOp1 >= iOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.FLOAT:
+                temp = Utilities.toFloat(parser, operandTwo);
+                double fOp1 = Double.parseDouble(operandOne.value);
+                double fOp2 = Double.parseDouble(temp);
+                if (fOp1 >= fOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.STRING:
+                int comResult = operandOne.value.compareTo(operandTwo.value);
+                if (comResult >= 0)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.BOOLEAN:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Can not apply comparison '>=' to type '" + Token.BOOLEAN + "'"
+                        , parser.scan.sourceFileNm);
+            case Token.DATE:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "DATE type not implemented '" + operandOne.value + "'"
+                        , parser.scan.sourceFileNm);
+            default:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Unknown type '" + operandOne.type + "'"
+                        , parser.scan.sourceFileNm);
+
+        }
+        return res;
+    }
+
+    /**
+     * Evaluate a less than or equal to comparison on two ResultValues
+     *
+     * @param parser
+     * @param operandOne
+     * @param operandTwo
+     * @return
+     * @throws ParserException
+     */
+    public static ResultValue notEqalTo(Parser parser, ResultValue operandOne, ResultValue operandTwo) throws ParserException
+    {
+
+        ResultValue res = new ResultValue(Token.BOOLEAN, -1);
+        String temp;
+
+        switch (operandOne.type)
+        {
+            case Token.INTEGER:
+                temp = Utilities.toInteger(parser, operandTwo);
+                int iOp1 = Integer.parseInt(operandOne.value);
+                int iOp2 = Integer.parseInt(temp);
+                if (iOp1 != iOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.FLOAT:
+                temp = Utilities.toFloat(parser, operandTwo);
+                double fOp1 = Double.parseDouble(operandOne.value);
+                double fOp2 = Double.parseDouble(temp);
+                if (fOp1 != fOp2)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.BOOLEAN: // In this case bool is the same as string
+            case Token.STRING:
+                int comResult = operandOne.value.compareTo(operandTwo.value);
+                if (comResult != 0)
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            case Token.DATE:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "DATE type not implemented '" + operandOne.value + "'"
+                        , parser.scan.sourceFileNm);
+            default:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Unknown type '" + operandOne.type + "'"
+                        , parser.scan.sourceFileNm);
+
+        }
+        return res;
+    }
+
+    /**
+     * coerces a value into a Bool type and throws an exception if it can not be coerced.
+     * <p>
+     *
+     * @param parser - Used for error generation
+     * @param value - ResultValue to be coerced
+     * @return
+     * @throws ParserException - Value can not be parsed as a Bool
+     */
+    private static String toBoolean(Parser parser, ResultValue value) throws ParserException
+    {
+
+        if (value.value.equals("T"))
+        {
+            return "T";
+        }
+        else if (value.value.equals("F"))
+        {
+            return "F";
+        }
         else
-        return false;
+        {
+            throw new ParserException(parser.scan.iSourceLineNr
+                    , "Can not parse '" + value.value + "' as Bool"
+                    , parser.scan.sourceFileNm);
+        }
     }
 
-    public static <T extends Comparable > boolean isGreaterThan(T x, T y){
-        if(x.compareTo(y) > 0){
-            return true;
+    /**
+     * coerces a value into a Float type and throws an exception if it can not be coerced.
+     * <p>
+     *
+     * @param parser -  Used for error generation
+     * @param value - ResultValue to be coerced
+     * @return
+     * @throws ParserException - Value can not be parsed as a Float
+     */
+    private static String toFloat(Parser parser, ResultValue value) throws ParserException
+    {
+        try {
+            Double.parseDouble(value.value);
+            return value.value;
+        } catch (Exception e)
+        {
+            // Do nothing
         }
-        else return false;
+        throw new ParserException(parser.scan.iSourceLineNr
+                , "Can not parse '" + value.value + "' as Int"
+                , parser.scan.sourceFileNm);
     }
 
-    public static <T extends Comparable > boolean isGreaterThanorEq(T x, T y){
-        if((x.compareTo(y) > 0) || x.compareTo(y) == 0){
-            return true;
+    /**
+     * coerces a value into a Int type and throws an exception if it can not be coerced.
+     * <p>
+     *
+     * @param parser -  Used for error generation
+     * @param value - ResultValue to be coerced
+     * @return
+     * @throws ParserException - Value can not be parsed as a Int
+     */
+    public static String toInteger(Parser parser, ResultValue value) throws ParserException
+    {
+        int temp;
+        try {
+            Integer.parseInt(value.value);
+            return value.value;
+        } catch (Exception e)
+        {
+            // Do nothing
         }
-        else return false;
-    }
-
-    public static <T extends Comparable > boolean isLessThan(T x, T y){
-        if(x.compareTo(y) < 0){
-            return true;
+        try {
+            temp = (int)Double.parseDouble(value.value);
+            return Integer.toString(temp);
+        } catch (Exception e)
+        {
+            // Do nothing
         }
-        else return false;
-    }
-
-    public static <T extends Comparable > boolean isLessThanorEq(T x, T y){
-        if((x.compareTo(y) < 0) || x.compareTo(y) == 0){
-            return true;
-        }
-        else return false;
+        throw new ParserException(parser.scan.iSourceLineNr
+                , "Can not parse '" + value.value + "' as Int"
+                , parser.scan.sourceFileNm);
     }
 
 

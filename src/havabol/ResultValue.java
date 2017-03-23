@@ -54,4 +54,9 @@ public class ResultValue
     {
         this(-1, -1);
     }
+
+    public ResultValue(String value, int type){
+        this.value = value;
+        this.type = type;
+    }
 }

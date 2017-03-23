@@ -1,0 +1,11 @@
+Int i = 5;
+
+if i > 10:
+    i = 10;
+else:
+    i = 100;
+endif;
+
+print(i);
+i = 1;
+print(i);
