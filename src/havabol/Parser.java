@@ -268,9 +268,7 @@ public class Parser
         String operator = scan.getNext();
         if(operator.equals(";")){
             currentValue = firstValue;
-//            currentType = scan.currentToken.subClassif;
              res = new ResultValue(currentValue, currentType,1,";");
-//            System.out.println("Res type " + res.type + " Current Value " + res.value);
             return res;
         }
 
@@ -292,6 +290,26 @@ public class Parser
         {
             secondValue = scan.currentToken.tokenStr;
             secondOperandType = scan.currentToken.subClassif;
+        }
+
+        if(isNegative == true)
+        {
+            switch (secondOperandType)
+            {
+                case Token.INTEGER:
+                    int x = Integer.parseInt(secondValue);
+                    x*= -1;
+                    secondValue = String.valueOf(x);
+                    break;
+                case Token.FLOAT:
+                    double y = Double.parseDouble(secondValue);
+                    y = y * -1;
+                    secondValue = String.valueOf(y);
+                case Token.STRING:
+                    //Check if its a float or int represented as string?
+                case Token.BOOLEAN:
+            }
+            isNegative = false;
         }
         firstResValue = new ResultValue(firstValue, firstOperandType);
         secondResValue =  new ResultValue(secondValue, secondOperandType);
