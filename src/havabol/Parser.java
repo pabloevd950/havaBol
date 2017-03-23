@@ -33,9 +33,10 @@ public class Parser
 
     public ResultValue statement(Boolean bExec) throws Exception
     {
+        //System.out.println("STATEMENT CALLED WITH BEXEC " + bExec);
         // advance token
         scan.getNext();
-        scan.currentToken.printToken();
+        //scan.currentToken.printToken();
 
         switch (scan.currentToken.primClassif)
         {
@@ -69,6 +70,7 @@ public class Parser
                 return function(bExec);
             case Token.OPERATOR:
             case Token.SEPARATOR:
+            case Token.EOF:
                 break;
             // should never hit this, otherwise MAJOR FUCK UP
             default:
@@ -86,7 +88,8 @@ public class Parser
      */
     public ResultValue declareStmt(Boolean bExec) throws Exception
     {
-        System.out.println("Declare statement here with " + scan.currentToken.tokenStr );
+        //System.out.println("Declare statement here with " + scan.currentToken.tokenStr );
+        //System.out.println("BEXEC IS " + bExec);
         
         int structure = -1;
         int dclType = -1;
@@ -150,8 +153,8 @@ public class Parser
      */
     public ResultValue assignStmt(Boolean bExec) throws Exception
     {
-        System.out.println("Assignment statement starts here for line " + scan.currentToken.tokenStr);
-        System.out.println(bExec);
+        //System.out.println("Assignment statement starts here for line " + scan.currentToken.tokenStr);
+        //System.out.println("BEXEC IS " +bExec);
 
         Numeric nOp2;  // numeric value of second operand
         Numeric nOp1;  // numeric value of first operand
@@ -178,7 +181,7 @@ public class Parser
             case "=":
                 if (bExec){
                     ResultValue res1 = assign(variableStr, expr());
-                    System.out.println("Variable name " + variableStr +  " Value is " + res1.value + " Type is " + res1.type);
+                    //System.out.println("Variable name " + variableStr +  " Value is " + res1.value + " Type is " + res1.type);
                     return res1;
                 }
                 else
@@ -226,6 +229,7 @@ public class Parser
      */
     public ResultValue expr() throws Exception
     {
+        //System.out.println("EXPR STATEMENT CALLED");
         //Result value for operands
         ResultValue firstResValue, secondResValue;
         //Result value for result
@@ -336,10 +340,11 @@ public class Parser
 
         }
         //Get terminating string
-        terminatingStr = scan.nextToken.tokenStr;
+        //terminatingStr = scan.nextToken.tokenStr;
+        terminatingStr = scan.getNext();
         //Final result value returned for a double operand operation
         res = new ResultValue(res.value, res.type,1,terminatingStr);
-        System.out.println("Res type " + res.type + " Current type " + res.type + " Value " + res.value + " termStr is " + terminatingStr);
+        //System.out.println("Res type " + res.type + " Current type " + res.type + " Value " + res.value + " termStr is " + terminatingStr);
         return res;
     }
 
@@ -389,7 +394,7 @@ public class Parser
      */
     public ResultValue ifStmt(Boolean bExec) throws Exception
     {
-        System.out.println("If statement here");
+        //System.out.println("If statement here with BEXEC + " + bExec);
 
         ResultValue resCond;
 
@@ -405,7 +410,7 @@ public class Parser
             //scan.getNext();
             resCond = expr();
 
-            System.out.println(">>expr was " + resCond.value);
+            //System.out.println(">>expr was " + resCond.value);
             // did the condition return true?
             if (resCond.value.equals("T"))
             {// condition returned true, execute statements on the true part
@@ -471,9 +476,11 @@ public class Parser
      */
     public ResultValue statements(Boolean bExec) throws Exception
     {
-        ResultValue result = new ResultValue();
-        while (scan.currentToken.primClassif != Token.END)
-            statement(bExec);
+        //System.out.println("STATEMENTS CALLED WITH BEXEC " + bExec);
+        ResultValue result = statement(bExec);
+        //while (scan.currentToken.primClassif != Token.END)
+        while (result.type != Token.END)
+            result = statement(bExec);
 
         result.terminatingStr = scan.currentToken.tokenStr;
         return result;
@@ -487,7 +494,7 @@ public class Parser
      */
     public ResultValue whileStmt(Boolean bExec) throws Exception
     {
-        System.out.println("While statement here");
+        //System.out.println("While statement here");
 
         ResultValue resCond;
 
@@ -566,12 +573,13 @@ public class Parser
                         switch (scan.currentToken.subClassif)
                         {
                             case Token.STRING:
-                                printLine += scan.currentToken.tokenStr;
-                                break;
                             case Token.INTEGER:
                             case Token.FLOAT:
                             case Token.BOOLEAN:
                             case Token.DATE:
+                                printLine += scan.currentToken.tokenStr;
+                                break;
+                            case Token.IDENTIFIER:
                                 printLine +=
                                         storageManager.getEntry(scan.currentToken.tokenStr).value;
                         }

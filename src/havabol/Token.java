@@ -47,7 +47,7 @@ public class Token
     // array of subClassif string values for the constants
     public static final String[] strSubClassifM =
             {"Undefined"
-                    , "IDENTFIER"   // 1
+                    , "IDENTIFIER"   // 1
                     , "INTEGER"     // 2
                     , "FLOAT"       // 3
                     , "BOOLEAN"     // 4

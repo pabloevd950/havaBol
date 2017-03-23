@@ -35,7 +35,11 @@ public class HavaBol
 
             // start parsing file
             while (scan.currentToken.primClassif != Token.EOF)
+            {
+                //System.out.println("PARSER CALL WITH CURRENT TOKEN:");
+                //scan.currentToken.printToken();
                 parser.statement(true);
+            }
         }
         catch (Exception e)
         {

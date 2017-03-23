@@ -71,13 +71,13 @@ public class Scanner
             throw new HBException("Empty source file:" + sourceFileNm);
 
         // Print a column heading
-        System.out.printf("%-11s %-12s %s\n"
+        /*System.out.printf("%-11s %-12s %s\n"
                 , "primClassif"
                 , "subClassif"
-                , "tokenStr");
+                , "tokenStr");*/
 
         // print first line in the source file
-        System.out.format("  %d %s\n", iSourceLineNr+1, sourceLineM.get(iSourceLineNr));
+        //System.out.format("  %d %s\n", iSourceLineNr+1, sourceLineM.get(iSourceLineNr));
         inp.close();
     }
 
@@ -101,13 +101,19 @@ public class Scanner
         String operations = "<=,>=,!=,==,+=,-=,*=,/=, ^=";
         String escapeChars = "t\"na\\\''";
 
+        //System.out.println("GET NEXT CALLED");
+
         // set currentToken to nextToken object to keep track of tokens and reset nextToken
         clone(nextToken);
         nextToken = new Token();
 
         // check if we encountered EOF
         if (nextToken.primClassif == Token.EOF)
+        {
+            //System.out.println("NEXT");
+            //nextToken.printToken();
             return "";
+        }
 
         // Automatically advance to the next source line when necessary
         if (iColPos >= textCharM.length)
@@ -121,7 +127,7 @@ public class Scanner
                 }
 
                 // print the source line we just grabbed
-                System.out.format("  %d %s\n", iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
+                //System.out.format("  %d %s\n", iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
 
                 //check for comments
                 if(sourceLineM.get(iSourceLineNr).contains("//")
@@ -131,7 +137,7 @@ public class Scanner
                     if(index == 0)
                     {
                         //Check if whole line is comment
-                        System.out.format("  %d %s\n", ++iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
+                        //System.out.format("  %d %s\n", ++iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
                     }
                     else // throw away part of line that is comment
                         sourceLineM.set(iSourceLineNr, sourceLineM.get(iSourceLineNr).substring(0, index).trim());
@@ -271,6 +277,12 @@ public class Scanner
 
         // set nextToken to the token built and return the current token string
         nextToken.tokenStr = token;
+
+        //System.out.println("CURRENT");
+        //currentToken.printToken();
+        //System.out.println("NEXT");
+        //nextToken.printToken();
+
         return currentToken.tokenStr;
     }
 
