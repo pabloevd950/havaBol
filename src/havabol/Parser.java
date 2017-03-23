@@ -142,6 +142,12 @@ public class Parser
                                                         , scan.currentToken.tokenStr);
     }
 
+    /**
+     *
+     * @param bExec
+     * @return
+     * @throws Exception
+     */
     public ResultValue assignStmt(Boolean bExec) throws Exception
     {
         System.out.println("Assignment statement starts here for line " + scan.currentToken.tokenStr);
@@ -194,6 +200,13 @@ public class Parser
                                                         , scan.currentToken.tokenStr);
     }
 
+    /**
+     *
+     * @param variableStr
+     * @param resExpr
+     * @return
+     * @throws Exception
+     */
     private ResultValue assign(String variableStr, ResultValue resExpr) throws Exception
     {
         // get entry from storage manager and make sure it is in the table
@@ -206,10 +219,16 @@ public class Parser
         return resExpr;
     }
 
+    /**
+     *
+     * @return
+     * @throws Exception
+     */
     public ResultValue expr() throws Exception
     {
-
+        //Result value for operands
         ResultValue firstResValue, secondResValue;
+        //Result value for result
         ResultValue res = new ResultValue();
 
         int firstOperandSubClassif;
@@ -221,14 +240,16 @@ public class Parser
 
 
         scan.getNext(); // get the operand
+        //Check if the first operand is negative
         if (scan.currentToken.tokenStr.equals("-"))
         {
             isNegative = true;
             scan.getNext();
         }
+        //Check if it is an identifier or a constant
+        //If identifier get its result value
         firstOperandSubClassif = scan.currentToken.subClassif;
         firstValue = scan.currentToken.tokenStr;
-
         if(firstOperandSubClassif == Token.IDENTIFIER)
         {
             firstResValue = storageManager.getEntry(firstValue);
@@ -237,28 +258,28 @@ public class Parser
         {
             firstResValue = new ResultValue(scan.currentToken.tokenStr, scan.currentToken.subClassif);
         }
+        //If it was negative make it negative
         if(isNegative == true)
         {
             firstResValue.value = Utilities.toNegative(this, firstResValue);
             isNegative = false;
         }
-
+        //Get operator. If it grabs a ';' return the single value
         String operator = scan.getNext();
         if(operator.equals(";")){
              res = new ResultValue(firstResValue.value, firstResValue.type,1,";");
             return res;
         }
-
+        //If not check if the next one is negative
         scan.getNext();
         if (scan.currentToken.tokenStr.equals("-"))
         {
             isNegative = true;
             scan.getNext();
         }
-
+        //Check if the second operand is identifier or constant
         secondOperandSubClassif = scan.currentToken.subClassif;
         secondValue = scan.currentToken.tokenStr;
-
         if(secondOperandSubClassif == Token.IDENTIFIER)
         {
             secondResValue = storageManager.getEntry(secondValue);
@@ -267,14 +288,14 @@ public class Parser
         {
             secondResValue = new ResultValue(scan.currentToken.tokenStr, scan.currentToken.subClassif);
         }
-
+        //If there was a unary minus apply it to the second operand
         if(isNegative == true)
         {
             secondResValue.value = Utilities.toNegative(this, secondResValue);
             isNegative = false;
         }
 
-
+        //Perform operarion based on operator
         switch (operator){
             case "+":
                 res = Utilities.add(this, firstResValue, secondResValue);
@@ -295,7 +316,6 @@ public class Parser
                 res = Utilities.isLessThan(this, firstResValue, secondResValue);
                 break;
             case ">":
-                System.out.println("About to compare  " + firstValue +" and  " + secondValue);
                 res = Utilities.isGreaterThan(this, firstResValue, secondResValue);
                 break;
             case "<=":
@@ -307,23 +327,39 @@ public class Parser
             case "==":
                 res = Utilities.isEqual(this, firstResValue, secondResValue);
                 break;
-
-
+            case "!=":
+                res = Utilities.notEqalTo(this, firstResValue, secondResValue);
+                break;
+            default:
+                error("ERROR: '%s' IS NOT A VALID OPERATOR"
+                        , operator);
 
         }
+        //Get terminating string
         terminatingStr = scan.nextToken.tokenStr;
+        //Final result value returned for a double operand operation
         res = new ResultValue(res.value, res.type,1,terminatingStr);
         System.out.println("Res type " + res.type + " Current type " + res.type + " Value " + res.value + " termStr is " + terminatingStr);
         return res;
     }
 
-
+    /**
+     *
+     * @param bExec
+     * @return
+     */
     public ResultValue expression(Boolean bExec){
-//
+
 
        return null;
     }
 
+    /**
+     *
+     * @param start
+     * @param end
+     * @throws Exception
+     */
     public void skipTo(String start, String end) throws Exception
     {
         // for error purposes
@@ -345,6 +381,12 @@ public class Parser
         return;
     }
 
+    /**
+     *
+     * @param bExec
+     * @return
+     * @throws Exception
+     */
     public ResultValue ifStmt(Boolean bExec) throws Exception
     {
         System.out.println("If statement here");
@@ -421,6 +463,12 @@ public class Parser
         return null;
     }
 
+    /**
+     *
+     * @param bExec
+     * @return
+     * @throws Exception
+     */
     public ResultValue statements(Boolean bExec) throws Exception
     {
         ResultValue result = new ResultValue();
@@ -431,6 +479,12 @@ public class Parser
         return result;
     }
 
+    /**
+     *
+     * @param bExec
+     * @return
+     * @throws Exception
+     */
     public ResultValue whileStmt(Boolean bExec) throws Exception
     {
         System.out.println("While statement here");
@@ -492,7 +546,12 @@ public class Parser
         return null;
     }
 
-
+    /**
+     *
+     * @param bExec
+     * @return
+     * @throws Exception
+     */
     private ResultValue function(Boolean bExec) throws Exception
     {
         switch (scan.currentToken.subClassif)
@@ -533,6 +592,7 @@ public class Parser
 
         return null;
     }
+
 
     public void infixExpr()
     {
