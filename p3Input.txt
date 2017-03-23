@@ -1,4 +1,4 @@
-Int i;
+Int i = -1;
 Float pi;
 String day;
    day

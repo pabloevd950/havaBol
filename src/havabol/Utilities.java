@@ -15,12 +15,70 @@ public class Utilities
         return x+y;
     }
 
+    public static ResultValue add(Parser parser, ResultValue firstOp, ResultValue secondOp) throws ParserException{
+        ResultValue res = null;
+        String temp;
+        switch (firstOp.type){
+            case Token.INTEGER:
+                 temp = Utilities.toInteger(parser , secondOp);
+                 int x = Integer.parseInt(firstOp.value);
+                 int y = Integer.parseInt(temp);
+                 int result = x + y;
+                 res = new ResultValue(String.valueOf(result), firstOp.type);
+                 break;
+            case Token.FLOAT:
+                temp = Utilities.toFloat(parser , secondOp);
+                double x2 = Double.parseDouble(firstOp.value);
+                double y2 = Double.parseDouble(temp);
+                double result2 = x2 + y2;
+                res = new ResultValue(String.valueOf(result2), firstOp.type);
+                break;
+            case Token.STRING:
+                break;
+            default:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Can not add to variable of type \'" + firstOp.type + "\'"
+                        , parser.scan.sourceFileNm);
+
+        }
+        return res;
+    }
+
     public static int subInt(int x, int y){
         return x-y;
     }
 
     public static double subFloat(double x, double y){
         return x-y;
+    }
+
+    public static ResultValue sub(Parser parser, ResultValue firstOp, ResultValue secondOp)throws ParserException{
+        ResultValue res = null;
+        String temp;
+        switch (firstOp.type){
+            case Token.INTEGER:
+                temp = Utilities.toInteger(parser , secondOp);
+                int x = Integer.parseInt(firstOp.value);
+                int y = Integer.parseInt(temp);
+                int result = x - y;
+                res = new ResultValue(String.valueOf(result), firstOp.type);
+                break;
+            case Token.FLOAT:
+                temp = Utilities.toFloat(parser , secondOp);
+                double x2 = Double.parseDouble(firstOp.value);
+                double y2 = Double.parseDouble(temp);
+                double result2 = x2 - y2;
+                res = new ResultValue(String.valueOf(result2), firstOp.type);
+                break;
+            case Token.STRING:
+                break;
+            default:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Can not subtract from variable of type \'" + firstOp.type + "\'"
+                        , parser.scan.sourceFileNm);
+
+        }
+        return res;
     }
 
     public static int divInt(int x, int y){
@@ -31,6 +89,35 @@ public class Utilities
         return x/y;
     }
 
+    public static ResultValue div(Parser parser, ResultValue firstOp, ResultValue secondOp)throws ParserException{
+        ResultValue res = null;
+        String temp;
+        switch (firstOp.type){
+            case Token.INTEGER:
+                temp = Utilities.toInteger(parser , secondOp);
+                int x = Integer.parseInt(firstOp.value);
+                int y = Integer.parseInt(temp);
+                int result = x / y;
+                res = new ResultValue(String.valueOf(result), firstOp.type);
+                break;
+            case Token.FLOAT:
+                temp = Utilities.toFloat(parser , secondOp);
+                double x2 = Double.parseDouble(firstOp.value);
+                double y2 = Double.parseDouble(temp);
+                double result2 = x2 / y2;
+                res = new ResultValue(String.valueOf(result2), firstOp.type);
+                break;
+            case Token.STRING:
+                break;
+            default:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Can not divide variable of type \'" + firstOp.type + "\'"
+                        , parser.scan.sourceFileNm);
+
+        }
+        return res;
+    }
+
     public static int mulInt(int x, int y){
         return x*y;
     }
@@ -39,12 +126,69 @@ public class Utilities
         return x*y;
     }
 
+    public static ResultValue mul(Parser parser, ResultValue firstOp, ResultValue secondOp)throws ParserException{
+        ResultValue res = null;
+        String temp;
+        switch (firstOp.type){
+            case Token.INTEGER:
+                temp = Utilities.toInteger(parser , secondOp);
+                int x = Integer.parseInt(firstOp.value);
+                int y = Integer.parseInt(temp);
+                int result = x * y;
+                res = new ResultValue(String.valueOf(result), firstOp.type);
+                break;
+            case Token.FLOAT:
+                temp = Utilities.toFloat(parser , secondOp);
+                double x2 = Double.parseDouble(firstOp.value);
+                double y2 = Double.parseDouble(temp);
+                double result2 = x2 * y2;
+                res = new ResultValue(String.valueOf(result2), firstOp.type);
+                break;
+            case Token.STRING:
+                break;
+            default:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Can not multiply variable of type \'" + firstOp.type + "\'"
+                        , parser.scan.sourceFileNm);
+
+        }
+        return res;
+    }
+
     public static double expInt(int x, int y){
         return Math.pow(x,y);
     }
 
     public static double expDouble(double x, double y){
         return Math.pow(x,y);
+    }
+
+    public static ResultValue exp(Parser parser, ResultValue firstOp, ResultValue secondOp)throws ParserException{
+        ResultValue res = null;
+        String temp;
+        switch (firstOp.type){
+            case Token.INTEGER:
+                temp = Utilities.toInteger(parser , secondOp);
+                int x = Integer.parseInt(firstOp.value);
+                int y = Integer.parseInt(temp);
+                int result = (int)Math.pow(x,  y);
+                res = new ResultValue(String.valueOf(result), firstOp.type);
+                break;
+            case Token.FLOAT:
+                temp = Utilities.toFloat(parser , secondOp);
+                double x2 = Double.parseDouble(firstOp.value);
+                double y2 = Double.parseDouble(temp);
+                double result2 = Math.pow(x2,  y2);
+                res = new ResultValue(String.valueOf(result2), firstOp.type);
+                break;
+            case Token.STRING:
+                break;
+            default:
+                throw new ParserException(parser.scan.iSourceLineNr
+                        , "Can not exponentiate to variable of type \'" + firstOp.type + "\'"
+                        , parser.scan.sourceFileNm);
+        }
+        return res;
     }
 
     /**
@@ -151,7 +295,7 @@ public class Utilities
                 break;
             case Token.BOOLEAN:
                 throw new ParserException(parser.scan.iSourceLineNr
-                        , "Can not apply comparison '>' to type '" + Token.BOOLEAN + "'"
+                        , "Can not apply comparison '>' to '" + Token.BOOLEAN + "'"
                         , parser.scan.sourceFileNm);
             case Token.DATE:
                 throw new ParserException(parser.scan.iSourceLineNr
@@ -478,6 +622,26 @@ public class Utilities
                 , parser.scan.sourceFileNm);
     }
 
+    public static String toNegative(Parser parser, ResultValue value){
+
+        switch (value.type)
+        {
+            case Token.INTEGER:
+                int x = Integer.parseInt(value.value);
+                x*= -1;
+                value.value = String.valueOf(x);
+                break;
+            case Token.FLOAT:
+                double y = Double.parseDouble(value.value);
+                y = y * -1;
+                value.value = String.valueOf(y);
+            case Token.STRING:
+                //Check if its a float or int represented as string?
+            case Token.BOOLEAN:
+        }
+        return value.value;
+
+    }
 
 
 }

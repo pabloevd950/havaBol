@@ -174,7 +174,6 @@ public class Parser
                     ResultValue res1 = assign(variableStr, expr());
                     System.out.println("Variable name " + variableStr +  " Value is " + res1.value + " Type is " + res1.type);
                     return res1;
-
                 }
                 else
                     skipTo(scan.currentToken.tokenStr, ";");
@@ -210,20 +209,15 @@ public class Parser
     public ResultValue expr() throws Exception
     {
 
-        ResultValue res, firstResValue, secondResValue, finalValueBool;
+        ResultValue firstResValue, secondResValue;
+        ResultValue res = new ResultValue();
 
         int firstOperandSubClassif;
         int secondOperandSubClassif;
-        int firstOperandType;
-        int secondOperandType;
         String terminatingStr;
         String firstValue ="";
         String secondValue ="";
-        int currentType= -1;
-        String currentValue = null;
         Boolean isNegative = false;
-        double finalValue;
-        int finalValueInt;
 
 
         scan.getNext(); // get the operand
@@ -237,38 +231,21 @@ public class Parser
 
         if(firstOperandSubClassif == Token.IDENTIFIER)
         {
-            firstOperandType = storageManager.getEntry(firstValue).type;
-            firstValue = storageManager.getEntry(firstValue).value;
+            firstResValue = storageManager.getEntry(firstValue);
         }
         else
         {
-            firstValue = scan.currentToken.tokenStr;
-            firstOperandType = scan.currentToken.subClassif;
+            firstResValue = new ResultValue(scan.currentToken.tokenStr, scan.currentToken.subClassif);
         }
         if(isNegative == true)
         {
-            switch (firstOperandType)
-            {
-                case Token.INTEGER:
-                    int x = Integer.parseInt(firstValue);
-                    x*= -1;
-                    firstValue = String.valueOf(x);
-                    break;
-                case Token.FLOAT:
-                    double y = Double.parseDouble(firstValue);
-                    y = y * -1;
-                    firstValue = String.valueOf(y);
-                case Token.STRING:
-                    //Check if its a float or int represented as string?
-                case Token.BOOLEAN:
-            }
+            firstResValue.value = Utilities.toNegative(this, firstResValue);
             isNegative = false;
         }
-        currentType = scan.currentToken.subClassif;
+
         String operator = scan.getNext();
         if(operator.equals(";")){
-            currentValue = firstValue;
-             res = new ResultValue(currentValue, currentType,1,";");
+             res = new ResultValue(firstResValue.value, firstResValue.type,1,";");
             return res;
         }
 
@@ -282,151 +259,61 @@ public class Parser
         secondOperandSubClassif = scan.currentToken.subClassif;
         secondValue = scan.currentToken.tokenStr;
 
-        if(secondOperandSubClassif == Token.IDENTIFIER){
-            secondOperandType = storageManager.getEntry(secondValue).type;
-            secondValue = storageManager.getEntry(secondValue).value;
+        if(secondOperandSubClassif == Token.IDENTIFIER)
+        {
+            secondResValue = storageManager.getEntry(secondValue);
         }
         else
         {
-            secondValue = scan.currentToken.tokenStr;
-            secondOperandType = scan.currentToken.subClassif;
+            secondResValue = new ResultValue(scan.currentToken.tokenStr, scan.currentToken.subClassif);
         }
 
         if(isNegative == true)
         {
-            switch (secondOperandType)
-            {
-                case Token.INTEGER:
-                    int x = Integer.parseInt(secondValue);
-                    x*= -1;
-                    secondValue = String.valueOf(x);
-                    break;
-                case Token.FLOAT:
-                    double y = Double.parseDouble(secondValue);
-                    y = y * -1;
-                    secondValue = String.valueOf(y);
-                case Token.STRING:
-                    //Check if its a float or int represented as string?
-                case Token.BOOLEAN:
-            }
+            secondResValue.value = Utilities.toNegative(this, secondResValue);
             isNegative = false;
         }
-        firstResValue = new ResultValue(firstValue, firstOperandType);
-        secondResValue =  new ResultValue(secondValue, secondOperandType);
+
 
         switch (operator){
             case "+":
-                if(firstOperandType == Token.INTEGER){
-                    finalValueInt = Utilities.addInt(Integer.parseInt(firstValue), Integer.parseInt(secondValue));
-                    currentValue = Integer.toString(finalValueInt);
-                    currentType = firstOperandType;
-                }
-                else if(firstOperandType ==  Token.FLOAT){
-                    finalValue = Utilities.addFloat(Double.parseDouble(firstValue), Float.parseFloat(secondValue));
-                    currentValue = Double.toString(finalValue);
-                    currentType = firstOperandType;
-                }
+                res = Utilities.add(this, firstResValue, secondResValue);
                 break;
-
             case "-":
-                if(firstOperandType == Token.INTEGER){
-                    finalValueInt = Utilities.subInt(Integer.parseInt(firstValue), Integer.parseInt(secondValue));
-                    currentValue = Integer.toString(finalValueInt);
-                    currentType = firstOperandType;
-                }
-                else if(firstOperandType ==  Token.FLOAT){
-                    finalValue = Utilities.subFloat(Double.parseDouble(firstValue), Double.parseDouble(secondValue));
-                    currentValue = Double.toString(finalValue);
-                    currentType = firstOperandType;
-                }
+                res = Utilities.sub(this, firstResValue, secondResValue);
                 break;
-
             case "*":
-                if(firstOperandType == Token.INTEGER){
-                    finalValueInt = Utilities.mulInt((int) Double.parseDouble(firstValue), (int) Double.parseDouble(secondValue));
-                    currentValue = Integer.toString(finalValueInt);
-                    currentType = firstOperandType;
-                }
-                else if(firstOperandType ==  Token.FLOAT){
-                    finalValue = Utilities.mulFloat(Double.parseDouble(firstValue), Double.parseDouble(secondValue));
-                    currentValue = Double.toString(finalValue);
-                    currentType = firstOperandType;
-                }
+                res = Utilities.mul(this, firstResValue, secondResValue);
                 break;
-
             case "/":
-                if(firstOperandType == Token.INTEGER){
-                    finalValueInt = Utilities.divInt(Integer.parseInt(firstValue), Integer.parseInt(secondValue));
-                    currentValue = Integer.toString(finalValueInt);
-                    currentType = firstOperandType;
-                }
-                else if(firstOperandType ==  Token.FLOAT){
-                    finalValue = Utilities.divFloat(Double.parseDouble(firstValue), Double.parseDouble(secondValue));
-                    currentValue = Double.toString(finalValue);
-                    currentType = firstOperandType;
-                }
+                res = Utilities.div(this, firstResValue, secondResValue);
                 break;
-
             case "^":
-                if(firstOperandType == Token.INTEGER){
-                    finalValue = Utilities.expInt(Integer.parseInt(firstValue), Integer.parseInt(secondValue));
-                    currentValue = Double.toString(finalValue);
-                    currentType = firstOperandType;
-                }
-                else if(firstOperandType ==  Token.FLOAT){
-                    finalValue = Utilities.expDouble(Double.parseDouble(firstValue), Double.parseDouble(secondValue));
-                    currentValue = Double.toString(finalValue);
-                    currentType = firstOperandType;
-                }
+                res = Utilities.exp(this, firstResValue, secondResValue);
                 break;
             case "<":
-                finalValueBool = Utilities.isLessThan(this, firstResValue, secondResValue);
-                if(finalValueBool.value.equals("T"))
-                    currentValue = "T";
-                else if(finalValueBool.value.equals("F"))
-                    currentValue = "F";
-                currentType = Token.BOOLEAN;
+                res = Utilities.isLessThan(this, firstResValue, secondResValue);
                 break;
             case ">":
                 System.out.println("About to compare  " + firstValue +" and  " + secondValue);
-                finalValueBool = Utilities.isGreaterThan(this, firstResValue, secondResValue);
-                if(finalValueBool.value.equals("T"))
-                    currentValue = "T";
-                else if(finalValueBool.value.equals("F"))
-                    currentValue = "F";
-                currentType = Token.BOOLEAN;
+                res = Utilities.isGreaterThan(this, firstResValue, secondResValue);
                 break;
             case "<=":
-                finalValueBool = Utilities.isLessThanorEq(this, firstResValue, secondResValue);
-                if(finalValueBool.value.equals("T"))
-                    currentValue = "T";
-                else if(finalValueBool.value.equals("F"))
-                    currentValue = "F";
-                currentType = Token.BOOLEAN;
+                res = Utilities.isLessThanorEq(this, firstResValue, secondResValue);
                 break;
             case ">=":
-                finalValueBool = Utilities.isGreaterThanorEq(this, firstResValue, secondResValue);
-                if(finalValueBool.value.equals("T"))
-                    currentValue = "T";
-                else if(finalValueBool.value.equals("F"))
-                    currentValue = "F";
-                currentType = Token.BOOLEAN;
+                res = Utilities.isGreaterThanorEq(this, firstResValue, secondResValue);
                 break;
             case "==":
-                finalValueBool = Utilities.isEqual(this, firstResValue, secondResValue);
-                if(finalValueBool.value.equals("T"))
-                    currentValue = "T";
-                else if(finalValueBool.value.equals("F"))
-                    currentValue = "F";
-                currentType = Token.BOOLEAN;
+                res = Utilities.isEqual(this, firstResValue, secondResValue);
                 break;
 
 
 
         }
         terminatingStr = scan.nextToken.tokenStr;
-        res = new ResultValue(currentValue, currentType,1,terminatingStr);
-        System.out.println("Res type " + res.type + " Current type " + currentType + " Value " + res.value + " termStr is " + terminatingStr);
+        res = new ResultValue(res.value, res.type,1,terminatingStr);
+        System.out.println("Res type " + res.type + " Current type " + res.type + " Value " + res.value + " termStr is " + terminatingStr);
         return res;
     }
 
