@@ -17,58 +17,55 @@ public class Parser
     public StorageManager storageManager;
     public Scanner scan;
 
-    public Parser (SymbolTable symbolTable, StorageManager storageManager, Scanner scan)
+    public Parser(SymbolTable symbolTable, StorageManager storageManager, Scanner scan)
     {
         this.symbolTable = symbolTable;
         this.storageManager = storageManager;
         this.scan = scan;
     }
 
-    public ResultValue statements(Boolean bExec) throws Exception
+    public ResultValue statement(Boolean bExec) throws Exception
     {
-        while (true)
-        {
-            //System.out.println("STATEMENT CALLED WITH BEXEC " + bExec);
-            // advance token
-            scan.getNext();
-            scan.currentToken.printToken();
+        //System.out.println("STATEMENT CALLED WITH BEXEC " + bExec);
+        // advance token
+        scan.getNext();
+        //scan.currentToken.printToken();
 
-            switch (scan.currentToken.primClassif)
-            {
-                case Token.CONTROL:
-                    switch (scan.currentToken.subClassif)
-                    {
-                        case Token.DECLARE:
-                            declareStmt(bExec);
-                        case Token.FLOW:
-                            if (scan.currentToken.tokenStr.equals("if"))
-                                ifStmt(bExec);
-                            else if (scan.currentToken.tokenStr.equals("while"))
-                                whileStmt(bExec);
-                        case Token.END:
-                            // end token so return
-                            return new ResultValue("", Token.END
-                                    , ResultValue.primitive, scan.currentToken.tokenStr);
-                        // should never hit this, otherwise MAJOR FUCK UP
-                        default:
-                            error("ERROR: UNIDENTIFIED CONTROL VARIABLE %s"
-                                    , scan.currentToken.tokenStr);
-                    }
-                    break;
-                case Token.OPERAND:
-                    assignStmt(bExec);
-                case Token.FUNCTION:
-                    function(bExec);
-                case Token.OPERATOR:
-                case Token.SEPARATOR:
-                case Token.EOF:
-                    break;
-                // should never hit this, otherwise MAJOR FUCK UP
-                default:
-                    error("INTERNAL ERROR CAUSED BY %s", scan.currentToken.tokenStr);
-            }
+        switch (scan.currentToken.primClassif)
+        {
+            case Token.CONTROL:
+                switch (scan.currentToken.subClassif)
+                {
+                    case Token.DECLARE:
+                        return declareStmt(bExec);
+                    case Token.FLOW:
+                        if (scan.currentToken.tokenStr.equals("if"))
+                            return ifStmt(bExec);
+                        else if (scan.currentToken.tokenStr.equals("while"))
+                            return whileStmt(bExec);
+                    case Token.END:
+                        // end token so return
+                        return new ResultValue("", Token.END
+                                , ResultValue.primitive, scan.currentToken.tokenStr);
+                    // should never hit this, otherwise MAJOR FUCK UP
+                    default:
+                        error("ERROR: UNIDENTIFIED CONTROL VARIABLE %s"
+                                , scan.currentToken.tokenStr);
+                }
+                break;
+            case Token.OPERAND:
+                return assignStmt(bExec);
+            case Token.FUNCTION:
+                return function(bExec);
+            case Token.OPERATOR:
+            case Token.SEPARATOR:
+            case Token.EOF:
+                break;
+            // should never hit this, otherwise MAJOR FUCK UP
+            default:
+                error("INTERNAL ERROR CAUSED BY %s", scan.currentToken.tokenStr);
         }
-            //return new ResultValue("", Token.VOID, Token.VOID, "");
+        return new ResultValue("", Token.VOID, Token.VOID, "");
     }
 
     /**
@@ -395,34 +392,34 @@ public class Parser
             // did the condition return true?
             if (resCond.value.equals("T"))
             {// condition returned true, execute statements on the true part
-                resCond = statements(true);
+                resCond = statementsIf(true);
 
                 // did we execute a while statement?
-                while (resCond.terminatingStr.equals("endwhile"))
-                    resCond = statements(true);
+                //while (resCond.terminatingStr.equals("endwhile"))
+                 //   resCond = statementsIf(true);
 
                 // what ended the statements after the true part? else of endif
                 if (resCond.terminatingStr.equals("else"))
                 {// has an else
                     if (! scan.getNext().equals(":"))
                         error("ERROR: EXPECTED ':' AFTER ELSE");
-                    resCond = statements(false);
+                    resCond = statementsIf(false);
                 }
             }
             else
             {// condition returned false, ignore all statements after the if
-                resCond = statements(false);
+                resCond = statementsIf(false);
 
                 // did we execute a while statement?
-                while (resCond.terminatingStr.equals("endwhile"))
-                    resCond = statements(false);
+                //while (resCond.terminatingStr.equals("endwhile"))
+                //    resCond = statements(false);
 
                 // check for else
                 if (resCond.terminatingStr.equals("else"))
                 { // if it is an 'else', execute
                     if (! scan.getNext().equals(":"))
                         error("ERROR: EXPECTED ':' AFTER ELSE");
-                    resCond = statements(true);
+                    resCond = statementsIf(true);
                 }
             }
         }
@@ -432,11 +429,11 @@ public class Parser
             skipTo("if", ":");
 
             // ignore true part
-            resCond = statements(false);
+            resCond = statementsIf(false);
 
             // did we execute a while statement?
-            while (resCond.terminatingStr.equals("endwhile"))
-                resCond = statements(false);
+            //while (resCond.terminatingStr.equals("endwhile"))
+            //    resCond = statements(false);
 
             // if the statements terminated with an 'else', we need to parse statements
             if (resCond.terminatingStr.equals("else"))
@@ -445,7 +442,7 @@ public class Parser
                     error("ERROR: EXPECTED ':' AFTER ELSE");
 
                 // ignore false part
-                resCond = statements(false);
+                resCond = statementsIf(false);
             }
         }
 
@@ -464,16 +461,28 @@ public class Parser
      * @return
      * @throws Exception
      */
-    /*public ResultValue statements(Boolean bExec) throws Exception
+    public ResultValue statementsIf(Boolean bExec) throws Exception
     {
         ResultValue result = statement(bExec);
 
-        while (result.type != Token.END)
+        while (result.type != Token.END || result.terminatingStr.equals("endwhile"))
             result = statement(bExec);
 
         result.terminatingStr = scan.currentToken.tokenStr;
         return result;
-    }*/
+    }
+
+    public ResultValue statementsWhile(Boolean bExec) throws Exception
+    {
+        ResultValue result = statement(bExec);
+
+        while (result.type != Token.END || (  result.terminatingStr.equals("endif")
+                                           || result.terminatingStr.equals("else")))
+            result = statement(bExec);
+
+        result.terminatingStr = scan.currentToken.tokenStr;
+        return result;
+    }
 
     /**
      *
@@ -495,11 +504,11 @@ public class Parser
             resCond = expr();
             while (resCond.value.equals("T"))
             {// did the condition return true?
-                resCond = statements(true);
+                resCond = statementsWhile(true);
 
                 // did we execute an if statement?
-                while (resCond.terminatingStr.equals("endif") || resCond.terminatingStr.equals("else"))
-                    resCond = statements(true);
+                //while (resCond.terminatingStr.equals("endif") || resCond.terminatingStr.equals("else"))
+                //    resCond = statements(true);
 
                 // did statements() end on an endwhile;?
                 if (! resCond.terminatingStr.equals("endwhile")
@@ -514,9 +523,9 @@ public class Parser
             }
 
             // expr() returned false, so skip ahead to the end of the while
-            resCond = statements(false);
-            while (resCond.terminatingStr.equals("endif") || resCond.terminatingStr.equals("else"))
-                resCond = statements(false);
+            resCond = statementsWhile(false);
+            //while (resCond.terminatingStr.equals("endif") || resCond.terminatingStr.equals("else"))
+             //   resCond = statements(false);
         }
         else
         {// we are ignoring execution, so ignore conditional, true and false part
@@ -524,11 +533,11 @@ public class Parser
             skipTo("while", ":");
 
             // ignore statements
-            resCond = statements(false);
+            resCond = statementsWhile(false);
 
             // continue to ignore statements
-            while (resCond.terminatingStr.equals("endif") || resCond.terminatingStr.equals("else"))
-                resCond = statements(false);
+            //while (resCond.terminatingStr.equals("endif") || resCond.terminatingStr.equals("else"))
+            //    resCond = statements(false);
         }
 
         // did we have an endwhile;
