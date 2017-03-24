@@ -60,9 +60,9 @@ public class Scanner
             sourceLineM.add(inp.nextLine());
 
         // initialize variables to track position in source file
-        iSourceLineNr = 0;
+        iSourceLineNr = -1;
         iColPos = 0;
-        textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
+        textCharM = sourceLineM.get(0).toCharArray();
         nextToken = new Token();
 
         // check that there is a next token, of there isn't, then source file is empty
@@ -116,8 +116,9 @@ public class Scanner
         }
 
         // Automatically advance to the next source line when necessary
-        if (iColPos >= textCharM.length)
-        { // cursor position is beyond the length of the line so grab a new line
+        if (iColPos >= textCharM.length || iSourceLineNr == -1)
+        { // cursor position is beyond the length of the line so grab a new line,
+          // if iSourceLineNr is equal to -1, then this is the first line.
             do
             { // find a line that is not empty
                 if (++iSourceLineNr >= sourceLineM.size())
@@ -138,6 +139,11 @@ public class Scanner
                     {
                         //Check if whole line is comment
                         //System.out.format("  %d %s\n", ++iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
+                        if (++iSourceLineNr >= sourceLineM.size())
+                        {
+                            nextToken.primClassif = Token.EOF;
+                            return currentToken.tokenStr;
+                        }
                     }
                     else // throw away part of line that is comment
                         sourceLineM.set(iSourceLineNr, sourceLineM.get(iSourceLineNr).substring(0, index).trim());
@@ -282,6 +288,7 @@ public class Scanner
         //currentToken.printToken();
         //System.out.println("NEXT");
         //nextToken.printToken();
+        //System.out.println();
 
         return currentToken.tokenStr;
     }

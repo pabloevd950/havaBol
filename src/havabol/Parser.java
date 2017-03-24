@@ -17,18 +17,11 @@ public class Parser
     public StorageManager storageManager;
     public Scanner scan;
 
-    private ArrayList<Boolean> bControl;
-    private ArrayList<String> szControl;
-    private int i;
-
     public Parser (SymbolTable symbolTable, StorageManager storageManager, Scanner scan)
     {
         this.symbolTable = symbolTable;
         this.storageManager = storageManager;
         this.scan = scan;
-        this.bControl = new ArrayList<Boolean>();
-        this.szControl = new ArrayList<String>();
-        this.i = -1;
     }
 
     public ResultValue statement(Boolean bExec) throws Exception
@@ -51,12 +44,8 @@ public class Parser
                         else if (scan.currentToken.tokenStr.equals("while"))
                             return whileStmt(bExec);
                     case Token.END:
-                        // was an end token expected?
-                        if (i >= 0 && !bControl.get(i))
-                            error("ERROR: UNEXPECTED CONTROL END TOKEN %s"
-                                    , scan.currentToken.tokenStr);
-                        // end token was expected so return
-                        return new ResultValue(szControl.get(i), Token.END
+                        // end token so return
+                        return new ResultValue("", Token.END
                                 , ResultValue.primitive, scan.currentToken.tokenStr);
                     // should never hit this, otherwise MAJOR FUCK UP
                     default:
@@ -77,7 +66,7 @@ public class Parser
                 error("INTERNAL ERROR CAUSED BY %s", scan.currentToken.tokenStr);
             }
 
-        return null;
+        return new ResultValue("", Token.VOID, Token.VOID, "");
     }
 
     /**
@@ -342,21 +331,11 @@ public class Parser
         //Get terminating string
         //terminatingStr = scan.nextToken.tokenStr;
         terminatingStr = scan.getNext();
+
         //Final result value returned for a double operand operation
         res = new ResultValue(res.value, res.type,1,terminatingStr);
         //System.out.println("Res type " + res.type + " Current type " + res.type + " Value " + res.value + " termStr is " + terminatingStr);
         return res;
-    }
-
-    /**
-     *
-     * @param bExec
-     * @return
-     */
-    public ResultValue expression(Boolean bExec){
-
-
-       return null;
     }
 
     /**
@@ -397,11 +376,6 @@ public class Parser
         //System.out.println("If statement here with BEXEC + " + bExec);
 
         ResultValue resCond;
-
-        // add to arraylists
-        this.bControl.add(true);
-        this.szControl.add("if");
-        this.i++;
 
         // do we need to evaluate the condition
         if (bExec)
@@ -456,16 +430,13 @@ public class Parser
             }
         }
 
+        //scan.currentToken.printToken();
+
         // did we have an endif; *this was after all the else checks
-        if (!resCond.terminatingStr.equals("endif") || !scan.getNext().equals(";"))
+        if (!resCond.terminatingStr.equals("endif") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endif;' FOR 'if' EXPRESSION");
 
-        // remove from array list
-        this.bControl.remove(i);
-        this.szControl.remove(i);
-        this.i--;
-
-        return null;
+        return new ResultValue("", Token.END, ResultValue.primitive, "endif");
     }
 
     /**
@@ -477,6 +448,7 @@ public class Parser
     public ResultValue statements(Boolean bExec) throws Exception
     {
         //System.out.println("STATEMENTS CALLED WITH BEXEC " + bExec);
+        //System.out.println(scan.currentToken.tokenStr);
         ResultValue result = statement(bExec);
         //while (scan.currentToken.primClassif != Token.END)
         while (result.type != Token.END)
@@ -498,11 +470,6 @@ public class Parser
 
         ResultValue resCond;
 
-        // add to arraylists
-        this.bControl.add(true);
-        this.szControl.add("while");
-        this.i++;
-
         // do we need to evaluate the condition
         if (bExec)
         {// we are executing, not ignoring
@@ -515,18 +482,32 @@ public class Parser
             resCond = expr();
             while (resCond.value.equals("T"))
             {// did the condition return true?
+                System.out.println("While loop started");
                 resCond = statements(true);
 
+                // did we execute an if statement?
+                while (resCond.terminatingStr.equals("endif") || resCond.terminatingStr.equals("else"))
+                    resCond = statements(true);
+
+
                 // did statements() end on an endwhile;?
-                if (! resCond.terminatingStr.equals("endwhile") || ! scan.getNext().equals(";"))
+                if (! resCond.terminatingStr.equals("endwhile")
+                   || !scan.nextToken.tokenStr.equals(";"))
                     error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
+
+                System.out.println("while loop passed");
 
                 // reset scanner cursor and check while condition again
                 scan.iSourceLineNr = iSourceLineNr;
                 scan.iColPos = iColPos;
                 scan.nextToken = nextToken;
-                scan.getNext();
+
+                scan.currentToken.printToken();
+                scan.nextToken.printToken();
+
                 resCond = expr();
+
+                System.out.println(resCond.value);
             }
 
             // expr() returned false, so skip ahead to the end of the while
@@ -539,18 +520,16 @@ public class Parser
 
             // ignore statements
             resCond = statements(false);
+
+            while (resCond.terminatingStr.equals("endif") || resCond.terminatingStr.equals("else"))
+                resCond = statements(false);
         }
 
         // did we have an endwhile;
-        if (! resCond.terminatingStr.equals("endwhile") || ! scan.getNext().equals(";"))
+        if (! resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
 
-        // remove from array list
-        this.bControl.remove(i);
-        this.szControl.remove(i);
-        this.i--;
-
-        return null;
+        return new ResultValue("", Token.END, ResultValue.primitive, "endwhile");
     }
 
     /**
@@ -568,6 +547,11 @@ public class Parser
                 if (scan.currentToken.tokenStr.equals("print"))
                 {
                     String printLine = "";
+
+                    // make sure the print function is in correct syntax
+                    if (! scan.getNext().equals("(") )
+                        error("ERROR: PRINT FUNCTION IS MISSING SEPARATOR '('");
+
                     while ( !scan.getNext().equals(")"))
                     {
                         switch (scan.currentToken.subClassif)
@@ -582,9 +566,17 @@ public class Parser
                             case Token.IDENTIFIER:
                                 printLine +=
                                         storageManager.getEntry(scan.currentToken.tokenStr).value;
+                            default:
+                                if (scan.currentToken.tokenStr.equals(","))
+                                    printLine += " ";
+                                else if (scan.currentToken.tokenStr.equals(";"))
+                                    error("ERROR: EXPECTED ')' BEFORE ';' TOKEN");
                         }
                     }
-                    System.out.println(printLine);
+                    if (bExec)
+                        System.out.println(printLine);
+                    if ( !scan.getNext().equals(";") )
+                        error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
                 }
                 else// for right now, any other function gets skipped
                     skipTo(scan.currentToken.tokenStr,";");
@@ -598,7 +590,8 @@ public class Parser
                            , scan.currentToken.tokenStr);
         }
 
-        return null;
+        return new ResultValue("", Token.BUILTIN
+                        , ResultValue.primitive, scan.currentToken.tokenStr);
     }
 
 

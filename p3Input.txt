@@ -1,4 +1,5 @@
-Int i = -1;
+print("p3Input.txt");
+Int i;
 Float pi;
 String day;
    day
