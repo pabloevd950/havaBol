@@ -344,16 +344,17 @@ public class Parser
             isNegative = false;
         }
         //Get operator. If it grabs a ';' return the single value
-        String operator = scan.getNext();
-        if(operator.equals(";")){
-            res = new ResultValue(firstResValue.value, firstResValue.type,1,";");
+        String operator = scan.nextToken.tokenStr;
+        if(operator.equals(";") || operator.equals(",") || operator.equals(")")){
+            res = new ResultValue(firstResValue.value, firstResValue.type,1,operator);
             if(scan.bShowExpr)
             {
-                System.out.println("\t\t...");
-                System.out.print("Result Value: " + res.value);
+                System.out.print("\t\t...");
+                System.out.println("Result Value: " + res.value);
             }
             return res;
         }
+        scan.getNext();
         //If not check if the next one is negative
         scan.getNext();
         if (scan.currentToken.tokenStr.equals("-"))
@@ -421,7 +422,7 @@ public class Parser
         }
         //Get terminating string
         //terminatingStr = scan.nextToken.tokenStr;
-        terminatingStr = scan.getNext();
+        terminatingStr = scan.nextToken.tokenStr;
 
         //Final result value returned for a double operand operation
         res = new ResultValue(res.value, res.type,1,terminatingStr);
@@ -654,6 +655,7 @@ public class Parser
                     if (! scan.getNext().equals("(") )
                         error("ERROR: PRINT FUNCTION IS MISSING SEPARATOR '('");
 
+                    Token previousToken = scan.currentToken;
                     while ( !scan.getNext().equals(")"))
                     {
                         switch (scan.currentToken.subClassif)
@@ -666,15 +668,26 @@ public class Parser
                                 printLine += scan.currentToken.tokenStr;
                                 break;
                             case Token.IDENTIFIER:
-                                printLine +=
-                                        storageManager.getEntry(scan.currentToken.tokenStr).value;
+                                scan.setTo(previousToken);
+                                ResultValue res = expr();
+                                printLine += res.value;
+                                break;
                             default:
                                 if (scan.currentToken.tokenStr.equals(","))
                                     printLine += " ";
+                                else if (scan.currentToken.primClassif == Token.OPERATOR)
+                                {
+                                    scan.setTo(previousToken);
+                                    ResultValue resExpr = expr();
+                                    printLine += resExpr.value;
+                                }
                                 else if (scan.currentToken.tokenStr.equals(";"))
-                                    error("ERROR: EXPECTED ')' BEFORE ';' TOKEN");
+                                    error("ERROR: EXPECTED ')' BEFORE ';' TOKEN %s"
+                                    , scan.currentToken.tokenStr);
                         }
+                        previousToken = scan.currentToken;
                     }
+
                     if (bExec)
                         System.out.println(printLine);
                     if ( !scan.getNext().equals(";") )
