@@ -108,7 +108,7 @@ public class Scanner
         nextToken = new Token();
 
         // check if we encountered EOF
-        if (nextToken.primClassif == Token.EOF)
+        if (currentToken.primClassif == Token.EOF)
         {
             //System.out.println("NEXT");
             //nextToken.printToken();
@@ -309,5 +309,15 @@ public class Scanner
         currentToken.subClassif = token.subClassif;
         currentToken.iSourceLineNr = token.iSourceLineNr;
         currentToken.iColPos = token.iColPos;
+    }
+
+    public void setTo(Token token) throws Exception
+    {
+        this.iSourceLineNr = token.iSourceLineNr;
+        this.iColPos = token.iColPos;
+        this.textCharM = sourceLineM.get(this.iSourceLineNr).toCharArray();
+
+        getNext();
+        getNext();
     }
 }

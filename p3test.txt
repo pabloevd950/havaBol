@@ -1,11 +1,10 @@
-endif;
-
 Int i = 1;
 
-if i > 0:
-    if i == 1:
-        print("i = ", i);
-    else:
-        print("wrong");
-    endif;
-endif;
+while i < 3:
+    while i < 4:
+        print("sex + ", i);
+        i = i + 1;
+    endwhile;
+endwhile;
+
+print("sex pt2");

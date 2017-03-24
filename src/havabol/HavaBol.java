@@ -34,12 +34,12 @@ public class HavaBol
             Parser parser = new Parser(symbolTable, storageManager, scan);
 
             // start parsing file
-            while (scan.currentToken.primClassif != Token.EOF)
-            {
+            //while (scan.currentToken.primClassif != Token.EOF)
+            //{
                 //System.out.println("PARSER CALL WITH CURRENT TOKEN:");
                 //scan.currentToken.printToken();
-                parser.statement(true);
-            }
+                parser.statements(true);
+            //}
         }
         catch (Exception e)
         {
