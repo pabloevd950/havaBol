@@ -40,9 +40,17 @@ public class Parser
                         return declareStmt(bExec);
                     case Token.FLOW:
                         if (scan.currentToken.tokenStr.equals("if"))
-                            return ifStmt(bExec);
+                        {
+                            ResultValue res = ifStmt(bExec);
+                            res.type = Token.VOID;
+                            return res;
+                        }
                         else if (scan.currentToken.tokenStr.equals("while"))
-                            return whileStmt(bExec);
+                        {
+                            ResultValue res =  whileStmt(bExec);
+                            res.type = Token.VOID;
+                            return res;
+                        }
                     case Token.END:
                         // end token so return
                         return new ResultValue("", Token.END
@@ -452,7 +460,7 @@ public class Parser
         if (!resCond.terminatingStr.equals("endif") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endif;' FOR 'if' EXPRESSION");
 
-        return new ResultValue("", Token.END, ResultValue.primitive, "endif");
+        return new ResultValue("", Token.END, ResultValue.primitive, "if");
     }
 
     /**
@@ -506,10 +514,6 @@ public class Parser
             {// did the condition return true?
                 resCond = statementsWhile(true);
 
-                // did we execute an if statement?
-                //while (resCond.terminatingStr.equals("endif") || resCond.terminatingStr.equals("else"))
-                //    resCond = statements(true);
-
                 // did statements() end on an endwhile;?
                 if (! resCond.terminatingStr.equals("endwhile")
                    || !scan.nextToken.tokenStr.equals(";"))
@@ -524,8 +528,6 @@ public class Parser
 
             // expr() returned false, so skip ahead to the end of the while
             resCond = statementsWhile(false);
-            //while (resCond.terminatingStr.equals("endif") || resCond.terminatingStr.equals("else"))
-             //   resCond = statements(false);
         }
         else
         {// we are ignoring execution, so ignore conditional, true and false part
@@ -534,15 +536,15 @@ public class Parser
 
             // ignore statements
             resCond = statementsWhile(false);
-
-            // continue to ignore statements
-            //while (resCond.terminatingStr.equals("endif") || resCond.terminatingStr.equals("else"))
-            //    resCond = statements(false);
         }
 
         // did we have an endwhile;
         if (! resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
+
+        //scan.getNext();
+        //scan.currentToken.printToken();
+        //scan.nextToken.printToken();
 
         return new ResultValue("", Token.END, ResultValue.primitive, "endwhile");
     }
