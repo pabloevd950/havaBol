@@ -33,7 +33,6 @@ public class HavaBol
             // create scanner and parser objects
             Scanner scan = new Scanner(args[0], symbolTable);
             Parser parser = new Parser(symbolTable, storageManager, scan);
-
             // start parsing file
             while (scan.currentToken.primClassif != Token.EOF)
                 parser.statement(true);

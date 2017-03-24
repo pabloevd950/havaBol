@@ -6,6 +6,7 @@ package havabol;
   All errors and exceptions are thrown up to main and output to stderr from there.
  */
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import havabol.SymbolTable.STControl;
 import havabol.SymbolTable.STFunction;
 import havabol.SymbolTable.SymbolTable;
@@ -23,6 +24,10 @@ public class Scanner
     public int iColPos;                    // column position within the current text line
     public Token nextToken;                 // the token following the currentToken
     public String sourceFileNm;            // source code file name
+    public Boolean bShowToken = false;
+    public Boolean bShowExpr = false;
+    public Boolean bShowAssign = false;
+
 
     // private variables
     private ArrayList<String> sourceLineM;  // array list of source text lines
@@ -193,7 +198,6 @@ public class Scanner
                         token += '"';
                     else if (textCharM[iColPos+1] == '\'')
                         token += '\'';
-
                     // increment iColPos to the next char after the escape values
                     iColPos += 2;
                 }
@@ -202,6 +206,7 @@ public class Scanner
             }
             // save Token attribute type as a string and advance cursor position away from quotation mark
             iColPos++;
+            token = "\""+ token + "\"";
             nextToken.subClassif = Token.STRING;
         }
         else if (delimiters.indexOf((textCharM[iColPos])) >= 0)
@@ -220,7 +225,13 @@ public class Scanner
             }
 
         // determine token classification
-        if (operator.contains(token) || operations.contains(token))//bridget was here
+        if (token.equals("debug"))
+        {
+            //token is a debug
+            System.out.println("debug");
+            nextToken.primClassif = Token.DEBUG;
+        }
+        else if (operator.contains(token) || operations.contains(token))//bridget was here
             // token is an operator
             nextToken.primClassif = Token.OPERATOR;
         else if (separator.contains(token))
@@ -280,7 +291,9 @@ public class Scanner
             else if (entry.definedBy == Token.USER)
                 nextToken.subClassif = Token.USER;
         }
-
+        if(nextToken.subClassif == Token.STRING){
+            token = token.substring(1, token.length() - 1);
+        }
         // set nextToken to the token built and return the current token string
         nextToken.tokenStr = token;
 
@@ -289,6 +302,13 @@ public class Scanner
         //System.out.println("NEXT");
         //nextToken.printToken();
         //System.out.println();
+        if(bShowToken)
+        {
+            System.out.println("\t\t...");
+            currentToken.printToken();
+            //If only want one , uncomment line below
+            // bShowToken = false;
+        }
 
         return currentToken.tokenStr;
     }

@@ -69,6 +69,75 @@ public class Parser
             case Token.SEPARATOR:
             case Token.EOF:
                 break;
+            case Token.DEBUG:
+                System.out.println("debugger call");
+                switch (scan.getNext())
+                {
+                    case "Token":
+                        scan.currentToken.primClassif = Token.DEBUG;
+                        switch (scan.getNext())
+                        {
+                            case "on":
+                                scan.currentToken.primClassif = Token.DEBUG;
+                                if (!scan.getNext().equals(";"))
+                                    error("MISSING ';'");
+                                scan.bShowToken = true;
+                                break;
+                            case "off":
+                                scan.currentToken.primClassif = Token.DEBUG;
+                                if (!scan.getNext().equals(";"))
+                                    error("MISSING ';'");
+                                scan.bShowToken = false;
+                                break;
+                            default:
+                                error("ERROR: HAS TO BE EITHER 'on' OR 'off' ");
+                        }
+                        break;
+                    case "Expr":
+                        scan.currentToken.primClassif = Token.DEBUG;
+                        System.out.println("Expr");
+                        switch (scan.getNext())
+                        {
+                            case "on":
+                                scan.currentToken.primClassif = Token.DEBUG;
+                                if (!scan.getNext().equals(";"))
+                                    error("MISSING ';'");
+                                scan.bShowExpr = true;
+                                break;
+                            case "off":
+                                scan.currentToken.primClassif = Token.DEBUG;
+                                if (!scan.getNext().equals(";"))
+                                    error("MISSING ';'");
+                                scan.bShowExpr = false;
+                                break;
+                            default:
+                                error("ERROR: HAS TO BE EITHER 'on' OR 'off' ");
+                        }
+                        break;
+                    case "Assign":
+                        scan.currentToken.primClassif = Token.DEBUG;
+                        System.out.println("Assign");
+                        switch (scan.getNext())
+                        {
+                            case "on":
+                                scan.currentToken.primClassif = Token.DEBUG;
+                                if (!scan.getNext().equals(";"))
+                                    error("MISSING ';' ");
+                                scan.bShowAssign = true;
+                                break;
+                            case "off":
+                                scan.currentToken.primClassif = Token.DEBUG;
+                                if (!scan.getNext().equals(";"))
+                                    error("MISSING ';'");
+                                scan.bShowAssign = false;
+                                break;
+                            default:
+                                error("ERROR: HAS TO BE EITHER 'on' OR 'off' ");
+                        }
+                    default:
+                        error("ERROR: HAS TO BE EITHER 'Expr', 'Assign', OR 'Token' AND FOUND " + scan.currentToken.tokenStr);
+                }
+                break;
             // should never hit this, otherwise MAJOR FUCK UP
             default:
                 error("INTERNAL ERROR CAUSED BY %s", scan.currentToken.tokenStr);
@@ -215,6 +284,11 @@ public class Parser
 
         // assign value to the variable and return result value
         storageManager.putEntry(variableStr, resExpr);
+        if(scan.bShowAssign)
+        {
+            System.out.println("\t\t..");
+            System.out.print("Variable Name: " + variableStr + " Value " + resExpr.value);
+        }
         return resExpr;
     }
 
@@ -272,7 +346,12 @@ public class Parser
         //Get operator. If it grabs a ';' return the single value
         String operator = scan.getNext();
         if(operator.equals(";")){
-             res = new ResultValue(firstResValue.value, firstResValue.type,1,";");
+            res = new ResultValue(firstResValue.value, firstResValue.type,1,";");
+            if(scan.bShowExpr)
+            {
+                System.out.println("\t\t...");
+                System.out.print("Result Value: " + res.value);
+            }
             return res;
         }
         //If not check if the next one is negative
@@ -346,6 +425,11 @@ public class Parser
 
         //Final result value returned for a double operand operation
         res = new ResultValue(res.value, res.type,1,terminatingStr);
+        if(scan.bShowExpr)
+        {
+            System.out.println("\t\t...");
+            System.out.print("Result Value: " + res.value);
+        }
         //System.out.println("Res type " + res.type + " Current type " + res.type + " Value " + res.value + " termStr is " + terminatingStr);
         return res;
     }
@@ -557,6 +641,7 @@ public class Parser
      */
     private ResultValue function(Boolean bExec) throws Exception
     {
+
         switch (scan.currentToken.subClassif)
         {// determine if function is built in, or user defined
             case Token.BUILTIN:

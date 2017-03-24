@@ -16,7 +16,8 @@ public class Token
     public static final int FUNCTION = 4;   // TBD
     public static final int CONTROL = 5;    // TBD
     public static final int EOF = 6;        // EOF encountered
-    public static final int RT_PAREN = 7;   // TBD
+    public static final int DEBUG = 7;   // TBD
+    public static final int RT_PAREN = 8;   // TBD
     // Constants for OPERAND's subClassif
     public static final int IDENTIFIER = 1;
     public static final int INTEGER    = 2; // integer constant
@@ -42,8 +43,9 @@ public class Token
                     , "FUNCTION"    // 4
                     , "CONTROL"     // 5
                     , "EOF"         // 6
+                    , "DEBUG"       // 7
             };
-    public static final int PRIM_CLASS_MAX = 6;
+    public static final int PRIM_CLASS_MAX = 7;
     // array of subClassif string values for the constants
     public static final String[] strSubClassifM =
             {"Undefined"
