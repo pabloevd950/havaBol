@@ -128,8 +128,8 @@ public class Utilities
         switch (firstOp.type){
             case Token.INTEGER:
                 temp = Utilities.toInteger(parser , secondOp);
-                System.out.println(firstOp.value);
-                System.out.println(parser.scan.iSourceLineNr);
+                //System.out.println(firstOp.value);
+                //System.out.println(parser.scan.iSourceLineNr);
                 if(firstOp.type == Token.FLOAT){
                     Double.parseDouble(firstOp.value);
                      x = Integer.parseInt(firstOp.value);
