@@ -287,6 +287,7 @@ public class Parser
             break;
             case Token.FLOAT:
                 resExpr.value = Utilities.toFloat(this, resExpr);
+
                 resExpr.type = Token.FLOAT;
                 //System.out.println(resExpr.value + " PENIS " + scan.iSourceLineNr);
 

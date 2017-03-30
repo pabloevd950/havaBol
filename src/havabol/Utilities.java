@@ -125,6 +125,7 @@ public class Utilities
         ResultValue resTemp = res;
         String temp;
         int x;
+       // System.out.println(firstOp.value + " " + secondOp.value);
         switch (firstOp.type){
             case Token.INTEGER:
                 temp = Utilities.toInteger(parser , secondOp);
@@ -565,7 +566,7 @@ public class Utilities
     {
         double temp;
         try {
-            temp = (int)Double.parseDouble(value.value);
+            temp = Double.parseDouble(value.value);
             return Double.toString(temp);
             //value.value = Double.parseDouble(value.value);
             //System.out.println(Double.parseDouble(value.value) + "IN toFloat");
