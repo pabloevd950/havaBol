@@ -3,6 +3,7 @@ package havabol;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
+import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.transform.Result;
 import java.util.ArrayList;
 import java.util.Stack;
@@ -70,7 +71,6 @@ public class Parser
             case Token.EOF:
                 break;
             case Token.DEBUG:
-                System.out.println("debugger call");
                 switch (scan.getNext())
                 {
                     case "Token":
@@ -95,7 +95,6 @@ public class Parser
                         break;
                     case "Expr":
                         scan.currentToken.primClassif = Token.DEBUG;
-                        System.out.println("Expr");
                         switch (scan.getNext())
                         {
                             case "on":
@@ -116,13 +115,13 @@ public class Parser
                         break;
                     case "Assign":
                         scan.currentToken.primClassif = Token.DEBUG;
-                        System.out.println("Assign");
+
                         switch (scan.getNext())
                         {
                             case "on":
                                 scan.currentToken.primClassif = Token.DEBUG;
                                 if (!scan.getNext().equals(";"))
-                                    error("MISSING ';' ");
+                                error("MISSING ';' ");
                                 scan.bShowAssign = true;
                                 break;
                             case "off":
@@ -134,6 +133,7 @@ public class Parser
                             default:
                                 error("ERROR: HAS TO BE EITHER 'on' OR 'off' ");
                         }
+                        break;
                     default:
                         error("ERROR: HAS TO BE EITHER 'Expr', 'Assign', OR 'Token' AND FOUND " + scan.currentToken.tokenStr);
                 }
@@ -226,13 +226,13 @@ public class Parser
         ResultValue res = null;
         ResultValue resExpr;
         String variableStr;
+        int leftType = storageManager.getEntry(scan.currentToken.tokenStr).type;
 
         // make sure current token is an identifier to properly assign
         if (scan.currentToken.subClassif != Token.IDENTIFIER)
             error("ERROR: %s IS NOT A VALID TARGET VARIABLE FOR ASSIGNMENT"
                                                     , scan.currentToken.tokenStr);
         variableStr = scan.currentToken.tokenStr;
-
         // advance to the next token
         scan.getNext();
 
@@ -245,7 +245,7 @@ public class Parser
         {
             case "=":
                 if (bExec){
-                    ResultValue res1 = assign(variableStr, expr());
+                    ResultValue res1 = assign(variableStr, expr(), leftType);
                     //System.out.println("Variable name " + variableStr +  " Value is " + res1.value + " Type is " + res1.type);
                     return res1;
                 }
@@ -275,9 +275,31 @@ public class Parser
      * @return
      * @throws Exception
      */
-    private ResultValue assign(String variableStr, ResultValue resExpr) throws Exception
+    private ResultValue assign(String variableStr, ResultValue resExpr, int type) throws Exception
     {
         // get entry from storage manager and make sure it is in the table
+        //System.out.println(resExpr.value + "Coming into switch");
+
+        switch (type){
+
+            case Token.INTEGER:
+                 resExpr.value = Utilities.toInteger(this, resExpr);
+            break;
+            case Token.FLOAT:
+                //resExpr.value = Utilities.toFloat(this, resExpr);
+                System.out.println(resExpr.value + " PENIS " + scan.iSourceLineNr);
+
+            break;
+            case Token.BOOLEAN:
+                resExpr.value = Utilities.toBoolean(this, resExpr);
+            break;
+            case Token.STRING:
+            break;
+            default:
+        }
+       // System.out.println("Leaving switch");
+       // System.out.println(resExpr.value);
+
         ResultValue res = storageManager.getEntry(variableStr);
         if(res == null)
             error("ERROR: %s HAS NOT BEEN DECLARED YET", variableStr);
@@ -286,8 +308,8 @@ public class Parser
         storageManager.putEntry(variableStr, resExpr);
         if(scan.bShowAssign)
         {
-            System.out.println("\t\t..");
-            System.out.print("Variable Name: " + variableStr + " Value " + resExpr.value);
+            System.out.print("\t\t...");
+            System.out.println("Variable Name: " + variableStr + " Value: " + resExpr.value);
         }
         return resExpr;
     }
@@ -299,7 +321,8 @@ public class Parser
      */
     public ResultValue expr() throws Exception
     {
-        //System.out.println("EXPR STATEMENT CALLED");
+        //System.out.println("EXPR STATEMENT CALLED  at line " + scan.iSourceLineNr);
+        //System.out.println(scan.currentToken.tokenStr);
         //Result value for operands
         ResultValue firstResValue, secondResValue;
         //Result value for result
@@ -428,8 +451,8 @@ public class Parser
         res = new ResultValue(res.value, res.type,1,terminatingStr);
         if(scan.bShowExpr)
         {
-            System.out.println("\t\t...");
-            System.out.print("Result Value: " + res.value);
+            System.out.print("\t\t...");
+            System.out.println("Result Value: " + res.value);
         }
         //System.out.println("Res type " + res.type + " Current type " + res.type + " Value " + res.value + " termStr is " + terminatingStr);
         return res;
@@ -642,7 +665,7 @@ public class Parser
      */
     private ResultValue function(Boolean bExec) throws Exception
     {
-
+        ResultValue res;
         switch (scan.currentToken.subClassif)
         {// determine if function is built in, or user defined
             case Token.BUILTIN:
@@ -658,33 +681,60 @@ public class Parser
                     Token previousToken = scan.currentToken;
                     while ( !scan.getNext().equals(")"))
                     {
-                        switch (scan.currentToken.subClassif)
-                        {
-                            case Token.STRING:
-                            case Token.INTEGER:
-                            case Token.FLOAT:
-                            case Token.BOOLEAN:
-                            case Token.DATE:
-                                printLine += scan.currentToken.tokenStr;
-                                break;
-                            case Token.IDENTIFIER:
-                                scan.setTo(previousToken);
-                                ResultValue res = expr();
-                                printLine += res.value;
-                                break;
-                            default:
-                                if (scan.currentToken.tokenStr.equals(","))
-                                    printLine += " ";
-                                else if (scan.currentToken.primClassif == Token.OPERATOR)
-                                {
-                                    scan.setTo(previousToken);
-                                    ResultValue resExpr = expr();
-                                    printLine += resExpr.value;
-                                }
-                                else if (scan.currentToken.tokenStr.equals(";"))
-                                    error("ERROR: EXPECTED ')' BEFORE ';' TOKEN %s"
-                                    , scan.currentToken.tokenStr);
+                        if(scan.currentToken.subClassif <= 5 && scan.currentToken.subClassif > 0){
+                            scan.setTo(previousToken);
+                            res = expr();
+                            printLine += res.value;
                         }
+                        else if (scan.currentToken.tokenStr.equals(","))
+                            printLine += " ";
+                        else if (scan.currentToken.primClassif == Token.OPERATOR)
+                        {
+                            scan.setTo(previousToken);
+                            ResultValue resExpr = expr();
+                            printLine += resExpr.value;
+                        }
+                        else if (scan.currentToken.tokenStr.equals(";"))
+                            error("ERROR: EXPECTED ')' BEFORE ';' TOKEN %s"
+                                    , scan.currentToken.tokenStr);
+
+//                        switch (scan.currentToken.subClassif)
+//                        {
+//                            case Token.STRING:
+//                            case Token.INTEGER:
+//                                scan.setTo(previousToken);
+//                                //System.out.println(scan.currentToken.tokenStr + "IN");
+//                                res = expr();
+//                                //System.out.println(scan.currentToken.tokenStr + "OUT");
+//
+//                                printLine += res.value;
+//                                break;
+//                            case Token.FLOAT:
+//                            case Token.BOOLEAN:
+//                            case Token.DATE:
+//                                printLine += scan.currentToken.tokenStr;
+//                                break;
+//                            case Token.IDENTIFIER:
+//                                scan.setTo(previousToken);
+//                                //System.out.println(scan.currentToken.tokenStr + "IN");
+//                                res = expr();
+//                                //System.out.println(scan.currentToken.tokenStr + "OUT");
+//
+//                                printLine += res.value;
+//                                break;
+//                            default:
+//                                if (scan.currentToken.tokenStr.equals(","))
+//                                    printLine += " ";
+//                                else if (scan.currentToken.primClassif == Token.OPERATOR)
+//                                {
+//                                    scan.setTo(previousToken);
+//                                    ResultValue resExpr = expr();
+//                                    printLine += resExpr.value;
+//                                }
+//                                else if (scan.currentToken.tokenStr.equals(";"))
+//                                    error("ERROR: EXPECTED ')' BEFORE ';' TOKEN %s"
+//                                    , scan.currentToken.tokenStr);
+//                        }
                         previousToken = scan.currentToken;
                     }
 

@@ -122,11 +122,21 @@ public class Utilities
 
     public static ResultValue mul(Parser parser, ResultValue firstOp, ResultValue secondOp)throws ParserException{
         ResultValue res = null;
+        ResultValue resTemp = res;
         String temp;
+        int x;
         switch (firstOp.type){
             case Token.INTEGER:
                 temp = Utilities.toInteger(parser , secondOp);
-                int x = Integer.parseInt(firstOp.value);
+                System.out.println(firstOp.value);
+                System.out.println(parser.scan.iSourceLineNr);
+                if(firstOp.type == Token.FLOAT){
+                    Double.parseDouble(firstOp.value);
+                     x = Integer.parseInt(firstOp.value);
+                }
+                else
+                     x = Integer.parseInt(firstOp.value);
+//                int x = Integer.parseInt(toInteger(parser, resTemp));
                 int y = Integer.parseInt(temp);
                 int result = x * y;
                 res = new ResultValue(String.valueOf(result), firstOp.type);
@@ -523,7 +533,7 @@ public class Utilities
      * @return
      * @throws ParserException - Value can not be parsed as a Bool
      */
-    private static String toBoolean(Parser parser, ResultValue value) throws ParserException
+    public static String toBoolean(Parser parser, ResultValue value) throws ParserException
     {
 
         if (value.value.equals("T"))
@@ -551,11 +561,16 @@ public class Utilities
      * @return
      * @throws ParserException - Value can not be parsed as a Float
      */
-    private static String toFloat(Parser parser, ResultValue value) throws ParserException
+    public static String toFloat(Parser parser, ResultValue value) throws ParserException
     {
+        double temp;
         try {
-            Double.parseDouble(value.value);
-            return value.value;
+            temp = (int)Double.parseDouble(value.value);
+            return Double.toString(temp);
+            //value.value = Double.parseDouble(value.value);
+            //System.out.println(Double.parseDouble(value.value) + "IN toFloat");
+            //System.out.println(value.value);
+            //return value.value;
         } catch (Exception e)
         {
             // Do nothing

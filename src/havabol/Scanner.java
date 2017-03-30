@@ -228,7 +228,6 @@ public class Scanner
         if (token.equals("debug"))
         {
             //token is a debug
-            System.out.println("debug");
             nextToken.primClassif = Token.DEBUG;
         }
         else if (operator.contains(token) || operations.contains(token))//bridget was here
@@ -304,7 +303,7 @@ public class Scanner
         //System.out.println();
         if(bShowToken)
         {
-            System.out.println("\t\t...");
+            System.out.print("\t\t...");
             currentToken.printToken();
             //If only want one , uncomment line below
             // bShowToken = false;
