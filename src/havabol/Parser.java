@@ -3,21 +3,28 @@ package havabol;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
-import javax.xml.bind.SchemaOutputResolver;
-import javax.xml.transform.Result;
-import java.util.ArrayList;
-import java.util.Stack;
-
-/**
- * Created by tkb442 on 3/3/17.
+/*
+ * This is the simple Parser class for the HavaBol programming language.
+ * All errors and exceptions are thrown up to the calling method and output to stderr from there.
  */
 public class Parser
 {
-
+    // public values to help keep track of our havabol objects
     public SymbolTable symbolTable;
     public StorageManager storageManager;
     public Scanner scan;
 
+    /**
+     * Parser constructor that takes in the symbolTable, storageManager, and Scanner
+     * objects and saves them to our class.
+     * <p>
+     * These objects will be used for the rest of the class in order to parse our source file
+     * and interpret the code.
+     *
+     * @param symbolTable object that contains symbol definitions for our programming language
+     * @param storageManager object that contains all user specified variables and their values and types
+     * @param scan object that contains our source file and will aid in parsing the file
+     */
     public Parser(SymbolTable symbolTable, StorageManager storageManager, Scanner scan)
     {
         this.symbolTable = symbolTable;
@@ -25,18 +32,30 @@ public class Parser
         this.scan = scan;
     }
 
+    /**
+     * This method gets the next token from the source file line using Scanner::getNext().
+     * Then it goes through a switch statement to determine what to do with the given token.
+     * <p>
+     * Returns resultValues returned to the method by the helper functions provided to it.
+     *
+     * @param bExec Tells the statement function whether we need to execute the code we find or
+     *              just look at it
+     * @return A generic ResultValue with all fields VOID if the bottom is hit, otherwise returns
+     *         the calculated ResultValue
+     * @throws Exception generic Exception type to handle any processing errors
+     */
     public ResultValue statement(Boolean bExec) throws Exception
     {
-        //System.out.println("STATEMENT CALLED WITH BEXEC " + bExec);
         // advance token
         scan.getNext();
-        //scan.currentToken.printToken();
 
+        // determine what to do with the current token
         switch (scan.currentToken.primClassif)
-        {
+        {// CONTROL, OPERAND, FUNCTION, OPERATOR, SEPARATOR, EOF, DEBUG, or defaults to error
             case Token.CONTROL:
                 switch (scan.currentToken.subClassif)
-                {
+                { // control token found, so determine the sub type for proper execution
+                  // DECLARE, FLOW, END, defaults to error
                     case Token.DECLARE:
                         return declareStmt(bExec);
                     case Token.FLOW:
@@ -71,12 +90,13 @@ public class Parser
             case Token.EOF:
                 break;
             case Token.DEBUG:
-                switch (scan.getNext())
-                {
+                switch ( scan.getNext() )
+                {// debug token found, determine which to change
                     case "Token":
                         scan.currentToken.primClassif = Token.DEBUG;
+
                         switch (scan.getNext())
-                        {
+                        {// are we turning on or off
                             case "on":
                                 scan.currentToken.primClassif = Token.DEBUG;
                                 if (!scan.getNext().equals(";"))
@@ -95,8 +115,9 @@ public class Parser
                         break;
                     case "Expr":
                         scan.currentToken.primClassif = Token.DEBUG;
+
                         switch (scan.getNext())
-                        {
+                        {// are we turning on or off
                             case "on":
                                 scan.currentToken.primClassif = Token.DEBUG;
                                 if (!scan.getNext().equals(";"))
@@ -117,7 +138,7 @@ public class Parser
                         scan.currentToken.primClassif = Token.DEBUG;
 
                         switch (scan.getNext())
-                        {
+                        {// are we turning on or off
                             case "on":
                                 scan.currentToken.primClassif = Token.DEBUG;
                                 if (!scan.getNext().equals(";"))
@@ -135,7 +156,8 @@ public class Parser
                         }
                         break;
                     default:
-                        error("ERROR: HAS TO BE EITHER 'Expr', 'Assign', OR 'Token' AND FOUND " + scan.currentToken.tokenStr);
+                        error("ERROR: HAS TO BE EITHER 'Expr', 'Assign', OR 'Token' " +
+                                "                       AND FOUND " + scan.currentToken.tokenStr);
                 }
                 break;
             // should never hit this, otherwise MAJOR FUCK UP
@@ -146,16 +168,19 @@ public class Parser
     }
 
     /**
+     * This method is called when ever a Control Declare token is encountered.
+     * It will determine the type and assign it to the next token's result value
+     * <p>
+     * This function will also allow havabol to support declaring and initializing on
+     * the same line.
      *
-     * @return
-     * @throws Exception
-     * @param bExec
+     * @param bExec Tells the statement function whether we need to execute the code we find or
+     *              just look at it
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
      */
     public ResultValue declareStmt(Boolean bExec) throws Exception
     {
-        //System.out.println("Declare statement here with " + scan.currentToken.tokenStr );
-        //System.out.println("BEXEC IS " + bExec);
-        
         int structure = -1;
         int dclType = -1;
 
@@ -174,7 +199,7 @@ public class Parser
                 dclType = Token.STRING;
                 break;
             default:
-                error("ERROR: INVALID DATA TYPE %s", scan.currentToken.tokenStr);
+                error("ERROR: INVALID DECLARE DATA TYPE %s", scan.currentToken.tokenStr);
         }
 
         // advance to the next token
@@ -182,7 +207,7 @@ public class Parser
 
         // the next token should of been a variable name, otherwise error
         if(scan.currentToken.primClassif != Token.OPERAND)
-            error("ERROR: %s SHOULD BE AN OPERAND", scan.currentToken.tokenStr);
+            error("ERROR: %s SHOULD BE AN OPERAND FOR DECLARATION", scan.currentToken.tokenStr);
 
         if (bExec)
         {// we are executing, not ignoring
@@ -200,7 +225,7 @@ public class Parser
             return assignStmt(bExec);
         // else check if it is an operator, because that is an error
         else if (scan.nextToken.primClassif == Token.OPERATOR)
-            error("ERROR: CANNOT PERFORM %s OPERATION BEFORE INITIALIZATION"
+            error("ERROR: DECLARE CANNOT PERFORM %s OPERATION BEFORE INITIALIZATION"
                         , scan.nextToken.tokenStr);
         // else check for statement terminating ';'
         else if(! scan.getNext().equals(";"))
@@ -211,20 +236,25 @@ public class Parser
     }
 
     /**
+     * This method is called when ever an operand or a '=' is encountered.
+     * It will determine the value and assign it to the specified operand
+     * <p>
+     * Also handles +=, -=, *=, /=
      *
-     * @param bExec
-     * @return
-     * @throws Exception
+     * @param bExec Tells the statement function whether we need to execute the code we find or
+     *              just look at it
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
      */
     public ResultValue assignStmt(Boolean bExec) throws Exception
     {
-        //System.out.println("Assignment statement starts here for line " + scan.currentToken.tokenStr);
-        //System.out.println("BEXEC IS " +bExec);
-
+        // not used rn
         Numeric nOp2;  // numeric value of second operand
         Numeric nOp1;  // numeric value of first operand
         ResultValue res = null;
         ResultValue resExpr;
+
+        // used
         String variableStr;
         int leftType = storageManager.getEntry(scan.currentToken.tokenStr).type;
 
@@ -233,20 +263,21 @@ public class Parser
             error("ERROR: %s IS NOT A VALID TARGET VARIABLE FOR ASSIGNMENT"
                                                     , scan.currentToken.tokenStr);
         variableStr = scan.currentToken.tokenStr;
+
         // advance to the next token
         scan.getNext();
 
         // make sure current token is an operator
         if (scan.currentToken.primClassif != Token.OPERATOR)
-            error("ERROR: EXPECTED AN OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
+            error("ERROR: ASSIGN EXPECTED AN OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
 
         // determine what kind of operation to execute
         switch (scan.currentToken.tokenStr)
         {
             case "=":
-                if (bExec){
+                if (bExec)
+                {
                     ResultValue res1 = assign(variableStr, expr(), leftType);
-                    //System.out.println("Variable name " + variableStr +  " Value is " + res1.value + " Type is " + res1.type);
                     return res1;
                 }
                 else
@@ -260,7 +291,7 @@ public class Parser
             case "^=":
                 break;
             default:
-                error("expected assignment operator");
+                error("ERROR: EXPECTED ASSIGNMENT OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
         }
 
         // if we ever hit this line, bExec is false
@@ -269,144 +300,163 @@ public class Parser
     }
 
     /**
+     * This method will assign the ResultValue object returned by expr() to the
+     * variable string specified. The variable string will be the key.
+     * <p>
+     * Makes sure that the variable has been declared to a type already.
      *
-     * @param variableStr
-     * @param resExpr
-     * @return
-     * @throws Exception
+     * @param variableStr contains the string of the variable we are assigning a value to
+     * @param resExpr the ResultValue object which contains the value to assign
+     * @param type Token type which we will be assigning
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
      */
     private ResultValue assign(String variableStr, ResultValue resExpr, int type) throws Exception
     {
         // get entry from storage manager and make sure it is in the table
-        //System.out.println(resExpr.value + "Coming into switch");
-
-        switch (type){
-
-            case Token.INTEGER:
-                 resExpr.value = Utilities.toInteger(this, resExpr);
-            break;
-            case Token.FLOAT:
-                resExpr.value = Utilities.toFloat(this, resExpr);
-
-                resExpr.type = Token.FLOAT;
-                //System.out.println(resExpr.value + " PENIS " + scan.iSourceLineNr);
-
-            break;
-            case Token.BOOLEAN:
-                resExpr.value = Utilities.toBoolean(this, resExpr);
-            break;
-            case Token.STRING:
-            break;
-            default:
-        }
-       // System.out.println("Leaving switch");
-       // System.out.println(resExpr.value);
-
         ResultValue res = storageManager.getEntry(variableStr);
         if(res == null)
-            error("ERROR: %s HAS NOT BEEN DECLARED YET", variableStr);
+            error("ERROR: ASSIGN REQUIRES THAT '%s' BE DECLARED", variableStr);
+
+        switch (type)
+        {// determine the type of value to assign to variable
+            case Token.INTEGER:
+                 resExpr.value = Utilities.toInteger(this, resExpr);
+                break;
+            case Token.FLOAT:
+                resExpr.value = Utilities.toFloat(this, resExpr);
+                resExpr.type = Token.FLOAT;
+                break;
+            case Token.BOOLEAN:
+                resExpr.value = Utilities.toBoolean(this, resExpr);
+                break;
+            case Token.STRING:
+                break;
+            default:
+                error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
+        }
 
         // assign value to the variable and return result value
         storageManager.putEntry(variableStr, resExpr);
+
+        // check for debug on
         if(scan.bShowAssign)
         {
             System.out.print("\t\t...");
             System.out.println("Variable Name: " + variableStr + " Value: " + resExpr.value);
         }
+
         return resExpr;
     }
 
     /**
+     * This method will evaluate an expression and return a ResultValue object
+     * that contains the final result.
+     * <p>
+     * Right now, this only handles single operation expressions
      *
-     * @return
-     * @throws Exception
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
      */
     public ResultValue expr() throws Exception
     {
-        //System.out.println("EXPR STATEMENT CALLED  at line " + scan.iSourceLineNr);
-        //System.out.println(scan.currentToken.tokenStr);
         //Result value for operands
         ResultValue firstResValue, secondResValue;
+
         //Result value for result
         ResultValue res = new ResultValue();
 
+        // values for first and second operand
         int firstOperandSubClassif;
+        String firstValue = "";
         int secondOperandSubClassif;
-        String terminatingStr;
-        String firstValue ="";
-        String secondValue ="";
+        String secondValue = "";
+
+        // helper variables for operation
         Boolean isNegative = false;
+        String operator;
 
+        // advance token to the operand
+        scan.getNext();
 
-        scan.getNext(); // get the operand
-
-        //scan.currentToken.printToken();
-        //scan.nextToken.printToken();
-
-
-        //Check if the first operand is negative
+        // check if first operand is negative
         if (scan.currentToken.tokenStr.equals("-"))
         {
             isNegative = true;
             scan.getNext();
         }
-        //Check if it is an identifier or a constant
-        //If identifier get its result value
+
+        /* pablo you could probably use the same expression code but change it a little
+         * to do complex expressions. I'd try to implement a while loop that goes until
+         * base case "; , )" are encountered. Same way you determine if we have a single
+         * value. Just seems like a good suggestion in order to not change your code that
+         * much.
+         */
+        // save first operand attributes
         firstOperandSubClassif = scan.currentToken.subClassif;
         firstValue = scan.currentToken.tokenStr;
+
+        // check if operand is an identifier or a constant
         if(firstOperandSubClassif == Token.IDENTIFIER)
-        {
+            // if identifier get its result value
             firstResValue = storageManager.getEntry(firstValue);
-        }
-        else
-        {
+        else// create a new result value object
             firstResValue = new ResultValue(scan.currentToken.tokenStr, scan.currentToken.subClassif);
-        }
-        //If it was negative make it negative
-        if(isNegative == true)
-        {
+
+        // check if first operand is supposed to be negative
+        if(isNegative)
+        {// supposed to be negative so change the sign
             firstResValue.value = Utilities.toNegative(this, firstResValue);
             isNegative = false;
         }
-        //Get operator. If it grabs a ';' return the single value
-        String operator = scan.nextToken.tokenStr;
-        if(operator.equals(";") || operator.equals(",") || operator.equals(")")){
-            res = new ResultValue(firstResValue.value, firstResValue.type,1,operator);
+
+        // determine operator
+        operator = scan.nextToken.tokenStr;
+
+        if(operator.equals(";") || operator.equals(",") || operator.equals(")"))
+        { // assign is done, so return the single value
+            // check for debug on
             if(scan.bShowExpr)
             {
                 System.out.print("\t\t...");
                 System.out.println("Result Value: " + res.value);
             }
-            return res;
+
+            return new ResultValue(firstResValue.value, firstResValue.type,1, operator);
         }
+
+        // advance once to the operator and then once more to the token after operator
         scan.getNext();
-        //If not check if the next one is negative
         scan.getNext();
+
+        // check if second operator is negative
         if (scan.currentToken.tokenStr.equals("-"))
         {
             isNegative = true;
             scan.getNext();
         }
-        //Check if the second operand is identifier or constant
+
+        // save second operand attributes
         secondOperandSubClassif = scan.currentToken.subClassif;
         secondValue = scan.currentToken.tokenStr;
+
+        // check if second operand is identifier or constant
         if(secondOperandSubClassif == Token.IDENTIFIER)
-        {
+            // if identifier get its result value
             secondResValue = storageManager.getEntry(secondValue);
-        }
-        else
-        {
+        else// create a new result value object
             secondResValue = new ResultValue(scan.currentToken.tokenStr, scan.currentToken.subClassif);
-        }
-        //If there was a unary minus apply it to the second operand
-        if(isNegative == true)
-        {
+
+        // check if second operand is supposed to be negative
+        if(isNegative)
+        {// if there was a unary minus, apply to the second operand
             secondResValue.value = Utilities.toNegative(this, secondResValue);
             isNegative = false;
         }
 
-        //Perform operarion based on operator
-        switch (operator){
+        // determine operation to perform
+        switch (operator)
+        {
             case "+":
                 res = Utilities.add(this, firstResValue, secondResValue);
                 break;
@@ -438,33 +488,34 @@ public class Parser
                 res = Utilities.isEqual(this, firstResValue, secondResValue);
                 break;
             case "!=":
-                res = Utilities.notEqalTo(this, firstResValue, secondResValue);
+                res = Utilities.notEqualTo(this, firstResValue, secondResValue);
                 break;
             default:
-                error("ERROR: '%s' IS NOT A VALID OPERATOR"
-                        , operator);
-
+                error("ERROR: '%s' IS NOT A VALID OPERATOR FOR EXPRESSION", operator);
         }
-        //Get terminating string
-        //terminatingStr = scan.nextToken.tokenStr;
-        terminatingStr = scan.nextToken.tokenStr;
 
-        //Final result value returned for a double operand operation
-        res = new ResultValue(res.value, res.type,1,terminatingStr);
+        // create final result value of expression to return
+        res = new ResultValue(res.value, res.type,1, scan.nextToken.tokenStr);
+
+        // check for debug on
         if(scan.bShowExpr)
         {
             System.out.print("\t\t...");
             System.out.println("Result Value: " + res.value);
         }
-        //System.out.println("Res type " + res.type + " Current type " + res.type + " Value " + res.value + " termStr is " + terminatingStr);
+
         return res;
     }
 
     /**
+     * This method is provided in order to skip to a specified position
+     * in the source file.
+     * <p>
+     * Handles EOF exception
      *
-     * @param start
-     * @param end
-     * @throws Exception
+     * @param start start string we are starting from, included more for error purposes
+     * @param end string literal we are looking for to terminate looping
+     * @throws Exception generic Exception type to handle any processing errors
      */
     public void skipTo(String start, String end) throws Exception
     {
@@ -472,49 +523,46 @@ public class Parser
         int iColPos = scan.currentToken.iColPos;
         int iSourceLineNr = scan.currentToken.iSourceLineNr;
 
+        // loop until we encounter EOF or the string literal we are looking for
         while (! scan.currentToken.tokenStr.equals(end)
                 && scan.currentToken.primClassif != Token.EOF)
             scan.getNext();
 
         if (scan.currentToken.primClassif == Token.EOF)
-        {// the while loop exited on an EOF, not a matching token
-            error("ERROR: LINE %d POSITION %d" +
-                            "\n\t%s DID NOT HAVE SEPARATOR, %s"
+            // the while loop exited on an EOF, not a matching token
+            error("ERROR: LINE %d POSITION %d" + "\n\t%s DID NOT HAVE SEPARATOR, %s"
                     , iSourceLineNr, iColPos, start, end);
-        }
 
         // we found a match, so we will return with no error
         return;
     }
 
     /**
+     * This method executes 'if' statements for HavaBol. It uses bExec and the
+     * ResultValue object returned from calling expression in order to determine
+     * if we are executing.
+     * <p>
+     * If we are not executing, we will still look over the lines to catch errors
      *
-     * @param bExec
-     * @return
-     * @throws Exception
+     * @param bExec Tells the statement function whether we need to execute the code we find or
+     *              just look at it
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
      */
     public ResultValue ifStmt(Boolean bExec) throws Exception
     {
-        //System.out.println("If statement here with BEXEC + " + bExec);
-
         ResultValue resCond;
 
         // do we need to evaluate the condition
         if (bExec)
         {// we are executing, not ignoring
-            // advance token and evaluate expression
-            //scan.getNext();
+            // evaluate expression
             resCond = expr();
 
-            //System.out.println(">>expr was " + resCond.value);
             // did the condition return true?
             if (resCond.value.equals("T"))
             {// condition returned true, execute statements on the true part
                 resCond = statementsIf(true);
-
-                // did we execute a while statement?
-                //while (resCond.terminatingStr.equals("endwhile"))
-                 //   resCond = statementsIf(true);
 
                 // what ended the statements after the true part? else of endif
                 if (resCond.terminatingStr.equals("else"))
@@ -527,10 +575,6 @@ public class Parser
             else
             {// condition returned false, ignore all statements after the if
                 resCond = statementsIf(false);
-
-                // did we execute a while statement?
-                //while (resCond.terminatingStr.equals("endwhile"))
-                //    resCond = statements(false);
 
                 // check for else
                 if (resCond.terminatingStr.equals("else"))
@@ -549,10 +593,6 @@ public class Parser
             // ignore true part
             resCond = statementsIf(false);
 
-            // did we execute a while statement?
-            //while (resCond.terminatingStr.equals("endwhile"))
-            //    resCond = statements(false);
-
             // if the statements terminated with an 'else', we need to parse statements
             if (resCond.terminatingStr.equals("else"))
             { // it is an else, so we need to skip statements
@@ -564,9 +604,7 @@ public class Parser
             }
         }
 
-        //scan.currentToken.printToken();
-
-        // did we have an endif; *this was after all the else checks
+        // did we have an 'endif;'?
         if (!resCond.terminatingStr.equals("endif") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endif;' FOR 'if' EXPRESSION");
 
@@ -574,15 +612,21 @@ public class Parser
     }
 
     /**
+     * This method is provided to Parser::ifStmt() in order to go through all lines in the
+     * 'if' statement until an 'endif' is encountered.
+     * <p>
+     * We will specifically check for an 'endwhile' so we know to keep going
      *
-     * @param bExec
-     * @return
-     * @throws Exception
+     * @param bExec Tells the statement function whether we need to execute the code we find or
+     *              just look at it
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
      */
     public ResultValue statementsIf(Boolean bExec) throws Exception
     {
         ResultValue result = statement(bExec);
 
+        // loop until we find an END token, only want "else" or "endif"
         while (result.type != Token.END || result.terminatingStr.equals("endwhile"))
             result = statement(bExec);
 
@@ -590,10 +634,22 @@ public class Parser
         return result;
     }
 
+    /**
+     * This method is provided to Parser::whileStmt() in order to go through all lines in the
+     * 'while' statement until a 'endwhile' is encountered.
+     * <p>
+     * We will specifically check for an 'else' or 'endif' so we know to keep going
+     *
+     * @param bExec Tells the statement function whether we need to execute the code we find or
+     *              just look at it
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
+     */
     public ResultValue statementsWhile(Boolean bExec) throws Exception
     {
         ResultValue result = statement(bExec);
 
+        // loop until we find an "endwhile"
         while (result.type != Token.END || (  result.terminatingStr.equals("endif")
                                            || result.terminatingStr.equals("else")))
             result = statement(bExec);
@@ -603,15 +659,19 @@ public class Parser
     }
 
     /**
+     * This method executes 'while' statements for HavaBol. It uses bExec and the
+     * ResultValue object returned from calling expression in order to determine
+     * if we keep executing.
+     * <p>
+     * If we are not executing, we will still look over the lines to catch errors
      *
-     * @param bExec
-     * @return
-     * @throws Exception
+     * @param bExec Tells the statement function whether we need to execute the code we find or
+     *              just look at it
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
      */
     public ResultValue whileStmt(Boolean bExec) throws Exception
     {
-        //System.out.println("While statement here");
-
         ResultValue resCond;
 
         // do we need to evaluate the condition
@@ -619,7 +679,9 @@ public class Parser
         {// we are executing, not ignoring
             Token whileToken = scan.currentToken;
 
+            // evaluate expression
             resCond = expr();
+
             while (resCond.value.equals("T"))
             {// did the condition return true?
                 resCond = statementsWhile(true);
@@ -652,22 +714,24 @@ public class Parser
         if (! resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
 
-        //scan.getNext();
-        //scan.currentToken.printToken();
-        //scan.nextToken.printToken();
-
         return new ResultValue("", Token.END, ResultValue.primitive, "endwhile");
     }
 
     /**
+     * This method is provided to Parser to execute HavaBol builtin and user
+     * defined functions.
+     * <p>
+     * function uses bExec in order to determine if we are executing or skipping.
      *
-     * @param bExec
-     * @return
-     * @throws Exception
+     * @param bExec Tells the statement function whether we need to execute the code we find or
+     *              just look at it
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
      */
     private ResultValue function(Boolean bExec) throws Exception
     {
         ResultValue res;
+
         switch (scan.currentToken.subClassif)
         {// determine if function is built in, or user defined
             case Token.BUILTIN:
@@ -681,33 +745,38 @@ public class Parser
                         error("ERROR: PRINT FUNCTION IS MISSING SEPARATOR '('");
 
                     Token previousToken = scan.currentToken;
-                    while ( !scan.getNext().equals(")"))
-                    {
-                        if(scan.currentToken.subClassif <= Token.STRING && scan.currentToken.subClassif > 0){
+                    while ( !scan.getNext().equals(")") )
+                    {// loop until we find a ')'
+                        if(scan.currentToken.subClassif <= Token.STRING && scan.currentToken.subClassif > 0)
+                        {
                             scan.setTo(previousToken);
                             res = expr();
                             printLine += res.value;
                         }
                         else if (scan.currentToken.tokenStr.equals(","))
+                            // ',' automatically add a space to our line
                             printLine += " ";
                         else if (scan.currentToken.primClassif == Token.OPERATOR)
-                        {
+                        {// operator encountered, evaluate and add to print string
                             scan.setTo(previousToken);
                             ResultValue resExpr = expr();
                             printLine += resExpr.value;
                         }
                         else if (scan.currentToken.tokenStr.equals(";"))
+                            // should not be encountered unless a ')' is missing
                             error("ERROR: EXPECTED ')' BEFORE ';' TOKEN %s"
                                     , scan.currentToken.tokenStr);
-
 
                         previousToken = scan.currentToken;
                     }
 
-                    if (bExec)
-                        System.out.println(printLine);
+                    // make sure we end on a ';'
                     if ( !scan.getNext().equals(";") )
                         error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
+
+                    // check if we are executing
+                    if (bExec)
+                        System.out.println(printLine);
                 }
                 else// for right now, any other function gets skipped
                     skipTo(scan.currentToken.tokenStr,";");
@@ -725,6 +794,16 @@ public class Parser
                         , ResultValue.primitive, scan.currentToken.tokenStr);
     }
 
+    /**
+     * This method is provided to the parser to simplify all processing errors encountered.
+     * <p>
+     * This method will call ParserException class in order to throw an error with a formatted
+     * message
+     *
+     * @param fmt string that contains the method and variable formats
+     * @param varArgs arguments to put in the format string
+     * @throws Exception generic Exception type to handle any processing errors
+     */
     public void error (String fmt, Object... varArgs) throws Exception
     {
         throw new ParserException(scan.currentToken.iSourceLineNr+1

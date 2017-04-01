@@ -1,24 +1,29 @@
 package havabol;
 
 
-/**
- * Created  on 3/3/17.
+/* Utilities class that will handle all basic operations for the havabol programming language.
+ * This class will deal with ResultValue objects and return every value as a string representation.
  */
 public class Utilities
 {
-
     /**
+     * This method is included in order to add two values
+     * <p>
+     * Method can add Int, floats, and strings.
      *
-     * @param parser
-     * @param firstOp
-     * @param secondOp
-     * @return
-     * @throws ParserException
+     * @param parser Parser object which we will reference for errors
+     * @param firstOp first operand we will perform operation on
+     * @param secondOp second operand we will perform operation on
+     * @return ResultValue object which contains the result and type of the operation
+     * @throws ParserException generic Exception type to handle any processing errors
      */
-    public static ResultValue add(Parser parser, ResultValue firstOp, ResultValue secondOp) throws ParserException{
+    public static ResultValue add(Parser parser, ResultValue firstOp, ResultValue secondOp) throws Exception
+    {
         ResultValue res = null;
         String temp;
-        switch (firstOp.type){
+
+        switch (firstOp.type)
+        {
             case Token.INTEGER:
                  temp = Utilities.toInteger(parser , secondOp);
                  int x = Integer.parseInt(firstOp.value);
@@ -36,26 +41,28 @@ public class Utilities
             case Token.STRING:
                 break;
             default:
-                throw new ParserException(parser.scan.iSourceLineNr
-                        , "Can not add to variable of type \'" + secondOp.type + "\' to variable of type \'" + firstOp.type + "\'"
-                        , parser.scan.sourceFileNm);
-
+                parser.error("ERROR: CANNOT ADD %s TO %s", secondOp.type, firstOp.type);
         }
         return res;
     }
 
     /**
+     * This method is included in order to subtract two values
+     * <p>
+     * Method can subtract ints and floats.
      *
-     * @param parser
-     * @param firstOp
-     * @param secondOp
-     * @return
-     * @throws ParserException
+     * @param parser Parser object which we will reference for errors
+     * @param firstOp first operand we will perform operation on
+     * @param secondOp second operand we will perform operation on
+     * @return ResultValue object which contains the result and type of the operation
+     * @throws ParserException generic Exception type to handle any processing errors
      */
-    public static ResultValue sub(Parser parser, ResultValue firstOp, ResultValue secondOp)throws ParserException{
+    public static ResultValue sub(Parser parser, ResultValue firstOp, ResultValue secondOp) throws Exception
+    {
         ResultValue res = null;
         String temp;
-        switch (firstOp.type){
+        switch (firstOp.type)
+        {
             case Token.INTEGER:
                 temp = Utilities.toInteger(parser , secondOp);
                 int x = Integer.parseInt(firstOp.value);
@@ -73,26 +80,28 @@ public class Utilities
             case Token.STRING:
                 break;
             default:
-                throw new ParserException(parser.scan.iSourceLineNr
-                        , "Can not subtract \'" + secondOp.type + "\' from variable of type \'" + firstOp.type + "\'"
-                        , parser.scan.sourceFileNm);
-
+                parser.error("ERROR: CANNOT SUBTRACT %s FROM %s", secondOp.type, firstOp.type);
         }
         return res;
     }
 
     /**
+     * This method is included in order to divide two values
+     * <p>
+     * Method can divide Int and floats.
      *
-     * @param parser
-     * @param firstOp
-     * @param secondOp
-     * @return
-     * @throws ParserException
+     * @param parser Parser object which we will reference for errors
+     * @param firstOp first operand we will perform operation on
+     * @param secondOp second operand we will perform operation on
+     * @return ResultValue object which contains the result and type of the operation
+     * @throws ParserException generic Exception type to handle any processing errors
      */
-    public static ResultValue div(Parser parser, ResultValue firstOp, ResultValue secondOp)throws ParserException{
+    public static ResultValue div(Parser parser, ResultValue firstOp, ResultValue secondOp) throws Exception
+    {
         ResultValue res = null;
         String temp;
-        switch (firstOp.type){
+        switch (firstOp.type)
+        {
             case Token.INTEGER:
                 temp = Utilities.toInteger(parser , secondOp);
                 int x = Integer.parseInt(firstOp.value);
@@ -110,34 +119,42 @@ public class Utilities
             case Token.STRING:
                 break;
             default:
-                throw new ParserException(parser.scan.iSourceLineNr
-                        , "Can not divide variable of type \'" + firstOp.type + "\' by type \'" + secondOp.type + "\'"
-                        , parser.scan.sourceFileNm);
-
+                parser.error("ERROR: CANNOT DIVIDE %s WITH %s", secondOp.type, firstOp.type);
         }
         return res;
     }
 
-
-
-    public static ResultValue mul(Parser parser, ResultValue firstOp, ResultValue secondOp)throws ParserException{
+    /**
+     * This method is included in order to multiply two values
+     * <p>
+     * Method can multiply Int and floats.
+     *
+     * @param parser Parser object which we will reference for errors
+     * @param firstOp first operand we will perform operation on
+     * @param secondOp second operand we will perform operation on
+     * @return ResultValue object which contains the result and type of the operation
+     * @throws ParserException generic Exception type to handle any processing errors
+     */
+    public static ResultValue mul(Parser parser, ResultValue firstOp, ResultValue secondOp) throws Exception
+    {
         ResultValue res = null;
         ResultValue resTemp = res;
         String temp;
         int x;
        // System.out.println(firstOp.value + " " + secondOp.value);
-        switch (firstOp.type){
+        switch (firstOp.type)
+        {
             case Token.INTEGER:
                 temp = Utilities.toInteger(parser , secondOp);
-                //System.out.println(firstOp.value);
-                //System.out.println(parser.scan.iSourceLineNr);
-                if(firstOp.type == Token.FLOAT){
+
+                if(firstOp.type == Token.FLOAT)
+                {
                     Double.parseDouble(firstOp.value);
                      x = Integer.parseInt(firstOp.value);
                 }
                 else
                      x = Integer.parseInt(firstOp.value);
-//                int x = Integer.parseInt(toInteger(parser, resTemp));
+
                 int y = Integer.parseInt(temp);
                 int result = x * y;
                 res = new ResultValue(String.valueOf(result), firstOp.type);
@@ -152,26 +169,28 @@ public class Utilities
             case Token.STRING:
                 break;
             default:
-                throw new ParserException(parser.scan.iSourceLineNr
-                        , "Can not multiply variable of type \'" + firstOp.type + "\' by variable of type\'" + secondOp.type + "\'"
-                        , parser.scan.sourceFileNm);
-
+                parser.error("ERROR: CANNOT MULTIPLY %s WITH %s", secondOp.type, firstOp.type);
         }
         return res;
     }
 
     /**
+     * This method is included in order to exponent two values
+     * <p>
+     * Method can exponent Int and floats.
      *
-     * @param parser
-     * @param firstOp
-     * @param secondOp
-     * @return
-     * @throws ParserException
+     * @param parser Parser object which we will reference for errors
+     * @param firstOp first operand we will perform operation on
+     * @param secondOp second operand we will perform operation on
+     * @return ResultValue object which contains the result and type of the operation
+     * @throws ParserException generic Exception type to handle any processing errors
      */
-    public static ResultValue exp(Parser parser, ResultValue firstOp, ResultValue secondOp)throws ParserException{
+    public static ResultValue exp(Parser parser, ResultValue firstOp, ResultValue secondOp)throws Exception
+    {
         ResultValue res = null;
         String temp;
-        switch (firstOp.type){
+        switch (firstOp.type)
+        {
             case Token.INTEGER:
                 temp = Utilities.toInteger(parser , secondOp);
                 int x = Integer.parseInt(firstOp.value);
@@ -189,25 +208,26 @@ public class Utilities
             case Token.STRING:
                 break;
             default:
-                throw new ParserException(parser.scan.iSourceLineNr
-                        , "Can not exponentiate to variable of type \'" + firstOp.type + "\'"
-                        , parser.scan.sourceFileNm);
+                parser.error("ERROR: CANNOT RAISE %s TO %s", secondOp.type, firstOp.type);
         }
         return res;
     }
 
     /**
-     * Evaluate a less than comparison on two ResultValues
+     * This method is included in order to evaluate a less than comparison
+     * on two ResultValues
+     * <p>
+     * Method can compare int, floats, booleans, and strings.
      *
-     * @param parser
-     * @param firstOP
-     * @param secondOP
-     * @return
-     * @throws ParserException
+     * @param parser Parser object which we will reference for errors
+     * @param firstOP first operand we will perform operation on
+     * @param secondOP second operand we will perform operation on
+     * @return ResultValue object which contains the result and type of the operation
+     * @throws ParserException generic Exception type to handle any processing errors
      */
-    public static ResultValue isLessThan(Parser parser, ResultValue firstOP, ResultValue secondOP) throws ParserException
+    public static ResultValue isLessThan(Parser parser, ResultValue firstOP, ResultValue secondOP)
+                                                                                        throws Exception
     {
-
         ResultValue res = new ResultValue(Token.BOOLEAN, -1);
         String temp;
 
@@ -243,27 +263,26 @@ public class Utilities
             case Token.DATE:
                 break;
             default:
-                throw new ParserException(parser.scan.iSourceLineNr
-                        , "Unknown type '" + firstOP.type + "'"
-                        , parser.scan.sourceFileNm);
-
+                parser.error("ERROR: UNKNOWN TYPE %s", firstOP.type);
         }
         return res;
     }
 
-
     /**
-     * Evaluate a greater than comparison on two ResultValues
+     * This method is included in order to evaluate a greater than comparison
+     * on two ResultValues
+     * <p>
+     * Method can compare int, floats, booleans, and strings.
      *
-     * @param parser
-     * @param firstOP
-     * @param secondOp
-     * @return
-     * @throws ParserException
+     * @param parser Parser object which we will reference for errors
+     * @param firstOP first operand we will perform operation on
+     * @param secondOp second operand we will perform operation on
+     * @return ResultValue object which contains the result and type of the operation
+     * @throws ParserException generic Exception type to handle any processing errors
      */
-    public static ResultValue isGreaterThan(Parser parser, ResultValue firstOP, ResultValue secondOp) throws ParserException
+    public static ResultValue isGreaterThan(Parser parser, ResultValue firstOP, ResultValue secondOp)
+                                                                                    throws Exception
     {
-
         ResultValue res = new ResultValue(Token.BOOLEAN, -1);
         String temp;
 
@@ -299,26 +318,26 @@ public class Utilities
             case Token.DATE:
                 break;
             default:
-                throw new ParserException(parser.scan.iSourceLineNr
-                        , "Unknown type '" + firstOP.type + "'"
-                        , parser.scan.sourceFileNm);
-
+                parser.error("ERROR: UNKNOWN TYPE %s", firstOP.type);
         }
         return res;
     }
 
     /**
-     * Evaluate a equal to comparison on two ResultValues
+     * This method is included in order to evaluate an equal comparison
+     * on two ResultValues
+     * <p>
+     * Method can compare int, floats, booleans, and strings.
      *
-     * @param parser
-     * @param firstOp
-     * @param secondOp
-     * @return
-     * @throws ParserException
+     * @param parser Parser object which we will reference for errors
+     * @param firstOp first operand we will perform operation on
+     * @param secondOp second operand we will perform operation on
+     * @return ResultValue object which contains the result and type of the operation
+     * @throws ParserException generic Exception type to handle any processing errors
      */
-    public static ResultValue isEqual(Parser parser, ResultValue firstOp, ResultValue secondOp) throws ParserException
+    public static ResultValue isEqual(Parser parser, ResultValue firstOp, ResultValue secondOp)
+                                                                                    throws Exception
     {
-
         ResultValue res = new ResultValue(Token.BOOLEAN, -1);
         String temp;
 
@@ -353,26 +372,26 @@ public class Utilities
             case Token.DATE:
                 break;
             default:
-                throw new ParserException(parser.scan.iSourceLineNr
-                        , "Unknown type '" + firstOp.type + "'"
-                        , parser.scan.sourceFileNm);
-
+                parser.error("ERROR: UNKNOWN TYPE %s", firstOp.type);
         }
         return res;
     }
 
     /**
-     * Evaluate a less than or equal to comparison on two ResultValues
+     * This method is included in order to evaluate a less than or equal comparison
+     * on two ResultValues
+     * <p>
+     * Method can compare int, floats, booleans, and strings.
      *
-     * @param parser
-     * @param firstOp
-     * @param secondOp
-     * @return
-     * @throws ParserException
+     * @param parser Parser object which we will reference for errors
+     * @param firstOp first operand we will perform operation on
+     * @param secondOp second operand we will perform operation on
+     * @return ResultValue object which contains the result and type of the operation
+     * @throws ParserException generic Exception type to handle any processing errors
      */
-    public static ResultValue isLessThanorEq(Parser parser, ResultValue firstOp, ResultValue secondOp) throws ParserException
+    public static ResultValue isLessThanorEq(Parser parser, ResultValue firstOp, ResultValue secondOp)
+                                                                                        throws Exception
     {
-
         ResultValue res = new ResultValue(Token.BOOLEAN, -1);
         String temp;
 
@@ -408,26 +427,26 @@ public class Utilities
             case Token.DATE:
                 break;
             default:
-                throw new ParserException(parser.scan.iSourceLineNr
-                        , "Unknown type '" + firstOp.type + "'"
-                        , parser.scan.sourceFileNm);
-
+                parser.error("ERROR: UNKNOWN TYPE %s", firstOp.type);
         }
         return res;
     }
 
     /**
-     * Evaluate a less than or equal to comparison on two ResultValues
+     * This method is included in order to evaluate a greater than or equal comparison
+     * on two ResultValues
+     * <p>
+     * Method can compare int, floats, booleans, and strings.
      *
-     * @param parser
-     * @param firstOp
-     * @param secondOp
-     * @return
-     * @throws ParserException
+     * @param parser Parser object which we will reference for errors
+     * @param firstOp first operand we will perform operation on
+     * @param secondOp second operand we will perform operation on
+     * @return ResultValue object which contains the result and type of the operation
+     * @throws ParserException generic Exception type to handle any processing errors
      */
-    public static ResultValue isGreaterThanorEq(Parser parser, ResultValue firstOp, ResultValue secondOp) throws ParserException
+    public static ResultValue isGreaterThanorEq(Parser parser, ResultValue firstOp, ResultValue secondOp)
+                                                                                        throws Exception
     {
-
         ResultValue res = new ResultValue(Token.BOOLEAN, -1);
         String temp;
 
@@ -463,26 +482,26 @@ public class Utilities
             case Token.DATE:
                 break;
             default:
-                throw new ParserException(parser.scan.iSourceLineNr
-                        , "Unknown type '" + firstOp.type + "'"
-                        , parser.scan.sourceFileNm);
-
+                parser.error("ERROR: UNKNOWN TYPE %s", firstOp.type);
         }
         return res;
     }
 
     /**
-     * Evaluate a less than or equal to comparison on two ResultValues
+     * This method is included in order to determine if two ResultValues
+     * are not equal.
+     * <p>
+     * Method can compare int, floats, booleans, and strings.
      *
-     * @param parser
-     * @param firstOp
-     * @param secondOp
-     * @return
-     * @throws ParserException
+     * @param parser Parser object which we will reference for errors
+     * @param firstOp first operand we will perform operation on
+     * @param secondOp second operand we will perform operation on
+     * @return ResultValue object which contains the result and type of the operation
+     * @throws ParserException generic Exception type to handle any processing errors
      */
-    public static ResultValue notEqalTo(Parser parser, ResultValue firstOp, ResultValue secondOp) throws ParserException
+    public static ResultValue notEqualTo(Parser parser, ResultValue firstOp, ResultValue secondOp)
+                                                                                            throws Exception
     {
-
         ResultValue res = new ResultValue(Token.BOOLEAN, -1);
         String temp;
 
@@ -517,103 +536,109 @@ public class Utilities
             case Token.DATE:
                 break;
             default:
-                throw new ParserException(parser.scan.iSourceLineNr
-                        , "Unknown type '" + firstOp.type + "'"
-                        , parser.scan.sourceFileNm);
-
+                parser.error("ERROR: UNKNOWN TYPE %s", firstOp.type);
         }
         return res;
     }
 
     /**
-     * coerces a value into a Bool type and throws an exception if it can not be coerced.
+     * This method coerces a value into a Bool type.
      * <p>
+     * Throws an exception if it can not be coerced.
      *
-     * @param parser - Used for error generation
-     * @param value - ResultValue to be coerced
-     * @return
+     * @param parser Used for error generation
+     * @param value ResultValue to be coerced
+     * @return Boolean string value
      * @throws ParserException - Value can not be parsed as a Bool
      */
-    public static String toBoolean(Parser parser, ResultValue value) throws ParserException
+    public static String toBoolean(Parser parser, ResultValue value) throws Exception
     {
-
         if (value.value.equals("T"))
-        {
             return "T";
-        }
         else if (value.value.equals("F"))
-        {
             return "F";
-        }
         else
-        {
-            throw new ParserException(parser.scan.iSourceLineNr
-                    , "Can not parse '" + value.value + "' as Bool"
-                    , parser.scan.sourceFileNm);
-        }
+            parser.error("ERROR: CANNOT COERCE %s AS BOOL", value.value);
+
+        return null;
     }
 
     /**
-     * coerces a value into a Float type and throws an exception if it can not be coerced.
+     * This method coerces a value into a Float type.
      * <p>
+     * Throws an exception if it can not be coerced.
      *
      * @param parser -  Used for error generation
      * @param value - ResultValue to be coerced
-     * @return
+     * @return string representation of a Double
      * @throws ParserException - Value can not be parsed as a Float
      */
-    public static String toFloat(Parser parser, ResultValue value) throws ParserException
+    public static String toFloat(Parser parser, ResultValue value) throws Exception
     {
         double temp;
-        try {
+
+        try
+        {
             temp = Double.parseDouble(value.value);
             return Double.toString(temp);
-            //value.value = Double.parseDouble(value.value);
-            //System.out.println(Double.parseDouble(value.value) + "IN toFloat");
-            //System.out.println(value.value);
-            //return value.value;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             // Do nothing
         }
-        throw new ParserException(parser.scan.iSourceLineNr
-                , "Can not parse '" + value.value + "' as Int"
-                , parser.scan.sourceFileNm);
+        parser.error("ERROR: CANNOT COERCE %s AS FLOAT", value.value);
+
+        return null;
     }
 
     /**
-     * coerces a value into a Int type and throws an exception if it can not be coerced.
+     * This method coerces a value into a Int type
+     * <p>
+     * Throws an exception if it can not be coerced.
+     *
+     * @param parser -  Used for error generation
+     * @param value - ResultValue to be coerced
+     * @return string representation of an Int
+     * @throws ParserException - Value can not be parsed as a Int
+     */
+    public static String toInteger(Parser parser, ResultValue value) throws Exception
+    {
+        int temp;
+
+        try
+        {
+            Integer.parseInt(value.value);
+            return value.value;
+        }
+        catch (Exception e)
+        {
+            // Do nothing
+        }
+
+        try
+        {
+            temp = (int)Double.parseDouble(value.value);
+            return Integer.toString(temp);
+        }
+        catch (Exception e)
+        {
+            // Do nothing
+        }
+
+        parser.error("ERROR: CANNOT COERCE %s AS INT", value.value);
+        return null;
+    }
+
+    /**
+     * This method coerces a value into a negative version
      * <p>
      *
      * @param parser -  Used for error generation
      * @param value - ResultValue to be coerced
-     * @return
-     * @throws ParserException - Value can not be parsed as a Int
+     * @return string representation of the value
      */
-    public static String toInteger(Parser parser, ResultValue value) throws ParserException
+    public static String toNegative(Parser parser, ResultValue value)
     {
-        int temp;
-        try {
-            Integer.parseInt(value.value);
-            return value.value;
-        } catch (Exception e)
-        {
-            // Do nothing
-        }
-        try {
-            temp = (int)Double.parseDouble(value.value);
-            return Integer.toString(temp);
-        } catch (Exception e)
-        {
-            // Do nothing
-        }
-        throw new ParserException(parser.scan.iSourceLineNr
-                , "Can not parse '" + value.value + "' as Int"
-                , parser.scan.sourceFileNm);
-    }
-
-    public static String toNegative(Parser parser, ResultValue value){
-
         switch (value.type)
         {
             case Token.INTEGER:
@@ -628,11 +653,8 @@ public class Utilities
                 break;
             case Token.STRING:
                 break;
-                //Check if its a float or int represented as string?
         }
+
         return value.value;
-
     }
-
-
 }

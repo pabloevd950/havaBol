@@ -1,28 +1,29 @@
 package havabol;
 
-
-import havabol.SymbolTable.SymbolTable;
-
 import java.util.HashMap;
-/**
- * Created by pablovalero on 3/6/17.
- */
-
 
 public class StorageManager
 {
     HashMap <String, ResultValue> sT;
 
     /**
-     *
+     * StorageManager constructor that will be used to provide methods for maintaining the values
+     * and types of user defined variables
+     * <p>
+     * This constructor uses a hash map with a string as a key and ResultValue object for the value.
      */
-    public StorageManager(){
+    public StorageManager()
+    {
         sT = new HashMap <String, ResultValue>();
     }
 
+
     /**
+     * getEntry method returns the StorageManger entry for the given variable
+     * <p>
+     * returns the STEntry for the inputted symbol or will raise a NULL exception
      *
-     * @param key key to get value from hashmap
+     * @param key String to use as a key to get value from hashmap sT
      * @return ResultValue entry from hasMap
      */
     public ResultValue getEntry(String key)
@@ -32,19 +33,16 @@ public class StorageManager
 
 
     /**
+     * putEntry method stores the variable and its corresponding ResultValue in the
+     * StorageManager
+     * <p>
+     * ResultValue tells about the variable we are storing
      *
-     * @param key key to get value from hashmap
+     * @param key String to use as a key to get value from hashmap sT
      * @param entry ResultValue entry to assign to key
      */
     public void putEntry(String key, ResultValue entry)
     {
         sT.put(key, entry);
     }
-
-
-
-    //We should check if variable already exists here.
-
-
-
 }

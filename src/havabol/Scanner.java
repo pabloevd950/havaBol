@@ -1,12 +1,10 @@
 package havabol;
 
 /*
-  cs4713p1.java by Kris Gilly
-  This is the simple Scanner class for the HavaBol programming language.
-  All errors and exceptions are thrown up to main and output to stderr from there.
+ * This is the simple Scanner class for the HavaBol programming language.
+ * All errors and exceptions are thrown up to the calling method and output to stderr from there.
  */
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import havabol.SymbolTable.STControl;
 import havabol.SymbolTable.STFunction;
 import havabol.SymbolTable.SymbolTable;
@@ -75,20 +73,12 @@ public class Scanner
         if (nextToken.tokenStr.isEmpty())
             throw new HBException("Empty source file:" + sourceFileNm);
 
-        // Print a column heading
-        /*System.out.printf("%-11s %-12s %s\n"
-                , "primClassif"
-                , "subClassif"
-                , "tokenStr");*/
-
-        // print first line in the source file
-        //System.out.format("  %d %s\n", iSourceLineNr+1, sourceLineM.get(iSourceLineNr));
         inp.close();
     }
 
     /**
      * This method gets the next token in the source file line. If there are no more tokens, it returns
-     * and empty string, otherwise it returns the token given that there were no processing errors.
+     * an empty string, otherwise it returns the token given that there were no processing errors.
      * <p>
      * The method automatically advances to the next source line when necessary and sets the attributes for
      * our Token object.
@@ -106,19 +96,13 @@ public class Scanner
         String operations = "<=,>=,!=,==,+=,-=,*=,/=, ^=";
         String escapeChars = "t\"na\\\''";
 
-        //System.out.println("GET NEXT CALLED");
-
         // set currentToken to nextToken object to keep track of tokens and reset nextToken
         clone(nextToken);
         nextToken = new Token();
 
         // check if we encountered EOF
         if (currentToken.primClassif == Token.EOF)
-        {
-            //System.out.println("NEXT");
-            //nextToken.printToken();
             return "";
-        }
 
         // Automatically advance to the next source line when necessary
         if (iColPos >= textCharM.length || iSourceLineNr == -1)
@@ -132,9 +116,6 @@ public class Scanner
                     return currentToken.tokenStr;
                 }
 
-                // print the source line we just grabbed
-                //System.out.format("  %d %s\n", iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
-
                 //check for comments
                 if(sourceLineM.get(iSourceLineNr).contains("//")
                                             && !sourceLineM.get(iSourceLineNr).matches("['\"]//['\"]"))
@@ -143,7 +124,6 @@ public class Scanner
                     if(index == 0)
                     {
                         //Check if whole line is comment
-                        //System.out.format("  %d %s\n", ++iSourceLineNr + 1, sourceLineM.get(iSourceLineNr));
                         if (++iSourceLineNr >= sourceLineM.size())
                         {
                             nextToken.primClassif = Token.EOF;
@@ -164,7 +144,7 @@ public class Scanner
         while (iColPos < textCharM.length && Character.isWhitespace(textCharM[iColPos]))
             iColPos++;
 
-        // set line and position number for the next token
+        // set line and position number for the next token to be at the beginning of the token
         nextToken.iSourceLineNr = iSourceLineNr;
         nextToken.iColPos = iColPos;
 
@@ -206,12 +186,15 @@ public class Scanner
             }
             // save Token attribute type as a string and advance cursor position away from quotation mark
             iColPos++;
-            token = "\""+ token + "\"";
+            token = "\"" + token + "\"";
             nextToken.subClassif = Token.STRING;
         }
         else if (delimiters.indexOf((textCharM[iColPos])) >= 0)
         {// token contains a delimiter
             token += textCharM[iColPos++];
+
+            // check if the delimiter we saved is an operator, if it is and we are within our boundaries,
+            // then check if then next position contains an '='
             if (operators.contains(token) && iColPos != textCharM.length && textCharM[iColPos] == '=')
                 token += textCharM[iColPos++];
         }
@@ -226,10 +209,8 @@ public class Scanner
 
         // determine token classification
         if (token.equals("debug"))
-        {
             //token is a debug
             nextToken.primClassif = Token.DEBUG;
-        }
         else if (operator.contains(token) || operations.contains(token))//bridget was here
             // token is an operator
             nextToken.primClassif = Token.OPERATOR;
@@ -241,7 +222,7 @@ public class Scanner
         {   // token is an operand
             nextToken.primClassif = Token.OPERAND;
 
-            // determine sub classification of token
+            // determine sub classification of operand token
             if (nextToken.subClassif == Token.STRING);
                 // token is a string literal which is already set
             else if (Character.isDigit(token.charAt(0)))
@@ -290,22 +271,22 @@ public class Scanner
             else if (entry.definedBy == Token.USER)
                 nextToken.subClassif = Token.USER;
         }
+
+        // pablo wtf is this? you added a step to add quotation marks to
+        // strings on line 190 and now you're taking them back off?
         if(nextToken.subClassif == Token.STRING){
             token = token.substring(1, token.length() - 1);
         }
+
         // set nextToken to the token built and return the current token string
         nextToken.tokenStr = token;
 
-        //System.out.println("CURRENT");
-        //currentToken.printToken();
-        //System.out.println("NEXT");
-        //nextToken.printToken();
-        //System.out.println();
+        // check if debugging is on
         if(bShowToken)
-        {
+        {// if only want one , uncomment line below
             System.out.print("\t\t...");
             currentToken.printToken();
-            //If only want one , uncomment line below
+
             // bShowToken = false;
         }
 
@@ -330,13 +311,29 @@ public class Scanner
         currentToken.iColPos = token.iColPos;
     }
 
+    /**
+     * This method is provided to set the scanner back to a certain location in code.
+     * <p>
+     * This is will take the input token, set the source line and col pos to that token,
+     * and then rebuild current and nextToken to have currentToken be the one we sent and nextToken
+     * be the token after in the line.
+     *
+     * @param token This is token we want to set our scanner to
+     * @throws Exception if there is a getNext exception, we are ready to handle it
+     */
     public void setTo(Token token) throws Exception
     {
+        // set line, column position, and the line char array to the token we are given
         this.iSourceLineNr = token.iSourceLineNr;
         this.iColPos = token.iColPos;
         this.textCharM = sourceLineM.get(this.iSourceLineNr).toCharArray();
 
+        // call getNext, currentToken = token that would of been next before we changed the poition
+        //               nextToken = the token we are changing our position to
         getNext();
+
+        // call getNext again, this time currentToken will be the token we want to be set to
+        // and nextToken will be the one that follows and normal continuation will occur
         getNext();
     }
 }

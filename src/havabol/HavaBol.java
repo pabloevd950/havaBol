@@ -1,19 +1,20 @@
 /*
-  This is a simple driver for the first programming assignment.
+  This is a simple driver for the havabol language interpreter.
   Command Arguments:
-      java HavaBol arg1
+      java havabol.HavaBol arg1
              arg1 is the havabol source file name.
   Output:
-      Prints each token in a table.
+      Anything sent to STDOUT will be printed to the terminal
+      debug <option> on prints the STDOUT values, variables, tokens, etc. to STDOUT
   Notes:
-      1. This creates a SymbolTable object which doesn't do anything
-         for this first programming assignment.
-      2. This uses the student's Scanner class to get each token from
-         the input file.  It uses the getNext method until it returns
-         an empty string.
+      1. This creates a SymbolTable, StorageManager, scanner, and parser objects
+         for use in interpreting the havabol source code.
+      2. This uses both the student's Parser class and Scanner class to get
+         each token from the input file.
+         It uses the getNext method until it returns an empty string.
       3. If the Scanner raises an exception, this driver prints
          information about the exception and terminates.
-      4. The token is printed using the Token::printToken() method.
+      4. The token is printed using the Token::printToken() method in debugging.
  */
 package havabol;
 
@@ -23,17 +24,17 @@ public class HavaBol
 {
     public static void main(String[] args)
     {
-        // Create the SymbolTable
+        // Create the SymbolTable and storage manager
         SymbolTable symbolTable = new SymbolTable();
         StorageManager storageManager = new StorageManager();
-
 
         try
         {
             // create scanner and parser objects
             Scanner scan = new Scanner(args[0], symbolTable);
             Parser parser = new Parser(symbolTable, storageManager, scan);
-            // start parsing file
+
+            // begin parsing file
             while (scan.currentToken.primClassif != Token.EOF)
                 parser.statement(true);
         }

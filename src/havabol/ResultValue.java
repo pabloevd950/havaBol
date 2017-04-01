@@ -18,8 +18,7 @@ public class ResultValue
     /**
      * Creates a new ResultValue object
      * <p>
-     * This constrctor initializes a resultValue object without a value
-     * Mainly used by declareStmt();
+     * This constructor initializes a resultValue object without a value
      *
      * @param type  declare type of variable
      * @param structure   type of data structure for the variable
@@ -38,8 +37,7 @@ public class ResultValue
     /**
      * Creates a new ResultValue object
      * <p>
-     * This constrctor initializes a resultValue object without a value
-     * Mainly used by declareStmt();
+     * This constructor initializes a resultValue object without a value
      *
      * @param type  declare type of variable
      * @param structure   type of data structure for the variable
@@ -50,13 +48,28 @@ public class ResultValue
         this("", type, structure, "");
     }
 
+    /**
+     * Creates a new ResultValue object
+     * <p>
+     * This constructor initializes a resultValue object without a value
+     *
+     * @param value The value to assign to the variable
+     * @param type declare type of variable
+     */
+    public ResultValue(String value, int type)
+    {
+        this.value = value;
+        this.type = type;
+    }
+
+    /**
+     * Creates a new ResultValue object
+     * <p>
+     * This constructor initializes a resultValue object without a value
+     *
+     */
     public ResultValue()
     {
         this(-1, -1);
-    }
-
-    public ResultValue(String value, int type){
-        this.value = value;
-        this.type = type;
     }
 }
