@@ -273,8 +273,9 @@ public class Scanner
         }
 
         // pablo wtf is this? you added a step to add quotation marks to
-        // strings on line 190 and now you're taking them back off?
-        if(nextToken.subClassif == Token.STRING){
+        // strings on line 189 and now you're taking them back off? -_-
+        // I know it was you because of this ---|
+        if(nextToken.subClassif == Token.STRING){// <- right here this disgusting ass thing
             token = token.substring(1, token.length() - 1);
         }
 
