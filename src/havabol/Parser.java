@@ -702,7 +702,7 @@ public class Parser
      * @return
      * @throws Exception
      */
-    public ResultValue forStmt(Boolean bExec) throws Exception
+    /*public ResultValue forStmt(Boolean bExec) throws Exception
     {
         ResultValue resCond;
 
@@ -729,7 +729,7 @@ public class Parser
             error("ERROR: EXPECTED 'endfor;' FOR 'while' EXPRESSION");
 
         return new ResultValue("", Token.END, ResultValue.primitive, "endfor");
-    }
+    }*/
 
     /**
      * This method is provided to Parser to execute HavaBol builtin and user
