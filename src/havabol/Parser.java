@@ -3,6 +3,8 @@ package havabol;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
+import javax.xml.transform.Result;
+
 /*
  * This is the simple Parser class for the HavaBol programming language.
  * All errors and exceptions are thrown up to the calling method and output to stderr from there.
@@ -60,17 +62,15 @@ public class Parser
                         return declareStmt(bExec);
                     case Token.FLOW:
                         if (scan.currentToken.tokenStr.equals("if"))
-                        {
-                            ResultValue res = ifStmt(bExec);
-                            res.type = Token.VOID;
-                            return res;
-                        }
+                            return ifStmt(bExec);
                         else if (scan.currentToken.tokenStr.equals("while"))
+                            return whileStmt(bExec);
+                        /*else if (scan.currentToken.tokenStr.equals("for"))
                         {
-                            ResultValue res =  whileStmt(bExec);
+                            ResultValue res = forStmt(bExec);
                             res.type = Token.VOID;
                             return res;
-                        }
+                        }*/
                     case Token.END:
                         // end token so return
                         return new ResultValue("", Token.END
@@ -164,7 +164,7 @@ public class Parser
             default:
                 error("INTERNAL ERROR CAUSED BY %s", scan.currentToken.tokenStr);
         }
-        return new ResultValue("", Token.VOID, Token.VOID, "");
+        return new ResultValue("", Token.VOID, Token.VOID, scan.currentToken.tokenStr);
     }
 
     /**
@@ -538,6 +538,31 @@ public class Parser
     }
 
     /**
+     * This method is provided to Parser::ifStmt, whileStmt, and forStmt.
+     * <p>
+     * It goes through
+     * all lines between the start of the statement and the end of the statement specified
+     * by the terminatingStr parameter.
+     *
+     * @param bExec Tells the statement function whether we need to execute the code we find or
+     *              just look at it
+     * @param terminatingStr Tells us when we are done executing lines for the statement
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
+     */
+    public ResultValue statements(Boolean bExec, String terminatingStr) throws Exception
+    {
+        ResultValue result = statement(bExec);
+
+        // loop until we find our terminating string
+        while (! terminatingStr.contains(result.terminatingStr))
+            result = statement(bExec);
+
+        result.terminatingStr = scan.currentToken.tokenStr;
+        return result;
+    }
+
+    /**
      * This method executes 'if' statements for HavaBol. It uses bExec and the
      * ResultValue object returned from calling expression in order to determine
      * if we are executing.
@@ -562,26 +587,28 @@ public class Parser
             // did the condition return true?
             if (resCond.value.equals("T"))
             {// condition returned true, execute statements on the true part
-                resCond = statementsIf(true);
+                resCond = statements(true, "endif else");
 
                 // what ended the statements after the true part? else of endif
                 if (resCond.terminatingStr.equals("else"))
                 {// has an else
                     if (! scan.getNext().equals(":"))
                         error("ERROR: EXPECTED ':' AFTER ELSE");
-                    resCond = statementsIf(false);
+
+                    resCond = statements(false, "endif");
                 }
             }
             else
             {// condition returned false, ignore all statements after the if
-                resCond = statementsIf(false);
+                resCond = statements(false, "endif else");
 
                 // check for else
                 if (resCond.terminatingStr.equals("else"))
                 { // if it is an 'else', execute
                     if (! scan.getNext().equals(":"))
                         error("ERROR: EXPECTED ':' AFTER ELSE");
-                    resCond = statementsIf(true);
+
+                    resCond = statements(true, "endif");
                 }
             }
         }
@@ -591,7 +618,7 @@ public class Parser
             skipTo("if", ":");
 
             // ignore true part
-            resCond = statementsIf(false);
+            resCond = statements(false, "endif else");
 
             // if the statements terminated with an 'else', we need to parse statements
             if (resCond.terminatingStr.equals("else"))
@@ -600,7 +627,7 @@ public class Parser
                     error("ERROR: EXPECTED ':' AFTER ELSE");
 
                 // ignore false part
-                resCond = statementsIf(false);
+                resCond = statements(false, "endif");
             }
         }
 
@@ -608,54 +635,7 @@ public class Parser
         if (!resCond.terminatingStr.equals("endif") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endif;' FOR 'if' EXPRESSION");
 
-        return new ResultValue("", Token.END, ResultValue.primitive, "if");
-    }
-
-    /**
-     * This method is provided to Parser::ifStmt() in order to go through all lines in the
-     * 'if' statement until an 'endif' is encountered.
-     * <p>
-     * We will specifically check for an 'endwhile' so we know to keep going
-     *
-     * @param bExec Tells the statement function whether we need to execute the code we find or
-     *              just look at it
-     * @return ResultValue object that contains the final result of execution
-     * @throws Exception generic Exception type to handle any processing errors
-     */
-    public ResultValue statementsIf(Boolean bExec) throws Exception
-    {
-        ResultValue result = statement(bExec);
-
-        // loop until we find an END token, only want "else" or "endif"
-        while (result.type != Token.END || result.terminatingStr.equals("endwhile"))
-            result = statement(bExec);
-
-        result.terminatingStr = scan.currentToken.tokenStr;
-        return result;
-    }
-
-    /**
-     * This method is provided to Parser::whileStmt() in order to go through all lines in the
-     * 'while' statement until a 'endwhile' is encountered.
-     * <p>
-     * We will specifically check for an 'else' or 'endif' so we know to keep going
-     *
-     * @param bExec Tells the statement function whether we need to execute the code we find or
-     *              just look at it
-     * @return ResultValue object that contains the final result of execution
-     * @throws Exception generic Exception type to handle any processing errors
-     */
-    public ResultValue statementsWhile(Boolean bExec) throws Exception
-    {
-        ResultValue result = statement(bExec);
-
-        // loop until we find an "endwhile"
-        while (result.type != Token.END || (  result.terminatingStr.equals("endif")
-                                           || result.terminatingStr.equals("else")))
-            result = statement(bExec);
-
-        result.terminatingStr = scan.currentToken.tokenStr;
-        return result;
+        return new ResultValue("", Token.END, ResultValue.primitive, ";");
     }
 
     /**
@@ -684,11 +664,10 @@ public class Parser
 
             while (resCond.value.equals("T"))
             {// did the condition return true?
-                resCond = statementsWhile(true);
+                resCond = statements(true, "endwhile");
 
                 // did statements() end on an endwhile;?
-                if (! resCond.terminatingStr.equals("endwhile")
-                   || !scan.nextToken.tokenStr.equals(";"))
+                if (! resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";"))
                     error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
 
                 // reset while loop token
@@ -699,7 +678,7 @@ public class Parser
             }
 
             // expr() returned false, so skip ahead to the end of the while
-            resCond = statementsWhile(false);
+            resCond = statements(false, "endwhile");
         }
         else
         {// we are ignoring execution, so ignore conditional, true and false part
@@ -707,14 +686,49 @@ public class Parser
             skipTo("while", ":");
 
             // ignore statements
-            resCond = statementsWhile(false);
+            resCond = statements(false, "endwhile");
         }
 
         // did we have an endwhile;
         if (! resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
 
-        return new ResultValue("", Token.END, ResultValue.primitive, "endwhile");
+        return new ResultValue("", Token.END, ResultValue.primitive, ";");
+    }
+
+    /**
+     *
+     * @param bExec
+     * @return
+     * @throws Exception
+     */
+    public ResultValue forStmt(Boolean bExec) throws Exception
+    {
+        ResultValue resCond;
+
+        // do we need to evaluate the condition?
+        if (bExec)
+        {// we are executing, not ignoring
+            Token forToken = scan.currentToken;
+
+            // evaluate control variables
+
+
+        }
+        else
+        {// we are ignoring execution, so control variables
+            // ignore control variables
+            skipTo("for", ":");
+
+            // ignore statements
+            resCond = statements(false, "endfor");
+        }
+
+        // did we have an endfor;
+        if (! resCond.terminatingStr.equals("endfor") || !scan.nextToken.tokenStr.equals(";"))
+            error("ERROR: EXPECTED 'endfor;' FOR 'while' EXPRESSION");
+
+        return new ResultValue("", Token.END, ResultValue.primitive, "endfor");
     }
 
     /**
