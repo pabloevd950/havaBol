@@ -747,18 +747,18 @@ public class Parser
         ResultValue res;
 
         switch (scan.currentToken.subClassif)
-        {// determine if function is built in, or user defined
+        {// determine if function is built in or user defined
             case Token.BUILTIN:
-                //do shit only for print
+                // make sure the function is in correct syntax
+                if (! scan.nextToken.tokenStr.equals("(") )
+                    error("ERROR: '%s' FUNCTION IS MISSING SEPARATOR '('", scan.currentToken.tokenStr);
+
+                // determine function
                 if (scan.currentToken.tokenStr.equals("print"))
                 {
                     String printLine = "";
-
-                    // make sure the print function is in correct syntax
-                    if (! scan.getNext().equals("(") )
-                        error("ERROR: PRINT FUNCTION IS MISSING SEPARATOR '('");
-
                     Token previousToken = scan.currentToken;
+
                     while ( !scan.getNext().equals(")") )
                     {// loop until we find a ')'
                         if(scan.currentToken.subClassif <= Token.STRING && scan.currentToken.subClassif > 0)
@@ -784,16 +784,11 @@ public class Parser
                         previousToken = scan.currentToken;
                     }
 
-                    // make sure we end on a ';'
-                    if ( !scan.getNext().equals(";") )
-                        error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
-
                     // check if we are executing
                     if (bExec)
                         System.out.println(printLine);
                 }
-                else// for right now, any other function gets skipped
-                    skipTo(scan.currentToken.tokenStr,";");
+
                 break;
             case Token.USER:
                 // do other shit later
@@ -803,6 +798,10 @@ public class Parser
                 error("INTERNAL ERROR: %s NOT A RECOGNIZED FUNCTION"
                            , scan.currentToken.tokenStr);
         }
+
+        // make sure we end on a ';'
+        if ( !scan.getNext().equals(";") )
+            error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
 
         return new ResultValue("", Token.BUILTIN
                         , ResultValue.primitive, scan.currentToken.tokenStr);
