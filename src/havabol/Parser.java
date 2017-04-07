@@ -2,6 +2,7 @@ package havabol;
 
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
+import java.util.regex.Pattern;
 
 /*
  * This is the simple Parser class for the HavaBol programming language.
@@ -711,7 +712,6 @@ public class Parser
         {// we are executing, not ignoring
             Token forToken = scan.currentToken;
 
-
             // advance to the start of the control variable
             scan.getNext();
 
@@ -789,7 +789,13 @@ public class Parser
                     if (scan.nextToken.primClassif != Token.OPERAND)
                         error("ERROR: EXPECTED VARIABLE BUT FOUND %s", scan.nextToken.tokenStr);
 
+                    // evaluate iterable expression
                     resCond = expr();
+
+                    // make sure we end on an ':'
+                    if ( !scan.getNext().equals(":"))
+                        error("ERROR: EXPECTED ':' AFTER FOR LOOP VARIABLES");
+
                     // make sure we have an appropriate iterable object (array or string)
                     if ( resCond.stucture == ResultValue.fixedArray
                        ||resCond.stucture == ResultValue.unboundedArray)
@@ -799,10 +805,6 @@ public class Parser
                     else
                     {// we are iterating over a string or expression
                         object = resCond.value;
-
-                        // make sure we end on an ':'
-                        if ( !scan.getNext().equals(":"))
-                            error("ERROR: EXPECTED ':' AFTER FOR LOOP VARIABLES");
 
                         // add item to storage manager as a string
                         storageManager.putEntry(item, new ResultValue("", Token.STRING
@@ -829,8 +831,63 @@ public class Parser
                     break;
                 // for by delimiter
                 case "from":
-                    // this is flexible shit which I am not
-                    //break;
+                    // declare for loop variables
+                    String stringCV = scan.currentToken.tokenStr;
+                    String string, delimiter;
+                    String stringM[];
+
+                    if (storageManager.getEntry(stringCV) != null)
+                        // make sure string cv has not been already defined
+                        error("ERROR: VARIABLE '%s' IS ALREADY DEFINED IN THE SCOPE", stringCV);
+
+                    // advance to 'from' token
+                    scan.getNext();
+
+                    // make sure next token is an operand
+                    if (scan.nextToken.primClassif != Token.OPERAND)
+                        error("ERROR: EXPECTED VARIABLE BUT FOUND %s", scan.nextToken.tokenStr);
+
+                    // save string value to iter on
+                    string = expr().value;
+
+                    if ( !scan.getNext().equals("by") )
+                     // make sure we have our delimiter
+                        error("ERROR: MISSING 'BY' SEPARATOR FOR DELIMITER");
+
+                    // save delimiter
+                    delimiter = expr().value;
+
+                    if ( !scan.getNext().equals(":") )
+                        // make sure we have our ending ':'
+                        error("ERROR: MISSING ':' SEPARATOR AT END OF FOR LOOP DECLARATION");
+
+                    // split string into an array with our delimiter
+                    stringM = string.split(Pattern.quote(delimiter));
+
+                    // add string control variable to storage manager as a string
+                    storageManager.putEntry(stringCV, new ResultValue("", Token.STRING
+                            , ResultValue.primitive, "from"));
+
+                    // iterate through our split string
+                    for (String s : stringM)
+                    {
+                        // update string cv in storage manager
+                        resCond = storageManager.getEntry(stringCV);
+                        resCond.value = "" + s;
+                        storageManager.putEntry(stringCV, resCond);
+                        resCond = statements(true, "endfor");
+
+                        // did statements() end on an endfor;?
+                        if( !resCond.terminatingStr.equals("endfor") ||
+                                !scan.nextToken.tokenStr.equals(";"))
+                            error("ERROR: EXPECTED 'endfor;' FOR 'for' EXPRESSION");
+
+                        // set position back to the beginning of the for loop
+                        scan.setTo(forToken);
+                        skipTo("for", ":");
+                    }
+
+                    break;
                 // unrecognized for separator
                 default:
                     error("ERROR: UNRECOGNIZED CONTROL SEPARATOR '%s'", scan.nextToken.tokenStr);
@@ -864,7 +921,9 @@ public class Parser
      */
     private ResultValue function(Boolean bExec) throws Exception
     {
+        int type = Token.BUILTIN;
         ResultValue res;
+        String value = "";
 
         switch (scan.currentToken.subClassif)
         {// determine if function is built in or user defined
@@ -875,7 +934,7 @@ public class Parser
 
                 // determine function
                 if (scan.currentToken.tokenStr.equals("print"))
-                {
+                {// print function
                     String printLine = "";
                     Token previousToken = scan.currentToken;
 
@@ -906,6 +965,25 @@ public class Parser
                     if (bExec)
                         System.out.println(printLine);
                 }
+                else if (scan.currentToken.tokenStr.equals("LENGTH"))
+                {// length function
+                    // advance to our parameter
+                    scan.getNext();
+                    scan.getNext();
+
+                    // get value of parameter
+                    res = expr();
+
+                    // make sure we only have one parameter
+                    if (!scan.currentToken.tokenStr.equals(")"))
+                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
+
+                    // calculate length of given string
+                    value = "" + res.value.length();
+
+                    // set type to an int
+                    type = Token.INTEGER;
+                }
 
                 break;
             case Token.USER:
@@ -921,8 +999,7 @@ public class Parser
         if ( !scan.getNext().equals(";") )
             error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
 
-        return new ResultValue("", Token.BUILTIN
-                        , ResultValue.primitive, scan.currentToken.tokenStr);
+        return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
     }
 
     /**
