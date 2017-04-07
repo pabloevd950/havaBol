@@ -3,8 +3,6 @@ package havabol;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
-import javax.xml.transform.Result;
-
 /*
  * This is the simple Parser class for the HavaBol programming language.
  * All errors and exceptions are thrown up to the calling method and output to stderr from there.
@@ -65,12 +63,9 @@ public class Parser
                             return ifStmt(bExec);
                         else if (scan.currentToken.tokenStr.equals("while"))
                             return whileStmt(bExec);
-                        /*else if (scan.currentToken.tokenStr.equals("for"))
-                        {
-                            ResultValue res = forStmt(bExec);
-                            res.type = Token.VOID;
-                            return res;
-                        }*/
+                        else if (scan.currentToken.tokenStr.equals("for"))
+                            return forStmt(bExec);
+                        break;
                     case Token.END:
                         // end token so return
                         return new ResultValue("", Token.END
@@ -231,7 +226,7 @@ public class Parser
         else if(! scan.getNext().equals(";"))
             error("ERROR: UNTERMINATED DECLARATION STATEMENT, ';' EXPECTED");
 
-        return new ResultValue("", Token.VOID, ResultValue.primitive
+        return new ResultValue("", Token.DECLARE, ResultValue.primitive
                                                         , scan.currentToken.tokenStr);
     }
 
@@ -413,7 +408,8 @@ public class Parser
         // determine operator
         operator = scan.nextToken.tokenStr;
 
-        if(operator.equals(";") || operator.equals(",") || operator.equals(")"))
+        if(operator.equals(";") || operator.equals(",") || operator.equals(")") || operator.equals("to")
+                || operator.equals(":") || operator.equals("by"))
         { // assign is done, so return the single value
             // check for debug on
             if(scan.bShowExpr)
@@ -598,7 +594,7 @@ public class Parser
                     resCond = statements(false, "endif");
                 }
             }
-            else
+            else if (resCond.value.equals("F"))
             {// condition returned false, ignore all statements after the if
                 resCond = statements(false, "endif else");
 
@@ -611,6 +607,10 @@ public class Parser
                     resCond = statements(true, "endif");
                 }
             }
+            else
+             // resCond value was not a boolean so it is an error
+                error("ERROR: EXPECTED BOOLEAN FOR IF STATEMENT " +
+                                    "BUT FOUND %s", scan.currentToken.tokenStr);
         }
         else
         {// we are ignoring execution, so ignore conditional, true and false part
@@ -702,7 +702,7 @@ public class Parser
      * @return
      * @throws Exception
      */
-    /*public ResultValue forStmt(Boolean bExec) throws Exception
+    public ResultValue forStmt(Boolean bExec) throws Exception
     {
         ResultValue resCond;
 
@@ -711,25 +711,145 @@ public class Parser
         {// we are executing, not ignoring
             Token forToken = scan.currentToken;
 
-            // evaluate control variables
 
+            // advance to the start of the control variable
+            scan.getNext();
 
+            // make sure that we have a control variable
+            if (scan.currentToken.subClassif != Token.IDENTIFIER)
+                error("ERROR: EXPECTED CONTROL VARIABLE BUT FOUND %s", scan.currentToken.tokenStr);
+
+            // check look ahead token for the type of for loop
+            switch (scan.nextToken.tokenStr)
+            {// =, in, from, or error
+                // counting for
+                case "=":
+                    // declare for loop variables
+                    int cv, ev, iv;
+                    String cvStr = scan.currentToken.tokenStr;
+
+                    // create int control variable
+                    cv = Integer.parseInt(assignStmt(true).value);
+
+                    // make sure we have the required end variable for our counting for loop
+                    if ( !scan.getNext().equals("to") )
+                        error("ERROR: EXPECTED END VARIABLE BUT FOUND %s", scan.currentToken.tokenStr);
+
+                    // create end variable
+                    ev = Integer.parseInt(expr().value);
+
+                    // check if we have an increment variable, default to 1
+                    if ( scan.getNext().equals("by"))
+                    {
+                        iv = Integer.parseInt(expr().value);
+
+                        // advance token to the expected ':'
+                        scan.getNext();
+                    }
+                    else
+                        iv = 1;
+
+                    // make sure we end on an ':'
+                    if ( !scan.currentToken.tokenStr.equals(":"))
+                        error("ERROR: EXPECTED ':' AFTER FOR LOOP VARIABLES");
+
+                    // execute counting for
+                    for (int i = cv; i < ev; i += iv)
+                    {
+                        resCond = statements(true, "endfor");
+
+                        // did statements() end on an endfor;?
+                        if (!resCond.terminatingStr.equals("endfor") || !scan.nextToken.tokenStr.equals(";"))
+                            error("ERROR: EXPECTED 'endfor;' FOR 'for' EXPRESSION");
+
+                        // update cv in storage manager
+                        resCond = storageManager.getEntry(cvStr);
+                        resCond.value = "" + (Integer.parseInt(resCond.value) + iv);
+                        storageManager.putEntry(cvStr, resCond);
+
+                        // set position back to the beginning of the for loop
+                        scan.setTo(forToken);
+                        skipTo("for", ":");
+                    }
+                    break;
+                // for fuck in berto
+                case "in":
+                    // declare for loop variables
+                    String item = scan.currentToken.tokenStr;
+                    String object;
+
+                    if (storageManager.getEntry(item) != null)
+                     // make sure item has not been already defined
+                        error("ERROR: VARIABLE '%s' IS ALREADY DEFINED IN THE SCOPE", item);
+
+                    // advance to 'in' token
+                    scan.getNext();
+
+                    // make sure next token is an operand
+                    if (scan.nextToken.primClassif != Token.OPERAND)
+                        error("ERROR: EXPECTED VARIABLE BUT FOUND %s", scan.nextToken.tokenStr);
+
+                    resCond = expr();
+                    // make sure we have an appropriate iterable object (array or string)
+                    if ( resCond.stucture == ResultValue.fixedArray
+                       ||resCond.stucture == ResultValue.unboundedArray)
+                    {// we are iterating through an array
+
+                    }
+                    else
+                    {// we are iterating over a string or expression
+                        object = resCond.value;
+
+                        // make sure we end on an ':'
+                        if ( !scan.getNext().equals(":"))
+                            error("ERROR: EXPECTED ':' AFTER FOR LOOP VARIABLES");
+
+                        // add item to storage manager as a string
+                        storageManager.putEntry(item, new ResultValue("", Token.STRING
+                                , ResultValue.primitive, "in"));
+
+                        for (char c : object.toCharArray())
+                        {
+                            // update cv in storage manager
+                            resCond = storageManager.getEntry(item);
+                            resCond.value = "" + c;
+                            storageManager.putEntry(item, resCond);
+                            resCond = statements(true, "endfor");
+
+                            // did statements() end on an endfor;?
+                            if( !resCond.terminatingStr.equals("endfor") ||
+                                    !scan.nextToken.tokenStr.equals(";"))
+                                error("ERROR: EXPECTED 'endfor;' FOR 'for' EXPRESSION");
+
+                            // set position back to the beginning of the for loop
+                            scan.setTo(forToken);
+                            skipTo("for", ":");
+                        }
+                    }
+                    break;
+                // for by delimiter
+                case "from":
+                    // this is flexible shit which I am not
+                    //break;
+                // unrecognized for separator
+                default:
+                    error("ERROR: UNRECOGNIZED CONTROL SEPARATOR '%s'", scan.nextToken.tokenStr);
+            }
         }
         else
-        {// we are ignoring execution, so control variables
+         // we are ignoring execution, so control variables
             // ignore control variables
             skipTo("for", ":");
 
-            // ignore statements
-            resCond = statements(false, "endfor");
-        }
+        // ignore statements
+        resCond = statements(false, "endfor");
 
         // did we have an endfor;
         if (! resCond.terminatingStr.equals("endfor") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endfor;' FOR 'while' EXPRESSION");
 
         return new ResultValue("", Token.END, ResultValue.primitive, "endfor");
-    }*/
+    }
 
     /**
      * This method is provided to Parser to execute HavaBol builtin and user
@@ -764,8 +884,7 @@ public class Parser
                         if(scan.currentToken.subClassif <= Token.STRING && scan.currentToken.subClassif > 0)
                         {
                             scan.setTo(previousToken);
-                            res = expr();
-                            printLine += res.value;
+                            printLine += expr().value;
                         }
                         else if (scan.currentToken.tokenStr.equals(","))
                             // ',' automatically add a space to our line
@@ -773,8 +892,7 @@ public class Parser
                         else if (scan.currentToken.primClassif == Token.OPERATOR)
                         {// operator encountered, evaluate and add to print string
                             scan.setTo(previousToken);
-                            ResultValue resExpr = expr();
-                            printLine += resExpr.value;
+                            printLine += expr().value;
                         }
                         else if (scan.currentToken.tokenStr.equals(";"))
                             // should not be encountered unless a ')' is missing

@@ -80,5 +80,7 @@ public class SymbolTable
         ht.put("not", new STEntry("not", Token.OPERATOR));
         ht.put("in", new STEntry("in", Token.OPERATOR));
         ht.put("notin", new STEntry("notin", Token.OPERATOR));
+        ht.put("by", new STControl("by", Token.CONTROL, Token.FLOW));
+        ht.put("to", new STControl("to", Token.CONTROL, Token.FLOW));
     }
 }
