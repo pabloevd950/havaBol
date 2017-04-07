@@ -39,6 +39,24 @@ public class Utilities
                 res = new ResultValue(String.valueOf(result2), firstOp.type);
                 break;
             case Token.STRING:
+                double d3, d4, result3;
+                int i3, i4, result4;
+
+                if (firstOp.value.contains(".")) 
+                {
+
+                    d3 = Double.parseDouble(Utilities.toFloat(parser, firstOp));
+                    d4 = Double.parseDouble(Utilities.toFloat(parser, secondOp));
+                    result3 = d3 + d4;
+                    res = new ResultValue(String.valueOf(result3), firstOp.type);
+                }
+                else 
+                {
+                    i3 = Integer.parseInt(Utilities.toInteger(parser , firstOp));
+                    i4 = Integer.parseInt(Utilities.toInteger(parser , secondOp));
+                    result4 = i3 + i4;
+                    res = new ResultValue(String.valueOf(result4), firstOp.type);
+                }
                 break;
             default:
                 parser.error("ERROR: CANNOT ADD %s TO %s", secondOp.type, firstOp.type);
@@ -78,6 +96,24 @@ public class Utilities
                 res = new ResultValue(String.valueOf(result2), firstOp.type);
                 break;
             case Token.STRING:
+                double d3, d4, result3;
+                int i3, i4, result4;
+
+                if (firstOp.value.contains("."))
+                {
+
+                    d3 = Double.parseDouble(Utilities.toFloat(parser, firstOp));
+                    d4 = Double.parseDouble(Utilities.toFloat(parser, secondOp));
+                    result3 = d3 - d4;
+                    res = new ResultValue(String.valueOf(result3), firstOp.type);
+                }
+                else
+                {
+                    i3 = Integer.parseInt(Utilities.toInteger(parser , firstOp));
+                    i4 = Integer.parseInt(Utilities.toInteger(parser , secondOp));
+                    result4 = i3 - i4;
+                    res = new ResultValue(String.valueOf(result4), firstOp.type);
+                }
                 break;
             default:
                 parser.error("ERROR: CANNOT SUBTRACT %s FROM %s", secondOp.type, firstOp.type);
@@ -117,6 +153,24 @@ public class Utilities
                 res = new ResultValue(String.valueOf(result2), firstOp.type);
                 break;
             case Token.STRING:
+                double d3, d4, result3;
+                int i3, i4, result4;
+
+                if (firstOp.value.contains("."))
+                {
+
+                    d3 = Double.parseDouble(Utilities.toFloat(parser, firstOp));
+                    d4 = Double.parseDouble(Utilities.toFloat(parser, secondOp));
+                    result3 = d3 / d4;
+                    res = new ResultValue(String.valueOf(result3), firstOp.type);
+                }
+                else
+                {
+                    i3 = Integer.parseInt(Utilities.toInteger(parser , firstOp));
+                    i4 = Integer.parseInt(Utilities.toInteger(parser , secondOp));
+                    result4 = i3 / i4;
+                    res = new ResultValue(String.valueOf(result4), firstOp.type);
+                }
                 break;
             default:
                 parser.error("ERROR: CANNOT DIVIDE %s WITH %s", secondOp.type, firstOp.type);
@@ -167,6 +221,24 @@ public class Utilities
                 res = new ResultValue(String.valueOf(result2), firstOp.type);
                 break;
             case Token.STRING:
+                double d3, d4, result3;
+                int i3, i4, result4;
+
+                if (firstOp.value.contains("."))
+                {
+
+                    d3 = Double.parseDouble(Utilities.toFloat(parser, firstOp));
+                    d4 = Double.parseDouble(Utilities.toFloat(parser, secondOp));
+                    result3 = d3 * d4;
+                    res = new ResultValue(String.valueOf(result3), firstOp.type);
+                }
+                else
+                {
+                    i3 = Integer.parseInt(Utilities.toInteger(parser , firstOp));
+                    i4 = Integer.parseInt(Utilities.toInteger(parser , secondOp));
+                    result4 = i3 * i4;
+                    res = new ResultValue(String.valueOf(result4), firstOp.type);
+                }
                 break;
             default:
                 parser.error("ERROR: CANNOT MULTIPLY %s WITH %s", secondOp.type, firstOp.type);
@@ -206,6 +278,24 @@ public class Utilities
                 res = new ResultValue(String.valueOf(result2), firstOp.type);
                 break;
             case Token.STRING:
+                double d3, d4, result3;
+                int i3, i4, result4;
+
+                if (firstOp.value.contains("."))
+                {
+
+                    d3 = Double.parseDouble(Utilities.toFloat(parser, firstOp));
+                    d4 = Double.parseDouble(Utilities.toFloat(parser, secondOp));
+                    result3 = Math.pow(d3, d4);
+                    res = new ResultValue(String.valueOf(result3), firstOp.type);
+                }
+                else
+                {
+                    i3 = Integer.parseInt(Utilities.toInteger(parser , firstOp));
+                    i4 = Integer.parseInt(Utilities.toInteger(parser , secondOp));
+                    result4 = (int)Math.pow(i3, i4);
+                    res = new ResultValue(String.valueOf(result4), firstOp.type);
+                }
                 break;
             default:
                 parser.error("ERROR: CANNOT RAISE %s TO %s", secondOp.type, firstOp.type);

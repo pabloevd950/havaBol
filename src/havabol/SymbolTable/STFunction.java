@@ -9,7 +9,7 @@ public class STFunction extends STEntry
     public int numArgs;
     public ArrayList <String> parmList;
 
-    /**\
+    /**
      * STFunction constructor that is a subclass of STEntry that helps identify the symbol in the symbol table
      * <p>
      * STFunction class classify the function primary classification into user or builtin
