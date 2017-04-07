@@ -1,11 +1,7 @@
 package havabol;
 
-import com.sun.org.apache.xpath.internal.SourceTree;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
-
-import javax.print.StreamPrintService;
-import javax.xml.transform.Result;
 
 /*
  * This is the simple Parser class for the HavaBol programming language.
