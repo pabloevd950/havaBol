@@ -20,9 +20,9 @@ public class ResultValue
      * <p>
      * This constructor initializes a resultValue object without a value
      *
+     * @param value    The value to assign to the variable
      * @param type  declare type of variable
      * @param structure   type of data structure for the variable
-     * @param value    The value to assign to the variable
      * @param terminatingStr ....
      * @return         ResultValue object
      */
