@@ -984,7 +984,28 @@ public class Parser
                     // set type to an int
                     type = Token.INTEGER;
                 }
+                else if (scan.currentToken.tokenStr.equals("SPACES"))
+                {
+                    //advance to our paramater
+                    scan.getNext();
+                    scan.getNext();
 
+                    //get value of parameter
+                    res = expr();
+
+                    // make sure we only have one parameter
+                    if (!scan.currentToken.tokenStr.equals(")"))
+                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
+
+                    // determine if string contains spaces
+                    if (res.value.trim().length() == 0)
+                        value = "T";
+                    else
+                        value = "F";
+
+                    // set type to a boolean
+                    type = Token.BOOLEAN;
+                }
                 break;
             case Token.USER:
                 // do other shit later
