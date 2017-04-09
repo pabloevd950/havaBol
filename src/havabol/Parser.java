@@ -273,7 +273,7 @@ public class Parser
             case "=":
                 if (bExec)
                 {
-                    ResultValue res1 = assign(variableStr, expr(), leftType);
+                    ResultValue res1 = assign(variableStr, expr(";"), leftType);
                     return res1;
                 }
                 else
@@ -354,7 +354,7 @@ public class Parser
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
-    public ResultValue expr() throws Exception
+    public ResultValue expr(String terminatingStr) throws Exception
     {
         //Result value for operands
         ResultValue firstResValue, secondResValue;
@@ -579,7 +579,7 @@ public class Parser
         if (bExec)
         {// we are executing, not ignoring
             // evaluate expression
-            resCond = expr();
+            resCond = expr(":");
 
             // did the condition return true?
             if (resCond.value.equals("T"))
@@ -661,7 +661,7 @@ public class Parser
             Token whileToken = scan.currentToken;
 
             // evaluate expression
-            resCond = expr();
+            resCond = expr(":");
 
             while (resCond.value.equals("T"))
             {// did the condition return true?
@@ -675,7 +675,7 @@ public class Parser
                 scan.setTo(whileToken);
 
                 // check expression case
-                resCond = expr();
+                resCond = expr(":");
             }
 
             // expr() returned false, so skip ahead to the end of the while
@@ -736,12 +736,12 @@ public class Parser
                         error("ERROR: EXPECTED END VARIABLE BUT FOUND %s", scan.currentToken.tokenStr);
 
                     // create end variable
-                    ev = Integer.parseInt(expr().value);
+                    ev = Integer.parseInt(expr("by :").value);
 
                     // check if we have an increment variable, default to 1
                     if ( scan.getNext().equals("by"))
                     {
-                        iv = Integer.parseInt(expr().value);
+                        iv = Integer.parseInt(expr(":").value);
 
                         // advance token to the expected ':'
                         scan.getNext();
@@ -790,15 +790,15 @@ public class Parser
                         error("ERROR: EXPECTED VARIABLE BUT FOUND %s", scan.nextToken.tokenStr);
 
                     // evaluate iterable expression
-                    resCond = expr();
+                    resCond = expr(":");
 
                     // make sure we end on an ':'
                     if ( !scan.getNext().equals(":"))
                         error("ERROR: EXPECTED ':' AFTER FOR LOOP VARIABLES");
 
                     // make sure we have an appropriate iterable object (array or string)
-                    if ( resCond.stucture == ResultValue.fixedArray
-                       ||resCond.stucture == ResultValue.unboundedArray)
+                    if ( resCond.structure == ResultValue.fixedArray
+                       ||resCond.structure == ResultValue.unboundedArray)
                     {// we are iterating through an array
 
                     }
@@ -848,14 +848,14 @@ public class Parser
                         error("ERROR: EXPECTED VARIABLE BUT FOUND %s", scan.nextToken.tokenStr);
 
                     // save string value to iter on
-                    string = expr().value;
+                    string = expr("by").value;
 
                     if ( !scan.getNext().equals("by") )
                      // make sure we have our delimiter
                         error("ERROR: MISSING 'BY' SEPARATOR FOR DELIMITER");
 
                     // save delimiter
-                    delimiter = expr().value;
+                    delimiter = expr(":").value;
 
                     if ( !scan.getNext().equals(":") )
                         // make sure we have our ending ':'
@@ -943,7 +943,7 @@ public class Parser
                         if(scan.currentToken.subClassif <= Token.STRING && scan.currentToken.subClassif > 0)
                         {
                             scan.setTo(previousToken);
-                            printLine += expr().value;
+                            printLine += expr(",").value;
                         }
                         else if (scan.currentToken.tokenStr.equals(","))
                             // ',' automatically add a space to our line
@@ -951,7 +951,7 @@ public class Parser
                         else if (scan.currentToken.primClassif == Token.OPERATOR)
                         {// operator encountered, evaluate and add to print string
                             scan.setTo(previousToken);
-                            printLine += expr().value;
+                            printLine += expr(",").value;
                         }
                         else if (scan.currentToken.tokenStr.equals(";"))
                             // should not be encountered unless a ')' is missing
@@ -972,7 +972,7 @@ public class Parser
                     scan.getNext();
 
                     // get value of parameter
-                    res = expr();
+                    res = expr(";");
 
                     // make sure we only have one parameter
                     if (!scan.currentToken.tokenStr.equals(")"))
@@ -991,7 +991,7 @@ public class Parser
                     scan.getNext();
 
                     //get value of parameter
-                    res = expr();
+                    res = expr(";");
 
                     // make sure we only have one parameter
                     if (!scan.currentToken.tokenStr.equals(")"))

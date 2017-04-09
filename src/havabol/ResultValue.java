@@ -12,7 +12,7 @@ public class ResultValue
 
     String value;
     int type;
-    int stucture;
+    int structure;
     String terminatingStr;
 
     /**
@@ -30,7 +30,7 @@ public class ResultValue
     {
         this.value = value;
         this.type = type;
-        this.stucture = structure;
+        this.structure = structure;
         this.terminatingStr = terminatingStr;
     }
 
