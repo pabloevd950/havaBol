@@ -33,7 +33,7 @@ public class Token
     // Constants for FUNCTION's subClassif (definedby)
     public static final int BUILTIN    = 13;// builtin function (e.g., print)
     public static final int USER       = 14;// user defined
-
+    // Constants for Expression evaluation
     // array of primClassif string values for the constants
     public static final String[] strPrimClassifM =
             {"Undefined"

@@ -2,6 +2,8 @@ package havabol;
 
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
+
+import java.util.Stack;
 import java.util.regex.Pattern;
 
 /*
@@ -344,6 +346,232 @@ public class Parser
 
         return resExpr;
     }
+
+    public ResultValue expression(String terminatingStr) throws Exception
+    {
+        Stack outPutStack = new Stack<ResultValue>();
+        Stack stack = new Stack<Token>();
+
+
+        Token poppedOperator, popped;
+        Token operand;
+        ResultValue firstResValue, secondResValue;
+        ResultValue res;
+
+        Boolean bFound;
+
+        //Go to start of expression
+        scan.getNext();
+
+
+
+
+        //Control token used to check for unary minus
+        Token prevToken = scan.currentToken;
+
+        while(scan.currentToken.primClassif == Token.OPERAND //Check if token is operand
+                || scan.currentToken.primClassif == Token.OPERATOR //Check if it is an operator
+                || "()".contains(scan.currentToken.tokenStr)) //Check if its separator
+        {
+            //Check token type
+            switch (scan.currentToken.primClassif)
+            {
+                //If token is an operand
+                case Token.OPERAND:
+                    operand = scan.currentToken;
+                    if(operand.subClassif == Token.IDENTIFIER)
+                        // if identifier get its result value
+                        firstResValue = storageManager.getEntry(operand.tokenStr);
+                    else// create a new result value object
+                        firstResValue = new ResultValue(operand.tokenStr, operand.subClassif);
+
+                    outPutStack.push(firstResValue);
+                    break;
+                //If token is an operator
+                case Token.OPERATOR:
+                    //Check what operator. Look for unary minus
+                    switch (scan.currentToken.tokenStr)
+                    {
+                        //If minus
+                        case "-":
+                            //Check if the previous token was an operator.
+                            //If it was, then we are expecting an operand, or unary minus.
+                            if(prevToken.primClassif == Token.OPERATOR || prevToken.primClassif == Token.SEPARATOR)
+                            {
+                                //Check if its an operand
+                                if(scan.nextToken.primClassif == Token.OPERAND)
+                                {
+                                    /**TODO
+                                     * Unary minus logic
+                                     */
+                                    Token unaryMinus = new Token("u-");
+                                    stack.push(unaryMinus);
+                                    System.out.println(getPrecedence(unaryMinus) + "UNARY MINUS");
+                                }
+                                //If it isn't, then we encountered an error
+                                else
+                                {
+                                    //Throw exception
+                                }
+                                break;
+                            }
+
+                            //Case where operator is not unary minus.
+                        default:
+                            //If the stack is not empty, check precedence
+                            //Check the precedence  of the current token compared to the last pushed to stack
+                            while(!stack.empty())
+                            {
+                                //Check precdence
+                                //if precedence of current operator is higher, break.
+                                if(getPrecedence(scan.currentToken) < getPrecedence((Token)stack.peek()))
+                                {
+                                    break;
+                                }
+                                //If stack is not empty, and precedence is right evaluate
+                                if(!stack.empty())
+                                {
+                                    //Pop operator
+                                    poppedOperator = (Token)stack.pop();
+                                    //Pop last value
+                                    firstResValue = (ResultValue) outPutStack.pop();
+                                    //Pop second value
+                                    secondResValue = (ResultValue)outPutStack.pop();
+                                    //Evaluate result value
+                                    res = evaluate(secondResValue, firstResValue, poppedOperator.tokenStr);
+                                    //Push value back to top of output stack
+                                    outPutStack.push(res);
+
+                                }
+
+                            }
+                            //Push the current token to the operator stack
+                            stack.push(scan.currentToken);
+
+                            break;
+                    }
+                    //handle function
+                case Token.FUNCTION:
+                    //Handle separators
+                case Token.SEPARATOR:
+
+                    switch (scan.currentToken.tokenStr)
+                    {
+                        case "(":
+                            stack.push(scan.currentToken);
+                            break;
+                        case ")":
+                            bFound = false;
+                            while(!stack.empty())
+                            {
+                                popped = (Token)stack.pop();
+                                if (popped.tokenStr.equals("(")) // If we found the lparn break
+                                {
+                                    bFound = true;
+                                    break;
+                                }
+                                else
+                                {
+                                    firstResValue = (ResultValue) outPutStack.pop(); // Get two operands for our operator
+                                    secondResValue = (ResultValue) outPutStack.pop();
+                                    res = evaluate(secondResValue, firstResValue, popped.tokenStr);
+                                    outPutStack.push(res); // Push result back onto stack
+                                }
+                            }
+                            break;
+
+                    }
+            }
+            prevToken = scan.currentToken;
+            scan.getNext();
+
+        }
+        //This should get the last result value
+        while(!stack.empty())
+        {
+            poppedOperator = (Token)stack.pop();
+            if(poppedOperator.tokenStr == "(")
+            {
+                System.out.println("Parem should not be here");
+            }
+            if(poppedOperator.tokenStr.equals("u-"))
+            {
+                ResultValue resvalue = (ResultValue) outPutStack.pop();
+                ResultValue minus = new ResultValue("-1",Token.INTEGER);
+                outPutStack.push(evaluate(minus, resvalue, "*"));
+            }
+            else
+            {
+                ResultValue resvalue = (ResultValue) outPutStack.pop();
+                ResultValue res2value = (ResultValue) outPutStack.pop();
+                outPutStack.push(evaluate(res2value, resvalue, poppedOperator.tokenStr));
+            }
+        }
+        //Final value
+        res = (ResultValue) outPutStack.pop();
+
+        if(scan.bShowExpr)
+        {
+            System.out.print("\t\t...");
+            System.out.println("Result Value: " + res.value);
+        }
+
+        scan.setTo(prevToken);
+        res.terminatingStr = scan.nextToken.tokenStr;
+        return res;
+    }
+
+
+    public ResultValue evaluate(ResultValue firstResValue, ResultValue secondResValue, String operator) throws Exception
+    {
+        //Result value for return value
+        ResultValue res = new ResultValue();
+
+
+        //Operator string
+        switch (operator)
+        {
+            case "+":
+                res = Utilities.add(this, firstResValue, secondResValue);
+                break;
+            case "-":
+                res = Utilities.sub(this, firstResValue, secondResValue);
+                break;
+            case "*":
+                res = Utilities.mul(this, firstResValue, secondResValue);
+                break;
+            case "/":
+                res = Utilities.div(this, firstResValue, secondResValue);
+                break;
+            case "^":
+                res = Utilities.exp(this, firstResValue, secondResValue);
+                break;
+            case "<":
+                res = Utilities.isLessThan(this, firstResValue, secondResValue);
+                break;
+            case ">":
+                res = Utilities.isGreaterThan(this, firstResValue, secondResValue);
+                break;
+            case "<=":
+                res = Utilities.isLessThanorEq(this, firstResValue, secondResValue);
+                break;
+            case ">=":
+                res = Utilities.isGreaterThanorEq(this, firstResValue, secondResValue);
+                break;
+            case "==":
+                res = Utilities.isEqual(this, firstResValue, secondResValue);
+                break;
+            case "!=":
+                res = Utilities.notEqualTo(this, firstResValue, secondResValue);
+                break;
+            default:
+                error("ERROR: '%s' IS NOT A VALID OPERATOR FOR EXPRESSION", operator);
+        }
+
+        return res;
+    }
+
+
 
     /**
      * This method will evaluate an expression and return a ResultValue object
@@ -1039,4 +1267,46 @@ public class Parser
                                 , String.format(fmt, varArgs)
                                 , scan.sourceFileNm);
     }
+
+
+
+
+    /**
+     *
+     * @param operator
+     * @return
+     */
+    public int getPrecedence(Token operator)
+    {   int precedence;
+        switch(operator.tokenStr)
+        {
+            case "u-":
+                precedence = 0;
+                break;
+            case "^":
+                precedence = 1;
+                break;
+            case "*":
+                precedence = 2;
+                break;
+            case "/":
+                precedence = 2;
+                break;
+            case "+":
+                precedence = 3;
+                break;
+            case "-":
+                precedence = 3;
+                break;
+            case "#":
+                precedence = 4;
+                break;
+            default:
+                precedence = 5;
+        }
+
+        return precedence;
+    }
+
 }
+
