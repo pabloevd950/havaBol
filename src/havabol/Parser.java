@@ -397,9 +397,10 @@ public class Parser
         while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
                 || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
-                || "()[]".contains(scan.currentToken.tokenStr)) // check if its separator
+                || "(),[]".contains(scan.currentToken.tokenStr)) // check if its separator
         {
-            System.out.println(scan.currentToken.tokenStr + " Token in while");
+            //System.out.println(scan.currentToken.tokenStr + " Token in while");
+
             // check token type
             switch (scan.currentToken.primClassif)
             {
@@ -751,10 +752,7 @@ public class Parser
         { // assign is done, so return the single value
             // check for debug on
             if(scan.bShowExpr)
-            {
-                System.out.print("\t\t...");
-                System.out.println("Result Value: " + res.value);
-            }
+                System.out.println("\t\t...Result Value: " + res.value);
 
             return new ResultValue(firstResValue.value, firstResValue.type,1, operator);
         }
@@ -833,10 +831,7 @@ public class Parser
 
         // check for debug on
         if(scan.bShowExpr)
-        {
-            System.out.print("\t\t...");
-            System.out.println("Result Value: " + res.value);
-        }
+            System.out.println("\t\t...Result Value: " + res.value);
 
         return res;
     }
@@ -1275,11 +1270,11 @@ public class Parser
                     String printLine = "";
                     Token previousToken = scan.currentToken;
 
-                    System.out.println("start");
-                    System.out.println(expression().value);
-                    System.out.println("end");
+                    //System.out.println("start");
+                    //System.out.println(expression().value);
+                    //System.out.println("end");
 
-                    /*while ( !scan.getNext().equals(")") )
+                    while ( !scan.getNext().equals(")") )
                     {// loop until we find a ')'
                         if(scan.currentToken.subClassif <= Token.STRING && scan.currentToken.subClassif > 0)
                         {
@@ -1299,8 +1294,8 @@ public class Parser
                             error("ERROR: EXPECTED ')' BEFORE ';' TOKEN %s"
                                     , scan.currentToken.tokenStr);*/
 
-                        /*previousToken = scan.currentToken;
-                    }*/
+                        previousToken = scan.currentToken;
+                    }
 
                     // check if we are executing
                     if (bExec)
@@ -1326,7 +1321,7 @@ public class Parser
                 }
                 else if (scan.currentToken.tokenStr.equals("SPACES"))
                 {
-                    //advance to our paramater
+                    //advance to our parameter
                     scan.getNext();
                     scan.getNext();
 
