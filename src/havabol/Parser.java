@@ -534,7 +534,7 @@ public class Parser
                                 {
                                     bFound = true;
                                     //Check if we are in function call
-                                    if(inFunc = true)
+                                    if(inFunc == true)
                                     {
                                         //Check that the next token is function symbol
                                         popped = (Token) stack.peek();
@@ -557,6 +557,9 @@ public class Parser
                                     outPutStack.push(res); // Push result back onto stack
                                 }
                             }
+                            // make sure we had a left parenthesis
+                            if (bFound == false)
+                                error("ERROR: EXPECTED LEFT PAREN");
                             break;
 
                     }
