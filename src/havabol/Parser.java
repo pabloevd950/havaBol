@@ -347,48 +347,100 @@ public class Parser
         return resExpr;
     }
 
+    /**
+     * This method will evaluate an expression and return a ResultValue object
+     * that contains the final result.
+     * <p>
+     * Handles complex expression. This method assumes that the current token is
+     * the token before the start of the expression. When it returns, the current token is at
+     * the token succeeding the evaluated expression.
+     *
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
+     */
     public ResultValue expression() throws Exception
     {
+        //Stack for resulting values
         Stack outPutStack = new Stack<ResultValue>();
+        //Operand stack
         Stack stack = new Stack<Token>();
 
-
+        //Tokens used for operators and operands
         Token poppedOperator, popped;
         Token operand;
-        ResultValue firstResValue, secondResValue;
-        ResultValue res;
+        //Resulting value for operands and final result.
+        ResultValue firstResValue, secondResValue, res;
 
-        Boolean bFound;
+        Boolean bFound; //Boolean to determine if we found left paren
+        Boolean inFunc = false; //Boolean to signal if we are in an expression called from function
+        Boolean bCategory = false; //Boolean to check proper infix notation
+        Boolean moveForward = true; //Boolean used to control moving forward to next token
+
+        //Check if this expression was called from function()
+        if(scan.currentToken.primClassif == Token.FUNCTION)
+        {
+            //System.out.println(scan.currentToken.tokenStr);
+            inFunc = true;
+            //Symbol token used to know when function operation ends
+            Token hashTag = new Token("#");
+            hashTag.primClassif = Token.SEPARATOR;
+            stack.push(hashTag);
+        }
 
         //Go to start of expression
         scan.getNext();
 
-
-
-
         //Control token used to check for unary minus
         Token prevToken = scan.currentToken;
-
+        //Loop through expression
         while(scan.currentToken.primClassif == Token.OPERAND //Check if token is operand
                 || scan.currentToken.primClassif == Token.OPERATOR //Check if it is an operator
-                || "()".contains(scan.currentToken.tokenStr)) //Check if its separator
+                || scan.currentToken.primClassif == Token.FUNCTION // check for functions
+                || "()[],".contains(scan.currentToken.tokenStr)) //Check if its separator
+
         {
+            //System.out.println(scan.currentToken.tokenStr + " Current token in while loop");
             //Check token type
             switch (scan.currentToken.primClassif)
             {
                 //If token is an operand
                 case Token.OPERAND:
+                    if(bCategory == true)
+                        error("EXPECTED OPERATOR AND FOUND " + scan.currentToken.tokenStr);
+                    //Set operand equal to current token
                     operand = scan.currentToken;
+
+                    //Get result value of operand. If its an identifier, get it from the storage manager
                     if(operand.subClassif == Token.IDENTIFIER)
                         // if identifier get its result value
                         firstResValue = storageManager.getEntry(operand.tokenStr);
                     else// create a new result value object
                         firstResValue = new ResultValue(operand.tokenStr, operand.subClassif);
 
+                    //Check and see if the next operator is a unary minus.
+                    try
+                    {
+                        poppedOperator = (Token)stack.peek();
+                        if(poppedOperator.tokenStr.equals("u-"))
+                        {
+                            stack.pop();
+                            ResultValue minus = new ResultValue("-1",Token.INTEGER);
+                            firstResValue = Utilities.mul(this, minus, firstResValue);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+
+                    }
                     outPutStack.push(firstResValue);
+                    bCategory = true;
                     break;
+
                 //If token is an operator
                 case Token.OPERATOR:
+                    if(bCategory == false && !scan.currentToken.tokenStr.equals("-"))
+                        error("EXPECTED OPERAND AND FOUND " + scan.currentToken.tokenStr);
+
                     //Check what operator. Look for unary minus
                     switch (scan.currentToken.tokenStr)
                     {
@@ -396,17 +448,16 @@ public class Parser
                         case "-":
                             //Check if the previous token was an operator.
                             //If it was, then we are expecting an operand, or unary minus.
-                            if(prevToken.primClassif == Token.OPERATOR || prevToken.primClassif == Token.SEPARATOR)
+                            if(prevToken.primClassif == Token.OPERATOR) //|| prevToken.primClassif == Token.SEPARATOR)
                             {
-                                //Check if its an operand
-                                if(scan.nextToken.primClassif == Token.OPERAND)
+                                //Check if next token is an operand or separator. If any is true. The "-" is "u-"
+                                if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.equals("("))
                                 {
                                     /**TODO
                                      * Unary minus logic
                                      */
                                     Token unaryMinus = new Token("u-");
                                     stack.push(unaryMinus);
-                                    System.out.println(getPrecedence(unaryMinus) + "UNARY MINUS");
                                 }
                                 //If it isn't, then we encountered an error
                                 else
@@ -425,9 +476,8 @@ public class Parser
                                 //Check precdence
                                 //if precedence of current operator is higher, break.
                                 if(getPrecedence(scan.currentToken) < getPrecedence((Token)stack.peek()))
-                                {
                                     break;
-                                }
+
                                 //If stack is not empty, and precedence is right evaluate
                                 if(!stack.empty())
                                 {
@@ -437,37 +487,66 @@ public class Parser
                                     firstResValue = (ResultValue) outPutStack.pop();
                                     //Pop second value
                                     secondResValue = (ResultValue)outPutStack.pop();
-                                    //Evaluate result value
+
                                     res = evaluate(secondResValue, firstResValue, poppedOperator.tokenStr);
                                     //Push value back to top of output stack
                                     outPutStack.push(res);
 
                                 }
-
                             }
                             //Push the current token to the operator stack
                             stack.push(scan.currentToken);
-
                             break;
+
                     }
-                    //handle function
+                    bCategory = false;
+                    break;
+
+                //handle functions
                 case Token.FUNCTION:
-                    //Handle separators
+                    //Cal function to give us result value
+                    outPutStack.push(testFunc());
+                    //When function return, current token might be next desired operator or terminator.
+                    //Set to false so we dont skip over it.
+                    moveForward = false;
+                    bCategory = true;
+                    break;
+
+
+                //Handle separators
                 case Token.SEPARATOR:
 
                     switch (scan.currentToken.tokenStr)
                     {
+                        //found left paren
                         case "(":
                             stack.push(scan.currentToken);
                             break;
+                        //found right paren
                         case ")":
                             bFound = false;
+                            //Loop through and operatoe until matching left paren is found
                             while(!stack.empty())
                             {
                                 popped = (Token)stack.pop();
+
                                 if (popped.tokenStr.equals("(")) // If we found the lparn break
                                 {
                                     bFound = true;
+                                    //Check if we are in function call
+                                    if(inFunc = true)
+                                    {
+                                        //Check that the next token is function symbol
+                                        popped = (Token) stack.peek();
+                                        if(popped.tokenStr.equals("#"))
+                                        {
+                                            //Pop
+                                            res = (ResultValue) outPutStack.peek();
+                                            scan.getNext();
+                                            return res;
+                                        }
+
+                                    }
                                     break;
                                 }
                                 else
@@ -482,16 +561,22 @@ public class Parser
 
                     }
             }
+            //Set previous token = to the current toke, so that we end at the terminating string
             prevToken = scan.currentToken;
-            scan.getNext();
+            //Move to next token unless we returned from function call
+            if(moveForward)
+                scan.getNext();
+            moveForward = true;
 
         }
         //This should get the last result value
         while(!stack.empty())
         {
             poppedOperator = (Token)stack.pop();
+
             if(poppedOperator.tokenStr == "(")
             {
+                //Throw error
                 System.out.println("Parem should not be here");
             }
             if(poppedOperator.tokenStr.equals("u-"))
@@ -518,10 +603,20 @@ public class Parser
 
         scan.setTo(prevToken);
         res.terminatingStr = scan.nextToken.tokenStr;
+        //Return final result value
         return res;
     }
 
 
+    /**
+     *
+     * This method recieves two operands and an operator and returns the resulting value
+     * @param firstResValue first operand
+     * @param secondResValue second operand
+     * @param operator operator to determine what operation to perform on operands
+     * @return Result value of operation
+     * @throws Exception
+     */
     public ResultValue evaluate(ResultValue firstResValue, ResultValue secondResValue, String operator) throws Exception
     {
         //Result value for return value
@@ -564,6 +659,8 @@ public class Parser
             case "!=":
                 res = Utilities.notEqualTo(this, firstResValue, secondResValue);
                 break;
+            case "u-":
+                //es = Utilities.mul(this, firstResValue, )
             default:
                 error("ERROR: '%s' IS NOT A VALID OPERATOR FOR EXPRESSION", operator);
         }
@@ -1250,6 +1347,58 @@ public class Parser
         return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
     }
 
+    public ResultValue testFunc() throws Exception
+    {
+        //System.out.println("Entering testFunc with current token as " + scan.currentToken.tokenStr);
+        int type = Token.BUILTIN;
+        ResultValue res;
+        String value = "";
+
+        switch (scan.currentToken.subClassif)
+        {// determine if function is built in or user defined
+            case Token.BUILTIN:
+                // make sure the function is in correct syntax
+                if (! scan.nextToken.tokenStr.equals("(") )
+                    error("ERROR: '%s' FUNCTION IS MISSING SEPARATOR '('", scan.currentToken.tokenStr);
+
+                // determine function
+                if (scan.currentToken.tokenStr.equals("LENGTH"))
+                {// length function
+                    // advance to our parameter
+                    //scan.getNext();
+                    //scan.getNext();
+                    // get value of parameter
+                    res = expression();
+
+                    // make sure we only have one parameter
+                    //                    if (!scan.currentToken.tokenStr.equals(")"))
+                    //                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
+
+                    // calculate length of given string
+                    value = "" + res.value.length();
+
+                    // set type to an int
+                    type = Token.INTEGER;
+                }
+
+                break;
+            case Token.USER:
+                // do other shit later
+                skipTo(scan.currentToken.tokenStr, ";");
+                break;
+            default:// should never hit this, otherwise MAJOR FUCK UP
+                error("INTERNAL ERROR: %s NOT A RECOGNIZED FUNCTION"
+                        , scan.currentToken.tokenStr);
+        }
+
+        // make sure we end on a ';'
+        // if ( !scan.currentToken.tokenStr.equals(";") )
+        //    error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
+
+        return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
+    }
+
+
     /**
      * This method is provided to the parser to simplify all processing errors encountered.
      * <p>
@@ -1271,9 +1420,10 @@ public class Parser
 
 
     /**
-     *
+     * This method recieves an operator as a token and checks it precedence.
+     * Operators with higher precedence have lower int value. As precedence decreases, int value goes up.
      * @param operator
-     * @return
+     * @return int value of precedence.
      */
     public int getPrecedence(Token operator)
     {   int precedence;
