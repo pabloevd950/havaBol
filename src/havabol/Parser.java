@@ -360,15 +360,15 @@ public class Parser
      */
     public ResultValue expression() throws Exception
     {
-        //Stack for resulting values
+        // result value and operand stacks
         Stack outPutStack = new Stack<ResultValue>();
-        //Operand stack
         Stack stack = new Stack<Token>();
 
-        //Tokens used for operators and operands
+        // operator and operand tokens
         Token poppedOperator, popped;
         Token operand;
-        //Resulting value for operands and final result.
+
+        // result value for operands and final result
         ResultValue firstResValue, secondResValue, res;
 
         Boolean bFound; //Boolean to determine if we found left paren
@@ -376,89 +376,101 @@ public class Parser
         Boolean bCategory = false; //Boolean to check proper infix notation
         Boolean moveForward = true; //Boolean used to control moving forward to next token
 
-        //Check if this expression was called from function()
+        // check if this expression was called from function()
         if(scan.currentToken.primClassif == Token.FUNCTION)
         {
-            //System.out.println(scan.currentToken.tokenStr);
             inFunc = true;
-            //Symbol token used to know when function operation ends
+
+            // create symbol token used to signal end of function operation
             Token hashTag = new Token("#");
             hashTag.primClassif = Token.SEPARATOR;
             stack.push(hashTag);
         }
 
-        //Go to start of expression
+        // advance to start of expression
         scan.getNext();
 
-        //Control token used to check for unary minus
+        // control token used to check for unary minus
         Token prevToken = scan.currentToken;
-        //Loop through expression
-        while(scan.currentToken.primClassif == Token.OPERAND //Check if token is operand
-                || scan.currentToken.primClassif == Token.OPERATOR //Check if it is an operator
-                || scan.currentToken.primClassif == Token.FUNCTION // check for functions
-                || "()[],".contains(scan.currentToken.tokenStr)) //Check if its separator
 
+        // loop through expression
+        while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
+                || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
+                || scan.currentToken.primClassif == Token.FUNCTION // check for functions
+                || "()[],".contains(scan.currentToken.tokenStr)) // check if its separator
         {
-            //System.out.println(scan.currentToken.tokenStr + " Current token in while loop");
-            //Check token type
+            // check token type
             switch (scan.currentToken.primClassif)
             {
-                //If token is an operand
+                // token is an operand
                 case Token.OPERAND:
                     if(bCategory == true)
-                        error("EXPECTED OPERATOR AND FOUND " + scan.currentToken.tokenStr);
-                    //Set operand equal to current token
+                     // we encountered an unexpected operand, looking for an operator
+                        error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR."
+                                    , scan.currentToken.tokenStr);
+
+                    // set operand equal to current token
                     operand = scan.currentToken;
 
-                    //Get result value of operand. If its an identifier, get it from the storage manager
+                    // get result value of operand. If its an identifier, get it from the storage manager
                     if(operand.subClassif == Token.IDENTIFIER)
-                        // if identifier get its result value
+                     // if identifier get its result value
                         firstResValue = storageManager.getEntry(operand.tokenStr);
-                    else// create a new result value object
+                    else
+                     // create a new result value object
                         firstResValue = new ResultValue(operand.tokenStr, operand.subClassif);
 
-                    //Check and see if the next operator is a unary minus.
+                    // check if the next operator is a unary minus
                     try
                     {
+                        // take a look at the top of the stack, no pop
                         poppedOperator = (Token)stack.peek();
+
                         if(poppedOperator.tokenStr.equals("u-"))
-                        {
+                        {// top of the stack contained a unary minus
+                            // pop it off the stack
                             stack.pop();
-                            ResultValue minus = new ResultValue("-1",Token.INTEGER);
-                            firstResValue = Utilities.mul(this, minus, firstResValue);
+
+                            // negate the operand before we push it on the stack
+                            firstResValue = Utilities.mul(this,
+                                        new ResultValue("-1",Token.INTEGER), firstResValue);
                         }
                     }
                     catch (Exception e)
                     {
-
+                        // catch empty stack exception and do nothing
+                        // means this is our first operand, so there is no error
                     }
+                    // push operand to the stack and signal that we now want an operator
                     outPutStack.push(firstResValue);
                     bCategory = true;
-                    break;
 
-                //If token is an operator
+                    break;
+                // token is an operator
                 case Token.OPERATOR:
                     if(bCategory == false && !scan.currentToken.tokenStr.equals("-"))
-                        error("EXPECTED OPERAND AND FOUND " + scan.currentToken.tokenStr);
+                     // we encountered an unexpected operator, looking for an operand
+                        error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND."
+                                , scan.currentToken.tokenStr);
 
-                    //Check what operator. Look for unary minus
+                    // determine operator, look for unary minus
                     switch (scan.currentToken.tokenStr)
                     {
-                        //If minus
+                        // minus
                         case "-":
-                            //Check if the previous token was an operator.
-                            //If it was, then we are expecting an operand, or unary minus.
-                            if(prevToken.primClassif == Token.OPERATOR) //|| prevToken.primClassif == Token.SEPARATOR)
-                            {
-                                //Check if next token is an operand or separator. If any is true. The "-" is "u-"
+                            // check if the previous token was an operator.
+                            if(prevToken.primClassif == Token.OPERATOR)
+                            {// previous token was an operator, either want an operand or unary minus
+                                //Check if next token is an operand or separator.
                                 if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.equals("("))
-                                {
-                                    /**TODO
-                                     * Unary minus logic
-                                     */
-                                    Token unaryMinus = new Token("u-");
-                                    stack.push(unaryMinus);
-                                }
+                                 // unary minus is true. Change the "-" to "u-"
+                                    stack.push(new Token("u-"));
+
+                                /*
+                                we need to make sure that we are handling the case where parenthesis
+                                are negated such as -(3). doesn't work right now
+                                 */
+
                                 //If it isn't, then we encountered an error
                                 else
                                 {
@@ -466,143 +478,139 @@ public class Parser
                                 }
                                 break;
                             }
-
-                            //Case where operator is not unary minus.
+                        // operator is not unary minus
                         default:
-                            //If the stack is not empty, check precedence
-                            //Check the precedence  of the current token compared to the last pushed to stack
+                            // loop through expression while the stack is not empty
                             while(!stack.empty())
                             {
-                                //Check precdence
-                                //if precedence of current operator is higher, break.
+                                // check precedence
                                 if(getPrecedence(scan.currentToken) < getPrecedence((Token)stack.peek()))
+                                 // precedence of current operator is higher, break
                                     break;
-
-                                //If stack is not empty, and precedence is right evaluate
-                                if(!stack.empty())
-                                {
-                                    //Pop operator
+                                else if(!stack.empty())
+                                {// stack is not empty and precedence is right, evaluate
+                                    // pop operator
                                     poppedOperator = (Token)stack.pop();
-                                    //Pop last value
+
+                                    // pop last value
                                     firstResValue = (ResultValue) outPutStack.pop();
-                                    //Pop second value
+
+                                    // pop second value
                                     secondResValue = (ResultValue)outPutStack.pop();
 
                                     res = evaluate(secondResValue, firstResValue, poppedOperator.tokenStr);
-                                    //Push value back to top of output stack
-                                    outPutStack.push(res);
 
+                                    // push value back to top of output stack
+                                    outPutStack.push(res);
                                 }
                             }
-                            //Push the current token to the operator stack
+                            // push the current token to the operator stack
                             stack.push(scan.currentToken);
                             break;
 
                     }
+                    // we are now expecting an operand
                     bCategory = false;
                     break;
-
-                //handle functions
+                // handle functions
                 case Token.FUNCTION:
-                    //Cal function to give us result value
+                    // call function to get result value
                     outPutStack.push(testFunc());
-                    //When function return, current token might be next desired operator or terminator.
-                    //Set to false so we dont skip over it.
+
+                    // make sure we don't skip over the next operator or terminator after function call
                     moveForward = false;
+
+                    // functions are considered operands, so we are now looking for an operator
                     bCategory = true;
                     break;
-
-
-                //Handle separators
+                // handle separators
                 case Token.SEPARATOR:
-
                     switch (scan.currentToken.tokenStr)
-                    {
-                        //found left paren
+                    {// determine left or right paren
                         case "(":
                             stack.push(scan.currentToken);
                             break;
-                        //found right paren
                         case ")":
+                            // right parenthesis found, set flag false until we find matching left paren
                             bFound = false;
-                            //Loop through and operatoe until matching left paren is found
-                            while(!stack.empty())
-                            {
+
+                            // loop through stack until matching left paren is found
+                            while (!stack.empty())
+                            {// stack is not empty and left paren not found, pop top of stack
                                 popped = (Token)stack.pop();
 
-                                if (popped.tokenStr.equals("(")) // If we found the lparn break
-                                {
+                                if (popped.tokenStr.equals("("))
+                                {// left paren found, set flag to true and break
                                     bFound = true;
-                                    //Check if we are in function call
-                                    if(inFunc == true)
-                                    {
-                                        //Check that the next token is function symbol
-                                        popped = (Token) stack.peek();
+
+                                    if (inFunc == true)
+                                    {// we are in a function call
+                                        popped = (Token)stack.peek();
                                         if(popped.tokenStr.equals("#"))
-                                        {
-                                            //Pop
-                                            res = (ResultValue) outPutStack.peek();
+                                        {// next token contains our function symbol, leave
+                                            res = (ResultValue)outPutStack.peek();
                                             scan.getNext();
                                             return res;
                                         }
-
                                     }
+
+                                    // not in a function and left paren found, leave while loop
                                     break;
                                 }
                                 else
-                                {
-                                    firstResValue = (ResultValue) outPutStack.pop(); // Get two operands for our operator
-                                    secondResValue = (ResultValue) outPutStack.pop();
+                                {// not a left paren, work with stack
+                                    // get the first two operands for our operator
+                                    firstResValue = (ResultValue)outPutStack.pop();
+                                    secondResValue = (ResultValue)outPutStack.pop();
+
+                                    // evaluate and push result back to stack
                                     res = evaluate(secondResValue, firstResValue, popped.tokenStr);
-                                    outPutStack.push(res); // Push result back onto stack
+                                    outPutStack.push(res);
                                 }
                             }
-                            // make sure we had a left parenthesis
                             if (bFound == false)
-                                error("ERROR: EXPECTED LEFT PAREN");
-                            break;
+                             // left paren was not encountered
+                                error("ERROR: EXPECTED LEFT PARENTHESIS");
 
+                            break;
                     }
             }
-            //Set previous token = to the current toke, so that we end at the terminating string
+            // set previous token to the current token
             prevToken = scan.currentToken;
-            //Move to next token unless we returned from function call
+
+            // advance token unless returned from function call
             if(moveForward)
                 scan.getNext();
-            moveForward = true;
 
+            moveForward = true;
         }
-        //This should get the last result value
+
+        // this should get the last result value
         while(!stack.empty())
-        {
+        {// this doesn't work, left paren at the beginning of an expr throws a java error
             poppedOperator = (Token)stack.pop();
 
-            if(poppedOperator.tokenStr == "(")
-            {
-                //Throw error
-                System.out.println("Parem should not be here");
-            }
-            if(poppedOperator.tokenStr.equals("u-"))
-            {
-                ResultValue resvalue = (ResultValue) outPutStack.pop();
-                ResultValue minus = new ResultValue("-1",Token.INTEGER);
-                outPutStack.push(evaluate(minus, resvalue, "*"));
-            }
+            if (poppedOperator.tokenStr == "(")
+             // unmatched left parentesis
+                error("ERROR: UNMATCHED LEFT PARENTHESIS FOR EXPRESSION");
+            else if (poppedOperator.tokenStr.equals("u-"))
+             // we have unary minus
+                outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER)
+                        , (ResultValue) outPutStack.pop(), "*"));
             else
-            {
+            {// evaluate normally
                 ResultValue resvalue = (ResultValue) outPutStack.pop();
                 ResultValue res2value = (ResultValue) outPutStack.pop();
                 outPutStack.push(evaluate(res2value, resvalue, poppedOperator.tokenStr));
             }
         }
-        //Final value
+
+        // final value
         res = (ResultValue) outPutStack.pop();
 
         if(scan.bShowExpr)
-        {
-            System.out.print("\t\t...");
-            System.out.println("Result Value: " + res.value);
-        }
+         // debug Expr on
+            System.out.println("\t\t...Result Value: " + res.value);
 
         scan.setTo(prevToken);
         res.terminatingStr = scan.nextToken.tokenStr;
@@ -1064,12 +1072,12 @@ public class Parser
                         error("ERROR: EXPECTED END VARIABLE BUT FOUND %s", scan.currentToken.tokenStr);
 
                     // create end variable
-                    ev = Integer.parseInt(expr().value);
+                    ev = Integer.parseInt(expression().value);
 
                     // check if we have an increment variable, default to 1
                     if ( scan.getNext().equals("by"))
                     {
-                        iv = Integer.parseInt(expr().value);
+                        iv = Integer.parseInt(expression().value);
 
                         // advance token to the expected ':'
                         scan.getNext();
@@ -1118,7 +1126,7 @@ public class Parser
                         error("ERROR: EXPECTED VARIABLE BUT FOUND %s", scan.nextToken.tokenStr);
 
                     // evaluate iterable expression
-                    resCond = expr();
+                    resCond = expression();
 
                     // make sure we end on an ':'
                     if ( !scan.getNext().equals(":"))
@@ -1176,14 +1184,14 @@ public class Parser
                         error("ERROR: EXPECTED VARIABLE BUT FOUND %s", scan.nextToken.tokenStr);
 
                     // save string value to iter on
-                    string = expr().value;
+                    string = expression().value;
 
                     if ( !scan.getNext().equals("by") )
                      // make sure we have our delimiter
                         error("ERROR: MISSING 'BY' SEPARATOR FOR DELIMITER");
 
                     // save delimiter
-                    delimiter = expr().value;
+                    delimiter = expression().value;
 
                     if ( !scan.getNext().equals(":") )
                         // make sure we have our ending ':'
