@@ -397,8 +397,9 @@ public class Parser
         while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
                 || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
-                || "()[],".contains(scan.currentToken.tokenStr)) // check if its separator
+                || "()[]".contains(scan.currentToken.tokenStr)) // check if its separator
         {
+            System.out.println(scan.currentToken.tokenStr + " Token in while");
             // check token type
             switch (scan.currentToken.primClassif)
             {
@@ -587,10 +588,10 @@ public class Parser
 
         // this should get the last result value
         while(!stack.empty())
-        {// this doesn't work, left paren at the beginning of an expr throws a java error
+        {
             poppedOperator = (Token)stack.pop();
 
-            if (poppedOperator.tokenStr == "(")
+            if (poppedOperator.tokenStr.equals("("))
              // unmatched left parentesis
                 error("ERROR: UNMATCHED LEFT PARENTHESIS FOR EXPRESSION");
             else if (poppedOperator.tokenStr.equals("u-"))
@@ -1274,7 +1275,11 @@ public class Parser
                     String printLine = "";
                     Token previousToken = scan.currentToken;
 
-                    while ( !scan.getNext().equals(")") )
+                    System.out.println("start");
+                    System.out.println(expression().value);
+                    System.out.println("end");
+
+                    /*while ( !scan.getNext().equals(")") )
                     {// loop until we find a ')'
                         if(scan.currentToken.subClassif <= Token.STRING && scan.currentToken.subClassif > 0)
                         {
@@ -1294,8 +1299,8 @@ public class Parser
                             error("ERROR: EXPECTED ')' BEFORE ';' TOKEN %s"
                                     , scan.currentToken.tokenStr);*/
 
-                        previousToken = scan.currentToken;
-                    }
+                        /*previousToken = scan.currentToken;
+                    }*/
 
                     // check if we are executing
                     if (bExec)
@@ -1352,8 +1357,8 @@ public class Parser
         }
 
         // make sure we end on a ';'
-        if ( !scan.getNext().equals(";") )
-            error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
+        /*if ( !scan.getNext().equals(";") )
+            error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");*/
 
         return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
     }
