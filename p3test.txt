@@ -1,5 +1,7 @@
-Int zx = (3 + 5) * 2 - 4 * "2.0";
-Int xyz = -5;
+Int zx = LENGTH(5 + (2 + 3)) + LENGTH("HIi");
+String str = "hello";
+print("Value of zx");
+print(zx);
 Int i;
 Float pi;
 String day;
