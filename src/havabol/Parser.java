@@ -249,7 +249,6 @@ public class Parser
 
                         return assignStmt(bExec);
                     }
-                    //idklol
                     else
                         error("ERROR:UNEXPECTED SYMBOL %s, EXPECTED EITHER ']' OR '='", scan.nextToken.tokenStr);
                 }
@@ -671,6 +670,9 @@ public class Parser
         Token poppedOperator, popped;
         Token operand;
 
+        Token hashTag = new Token("#");
+        hashTag.primClassif = Token.SEPARATOR;
+
         // result value for operands and final result
         ResultValue firstResValue, secondResValue, res;
 
@@ -679,19 +681,23 @@ public class Parser
         Boolean bCategory = false; //Boolean to check proper infix notation
         Boolean moveForward = true; //Boolean used to control moving forward to next token
 
+        //System.out.println("** " + scan.currentToken.tokenStr + "  Token at start of expression" + scan.iSourceLineNr);
+
         // check if this expression was called from function()
-        if(scan.currentToken.primClassif == Token.FUNCTION)
+        if(scan.currentToken.primClassif == Token.FUNCTION || scan.currentToken.tokenStr.equals(","))
         {
             inFunc = true;
-
-            // create symbol token used to signal end of function operation
-            Token hashTag = new Token("#");
-            hashTag.primClassif = Token.SEPARATOR;
+            Token paren = new Token("(");
+            paren.primClassif = Token.SEPARATOR;
             stack.push(hashTag);
+            //stack.push(paren);
         }
 
         // advance to start of expression
-        scan.getNext();
+        if(!scan.currentToken.tokenStr.equals(","))
+            scan.getNext();
+
+        //System.out.println("** " + scan.currentToken.tokenStr + "  Token at start of while" + scan.iSourceLineNr);
 
         // control token used to check for unary minus
         Token prevToken = scan.currentToken;
@@ -700,9 +706,10 @@ public class Parser
         while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
                 || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
-                || "(),[]".contains(scan.currentToken.tokenStr)) // check if its separator
+                || "()".contains(scan.currentToken.tokenStr)// check if its separator
+                || (",".contains(scan.currentToken.tokenStr) && inFunc == true))//comma if we are in function
         {
-            //System.out.println(scan.currentToken.tokenStr + " Token in while");
+            //System.out.println(" ** " + scan.currentToken.tokenStr + " Token in while");
 
             // check token type
             switch (scan.currentToken.primClassif)
@@ -725,6 +732,15 @@ public class Parser
                      // create a new result value object
                         firstResValue = new ResultValue(operand.tokenStr, operand.subClassif);
 
+                    if(scan.nextToken.tokenStr.equals("["))
+                    {
+                        String arrayNameStr = scan.currentToken.tokenStr;
+                        scan.getNext();
+                        ResultValue arrayIndex = expression();
+                        scan.getNext();
+                        System.out.println(arrayNameStr + " at " + arrayIndex.value);
+                        firstResValue = new ResultValue("100", Token.INTEGER);
+                    }
                     // check if the next operator is a unary minus
                     try
                     {
@@ -764,12 +780,15 @@ public class Parser
                         // minus
                         case "-":
                             // check if the previous token was an operator.
-                            if(prevToken.primClassif == Token.OPERATOR)
+                            if(prevToken.primClassif == Token.OPERATOR || prevToken.tokenStr.equals(","))
                             {// previous token was an operator, either want an operand or unary minus
                                 //Check if next token is an operand or separator.
                                 if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.equals("("))
-                                 // unary minus is true. Change the "-" to "u-"
+                                {
+                                    // unary minus is true. Change the "-" to "u-"
                                     stack.push(new Token("u-"));
+
+                                }
 
                                 /*
                                 we need to make sure that we are handling the case where parenthesis
@@ -832,9 +851,43 @@ public class Parser
                 case Token.SEPARATOR:
                     switch (scan.currentToken.tokenStr)
                     {// determine left or right paren
+
                         case "(":
                             stack.push(scan.currentToken);
                             break;
+                        case ",":
+                            if(stack.peek().equals(hashTag))
+                            {
+                                //Replace commas with parentheses
+
+                                //Token used to determine when to return
+                                Token commasymbol = new Token("#");
+                                commasymbol.primClassif = Token.SEPARATOR;
+
+                                //Token to simulate left paren
+                                Token leftParen = new Token("(");
+                                leftParen.primClassif = Token.SEPARATOR;
+
+                                //Push these on to stack
+                                stack.push(commasymbol);
+                                stack.push(leftParen);
+                                break;
+                            }
+                            else
+                            {
+                                //Comma will act as right paren
+                                Token rightParen = new Token(")");
+                                rightParen.primClassif = Token.SEPARATOR;
+                                moveForward = false;
+                                if(prevToken.tokenStr.equals(")"))
+                                {
+                                    System.out.println("Might need to do something here");
+                                }
+                                //stack.push(rightParen);
+                                //inFunc = false;
+                            }
+                        case "]":
+
                         case ")":
                             // right parenthesis found, set flag false until we find matching left paren
                             bFound = false;
@@ -843,7 +896,7 @@ public class Parser
                             while (!stack.empty())
                             {// stack is not empty and left paren not found, pop top of stack
                                 popped = (Token)stack.pop();
-
+                                //System.out.println(popped.tokenStr + " Popped **");
                                 if (popped.tokenStr.equals("("))
                                 {// left paren found, set flag to true and break
                                     bFound = true;
@@ -852,9 +905,16 @@ public class Parser
                                     {// we are in a function call
                                         popped = (Token)stack.peek();
                                         if(popped.tokenStr.equals("#"))
-                                        {// next token contains our function symbol, leave
+                                        {   // next token contains our function symbol, leave
                                             res = (ResultValue)outPutStack.peek();
-                                            scan.getNext();
+                                            //scan.getNext();
+                                            if(scan.currentToken.tokenStr.equals(")"))
+                                            {
+                                                scan.getNext();
+                                            }
+
+                                            //System.out.println( "  **  " + scan.currentToken.tokenStr + " retrn from while");
+
                                             return res;
                                         }
                                     }
@@ -875,7 +935,7 @@ public class Parser
                             }
                             if (bFound == false)
                              // left paren was not encountered
-                                error("ERROR: EXPECTED LEFT PARENTHESIS");
+                                //error("ERROR: EXPECTED LEFT PARENTHESIS");
 
                             break;
                     }
@@ -894,9 +954,9 @@ public class Parser
         while(!stack.empty())
         {
             poppedOperator = (Token)stack.pop();
-
+            //System.out.println(scan.currentToken.tokenStr);
             if (poppedOperator.tokenStr.equals("("))
-             // unmatched left parentesis
+                // unmatched left parentesis
                 error("ERROR: UNMATCHED LEFT PARENTHESIS FOR EXPRESSION");
             else if (poppedOperator.tokenStr.equals("u-"))
              // we have unary minus
@@ -911,15 +971,19 @@ public class Parser
         }
 
         // final value
-        res = (ResultValue) outPutStack.pop();
+            res = (ResultValue) outPutStack.pop();
 
         if(scan.bShowExpr)
          // debug Expr on
             System.out.println("\t\t...Result Value: " + res.value);
 
         scan.setTo(prevToken);
+
         res.terminatingStr = scan.nextToken.tokenStr;
         //Return final result value
+
+        //System.out.println(scan.currentToken.tokenStr + " retrn out of while  Value is" + res.value);
+
         return res;
     }
 
@@ -1599,32 +1663,41 @@ public class Parser
                     String printLine = "";
                     Token previousToken = scan.currentToken;
 
-                    //System.out.println("start");
-                    //System.out.println(expression().value);
-                    //System.out.println("end");
+                    while(!scan.currentToken.tokenStr.equals(";") || !scan.nextToken.tokenStr.equals(";"))
+                    {
+                        if(scan.currentToken.tokenStr.equals(";"))
+                            break;
+                        //System.out.println("   ***  start");
+                        printLine += expression().value;
+                        printLine += " ";
+                        //System.out.println("   ***  end");
 
-                    while ( !scan.getNext().equals(")") )
-                    {// loop until we find a ')'
-                        if(scan.currentToken.subClassif <= Token.STRING && scan.currentToken.subClassif > 0)
-                        {
-                            scan.setTo(previousToken);
-                            printLine += expr().value;
-                        }
-                        else if (scan.currentToken.tokenStr.equals(","))
-                            // ',' automatically add a space to our line
-                            printLine += " ";
-                        else if (scan.currentToken.primClassif == Token.OPERATOR)
-                        {// operator encountered, evaluate and add to print string
-                            scan.setTo(previousToken);
-                            printLine += expr().value;
-                        }
-                        /*else if (scan.currentToken.tokenStr.equals(";"))
-                            // should not be encountered unless a ')' is missing
-                            error("ERROR: EXPECTED ')' BEFORE ';' TOKEN %s"
-                                    , scan.currentToken.tokenStr);*/
 
-                        previousToken = scan.currentToken;
-                    }
+                     }
+
+//                    while ( !scan.getNext().equals(")") )
+//                    {// loop until we find a ')'
+//                        if(scan.currentToken.subClassif <= Token.STRING && scan.currentToken.subClassif > 0)
+//                        {
+//                            scan.setTo(previousToken);
+//                            System.out.println(scan.currentToken.tokenStr);
+//                            printLine += expression().value;
+//                        }
+//                        else if (scan.currentToken.tokenStr.equals(","))
+//                            // ',' automatically add a space to our line
+//                            printLine += " ";
+//                        else if (scan.currentToken.primClassif == Token.OPERATOR)
+//                        {// operator encountered, evaluate and add to print string
+//                            scan.setTo(previousToken);
+//                            printLine += expression().value;
+//                        }
+//                        /*else if (scan.currentToken.tokenStr.equals(";"))
+//                            // should not be encountered unless a ')' is missing
+//                            error("ERROR: EXPECTED ')' BEFORE ';' TOKEN %s"
+//                                    , scan.currentToken.tokenStr);*/
+//
+//                        previousToken = scan.currentToken;
+//                    }
 
                     // check if we are executing
                     if (bExec)
@@ -1753,7 +1826,9 @@ public class Parser
                     //scan.getNext();
                     //scan.getNext();
                     // get value of parameter
+                    //System.out.println("Start");
                     res = expression();
+                    //System.out.println("End");
 
                     // make sure we only have one parameter
                     //                    if (!scan.currentToken.tokenStr.equals(")"))
@@ -1761,7 +1836,6 @@ public class Parser
 
                     // calculate length of given string
                     value = "" + res.value.length();
-
                     // set type to an int
                     type = Token.INTEGER;
                 }
