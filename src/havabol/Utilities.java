@@ -747,4 +747,15 @@ public class Utilities
 
         return value.value;
     }
+
+    public static ResultValue concatenate(Parser parser, ResultValue left, ResultValue right)
+    {
+        /*// left operand must be a string
+        if ( left.type != Token.STRING)
+            parser.error("ERROR: CANNOT CONCATENATE VARIABLE OF TYPE %s, STRING EXPECTED", left.type);*/
+
+        ResultValue res = new ResultValue(Token.STRING, ResultValue.primitive);
+        res.value = left.value + right.value;
+        return res;
+    }
 }

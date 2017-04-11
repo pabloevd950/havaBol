@@ -839,7 +839,7 @@ public class Parser
                 // handle functions
                 case Token.FUNCTION:
                     // call function to get result value
-                    outPutStack.push(testFunc());
+                    outPutStack.push(function(true));
 
                     // make sure we don't skip over the next operator or terminator after function call
                     moveForward = false;
@@ -1497,7 +1497,7 @@ public class Parser
 
                     // make sure we have an appropriate iterable object (array or string)
                     if ( resCond.structure == ResultValue.fixedArray
-                       ||resCond.structure == ResultValue.unboundedArray)
+                       ||resCond.structure == ResultValue.unboundedArray )
                     {// we are iterating through an array
                         // value should contain the array name in the case of an array
                         ResultArray array = (ResultArray)storageManager.getEntry(resCond.value);
@@ -1657,62 +1657,35 @@ public class Parser
                 if (! scan.nextToken.tokenStr.equals("(") )
                     error("ERROR: '%s' FUNCTION IS MISSING SEPARATOR '('", scan.currentToken.tokenStr);
 
-                // determine function
-                if (scan.currentToken.tokenStr.equals("print"))
+                // check if we are executing
+                if (bExec == false)
+                    skipTo(scan.currentToken.tokenStr, ")");
+                // we are executing, determine function
+                else if (scan.currentToken.tokenStr.equals("print"))
                 {// print function
                     String printLine = "";
-                    Token previousToken = scan.currentToken;
 
-                    while(!scan.currentToken.tokenStr.equals(";") || !scan.nextToken.tokenStr.equals(";"))
-                    {
-                        if(scan.currentToken.tokenStr.equals(";"))
-                            break;
-                        //System.out.println("   ***  start");
-                        printLine += expression().value;
-                        printLine += " ";
-                        //System.out.println("   ***  end");
+                    // begin building the output line created by the print
+                    while ( !scan.currentToken.tokenStr.equals(";") )
+                    {// expression will return on a ',' or ';', auto add space for a ','
+                        printLine += expression().value + " ";
 
+                        if ( !scan.currentToken.tokenStr.equals(",")
+                           &&!scan.currentToken.tokenStr.equals(";") )
+                         // print is not terminated by a ';'
+                            error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
+                    }
 
-                     }
-
-//                    while ( !scan.getNext().equals(")") )
-//                    {// loop until we find a ')'
-//                        if(scan.currentToken.subClassif <= Token.STRING && scan.currentToken.subClassif > 0)
-//                        {
-//                            scan.setTo(previousToken);
-//                            System.out.println(scan.currentToken.tokenStr);
-//                            printLine += expression().value;
-//                        }
-//                        else if (scan.currentToken.tokenStr.equals(","))
-//                            // ',' automatically add a space to our line
-//                            printLine += " ";
-//                        else if (scan.currentToken.primClassif == Token.OPERATOR)
-//                        {// operator encountered, evaluate and add to print string
-//                            scan.setTo(previousToken);
-//                            printLine += expression().value;
-//                        }
-//                        /*else if (scan.currentToken.tokenStr.equals(";"))
-//                            // should not be encountered unless a ')' is missing
-//                            error("ERROR: EXPECTED ')' BEFORE ';' TOKEN %s"
-//                                    , scan.currentToken.tokenStr);*/
-//
-//                        previousToken = scan.currentToken;
-//                    }
-
-                    // check if we are executing
-                    if (bExec)
-                        System.out.println(printLine);
+                    // print out the line
+                    System.out.println(printLine);
                 }
                 else if (scan.currentToken.tokenStr.equals("LENGTH"))
                 {// length function
-                    // advance to the left parenthesis
-                    //scan.getNext();
-
                     // get value of parameter
                     res = expression();
 
                     // make sure we only have one parameter
-                    if (!scan.currentToken.tokenStr.equals(")"))
+                    if (scan.currentToken.tokenStr.equals(","))
                         error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
 
                     // calculate length of given string
@@ -1723,17 +1696,14 @@ public class Parser
                 }
                 else if (scan.currentToken.tokenStr.equals("SPACES"))
                 {
-                    /*//advance to before our parameter
-                    scan.getNext();*/
-
                     //get value of parameter
                     res = expression();
 
                     // make sure we only have one parameter
-                    if (!scan.currentToken.tokenStr.equals(")"))
+                    if (scan.currentToken.tokenStr.equals(","))
                         error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
 
-                    // determine if string contains spaces
+                    // determine if string contains only spaces or is empty
                     if (res.value.trim().length() == 0)
                         value = "T";
                     else
@@ -1828,6 +1798,7 @@ public class Parser
                     // get value of parameter
                     //System.out.println("Start");
                     res = expression();
+                    //scan.currentToken.printToken();
                     //System.out.println("End");
 
                     // make sure we only have one parameter
