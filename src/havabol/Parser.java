@@ -3,6 +3,7 @@ package havabol;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
+import java.util.ArrayList;
 import javax.xml.transform.Result;
 import java.util.ArrayList;
 import java.util.Stack;
@@ -327,10 +328,11 @@ public class Parser
         Numeric nOp1;  // numeric value of first operand
         ResultValue res = null;
         ResultValue resExpr;
-        int leftType = -1;
 
         // used
+        int leftType = -1;
         String variableStr;
+
         if (bExec)
             leftType = storageManager.getEntry(scan.currentToken.tokenStr).type;
 
@@ -387,8 +389,6 @@ public class Parser
                 error("ERROR: EXPECTED ASSIGNMENT OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
         }
 
-        scan.currentToken.printToken();
-
         // if we ever hit this line, bExec is false
         return new ResultValue("", Token.VOID, ResultValue.primitive
                                                         , scan.currentToken.tokenStr);
@@ -431,11 +431,11 @@ public class Parser
             // assign value to the variable and return result value
             storageManager.putEntry(variableStr, resExpr);
 
-            // check for debug on
-            if(scan.bShowAssign)
-                System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
+        // check for debug on
+        if(scan.bShowAssign)
+            System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
 
-            return resExpr;
+        return resExpr;
     }
 
     /**
@@ -549,7 +549,7 @@ public class Parser
         while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
                 || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
-                || "()[".contains(scan.currentToken.tokenStr)) // check if its separator
+                || "(),[]".contains(scan.currentToken.tokenStr)) // check if its separator
         {
             //System.out.println(scan.currentToken.tokenStr + " Token in while");
 
@@ -764,7 +764,7 @@ public class Parser
 
         if(scan.bShowExpr)
          // debug Expr on
-            System.out.println("\t\t...Result Value: " + res.value + " Result Struct: " + res.structure);
+            System.out.println("\t\t...Result Value: " + res.value);
 
         scan.setTo(prevToken);
         res.terminatingStr = scan.nextToken.tokenStr;
@@ -1456,7 +1456,7 @@ public class Parser
                 else if (scan.currentToken.tokenStr.equals("LENGTH"))
                 {// length function
                     // advance to the left parenthesis
-                    scan.getNext();
+                    //scan.getNext();
 
                     // get value of parameter
                     res = expression();
