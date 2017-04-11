@@ -7,7 +7,7 @@ import java.util.ArrayList;
  */
 public class ResultArray extends ResultValue
 {
-    ArrayList array;
+    ArrayList<ResultValue> array;
     int iPopulatedLen, iDeclaredLen, iNegSub;
 
     public ResultArray(ArrayList array, int type, int structure, int iPopulatedLen, int iDeclaredLen, int iNegSub)

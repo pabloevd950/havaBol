@@ -1287,7 +1287,33 @@ public class Parser
                     if ( resCond.structure == ResultValue.fixedArray
                        ||resCond.structure == ResultValue.unboundedArray)
                     {// we are iterating through an array
+                        // value should contain the array name in the case of an array
+                        ResultArray array = (ResultArray)storageManager.getEntry(resCond.value);
 
+                        // save the array list
+                        ArrayList<ResultValue> arrayList = array.array;
+
+                        // add item to storage manager as the array type
+                        storageManager.putEntry(item, new ResultValue("", array.type
+                                , ResultValue.primitive, "in"));
+
+                        for (ResultValue elem : arrayList)
+                        {
+                            // update cv in storage manager
+                            resCond = storageManager.getEntry(item);
+                            resCond.value = "" + elem.value;
+                            storageManager.putEntry(item, resCond);
+                            resCond = statements(true, "endfor");
+
+                            // did statements() end on an endfor;?
+                            if( !resCond.terminatingStr.equals("endfor") ||
+                                    !scan.nextToken.tokenStr.equals(";"))
+                                error("ERROR: EXPECTED 'endfor;' FOR 'for' EXPRESSION");
+
+                            // set position back to the beginning of the for loop
+                            scan.setTo(forToken);
+                            skipTo("for", ":");
+                        }
                     }
                     else
                     {// we are iterating over a string or expression
