@@ -245,9 +245,9 @@ public class Parser
                         storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, dclType, structure));
 
                         //reset position to identifier, so assignStmt can work
-                        scan.setTo(identifier);
+                        //scan.setTo(identifier);
 
-                        return assignStmt(bExec);
+                        return declareArray(bExec, variableStr, dclType, 0);
                     }
                     else
                         error("ERROR:UNEXPECTED SYMBOL %s, EXPECTED EITHER ']' OR '='", scan.nextToken.tokenStr);
@@ -257,30 +257,36 @@ public class Parser
                 {
                     //do expression to find declared length
                     int length = Integer.parseInt(Utilities.toInteger(this, expression()));
+
+                    //advance to right bracket
+                    scan.getNext();
+                    //advance token to either ';' or '='
                     scan.getNext();
                     // value list is not given, but still declared
-                    if (scan.nextToken.tokenStr.equals(";"))
+                    if (scan.currentToken.tokenStr.equals(";"))
                     {
                         symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
                                 , identifier.primClassif, dclType
                                 , ResultValue.fixedArray, 1, 1));
-                        storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, null, dclType, structure, -1, length, (length+1)*-1));
+                        storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, null, dclType, structure, 0, length, (length+1)*-1));
                         return new ResultValue("", Token.DECLARE, ResultValue.fixedArray
                                 , scan.currentToken.tokenStr);
                     }
                     // value list is given, so send to assign
-                    else if (scan.nextToken.tokenStr.equals("="))
+                    else if (scan.currentToken.tokenStr.equals("="))
                     {
                         symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
                                 , identifier.primClassif, dclType
                                 , ResultValue.fixedArray, 1, 1));
-                        storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, null, dclType, structure, -1, length, (length+1)*-1));
+                        storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, null, dclType, structure, 0, length, (length+1)*-1));
 
                         //reset position to identifier, so assignStmt can work
-                        scan.setTo(identifier);
+                        //scan.setTo(identifier);
 
-                        return assignStmt(bExec);
+                        return declareArray(bExec, variableStr, dclType, length);
                     }
+                    else
+                        error("ERROR: EXPECTED EITHER ';' OR '=', UNEXPECTED TOKEN '%s'", scan.currentToken.tokenStr);
 
                 }
             }
@@ -311,6 +317,83 @@ public class Parser
     }
 
     /**
+     * assume currentToken is '='
+     * @param bExec
+     * @param type
+     * @param declared
+     * @return
+     * @throws Exception
+     */
+    public ResultArray declareArray(Boolean bExec, String variableStr, int type, int declared) throws Exception
+    {
+        //will add this into the arraylist
+        ResultValue resExpr = new ResultValue(-1,-1);
+        //to be returned
+        ResultArray resArray;
+        //the list that is set if expression is called
+        ArrayList<ResultValue> expressionVals = new ArrayList<>();
+        //will act as iPopulated
+        int iAmt = 0;
+        Boolean bFirst = true;
+        // loop using expression, until ';' is found
+        while(!resExpr.terminatingStr.equals(";") && !scan.currentToken.tokenStr.equals(";"))
+        {
+            // evaluate expression to receive values for arraylist
+            System.out.println("START" + scan.currentToken.tokenStr);
+            resExpr = expression();
+            System.out.println(resExpr.value + " Value ret for array");
+            if (bFirst == true)
+            {
+                scan.getNext();
+                bFirst = false;
+            }
+            System.out.println("END");
+
+            //increment amount populated and check to see if greater than declare
+            if (iAmt++ > declared)
+                error("ERROR: CANNOT DECLARE MORE THAN '%d' INTO ARRAY '%s'", declared, variableStr);
+            switch (type)
+            {// determine the type of value to assign to ResultValue to add to array
+                case Token.INTEGER:
+                    resExpr.value = Utilities.toInteger(this, resExpr);
+                    resExpr.type = Token.INTEGER;
+                    // add into list
+                    expressionVals.add(resExpr);
+                    break;
+                case Token.FLOAT:
+                    resExpr.value = Utilities.toFloat(this, resExpr);
+                    resExpr.type = Token.FLOAT;
+                    // add into list
+                    expressionVals.add(resExpr);
+                    break;
+                case Token.BOOLEAN:
+                    resExpr.value = Utilities.toBoolean(this, resExpr);
+                    resExpr.type = Token.BOOLEAN;
+                    // add into list
+                    expressionVals.add(resExpr);
+                    break;
+                case Token.STRING:
+                    resExpr.type = Token.STRING;
+                    // add into list
+                    expressionVals.add(resExpr);
+                    break;
+                default:
+                    error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
+
+            }
+            // check for debug on
+            if(scan.bShowAssign)
+                System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
+        }
+        //create ResultArray to return
+        resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.fixedArray, iAmt, declared, (declared + 1) * 1);
+        //add into storagemanager
+        storageManager.putEntry(variableStr, resArray);
+
+        return resArray;
+    }
+
+    /**
      * This method is called when ever an operand or a '=' is encountered.
      * It will determine the value and assign it to the specified operand
      * <p>
@@ -326,12 +409,14 @@ public class Parser
         // not used rn
         Numeric nOp2;  // numeric value of second operand
         Numeric nOp1;  // numeric value of first operand
-        ResultValue res = null;
+        ResultValue res;
         ResultValue resExpr;
 
         // used
-        int leftType = -1;
+        int leftType = -1, iIndex = 0;
         String variableStr;
+        Boolean bIndex = false;
+        ResultArray resA;
 
         if (bExec)
             leftType = storageManager.getEntry(scan.currentToken.tokenStr).type;
@@ -348,12 +433,20 @@ public class Parser
          // undeclared variable while bExec true
             error("ERROR: ASSIGN REQUIRES THAT '%s' BE DECLARED", variableStr);
 
-        //COME BACK TO HERE advance to the next token
-        if (scan.nextToken.equals("["))
-            while(scan.currentToken.primClassif != Token.OPERATOR)
-                scan.getNext();
-        else
+        //advance token
+        scan.getNext();
+
+        // arrays must call expression to determine array index
+        if (scan.currentToken.equals("["))
+        {
+            iIndex = Integer.parseInt(Utilities.toInteger(this, expression()));
+            //advance from the index to right bracket
             scan.getNext();
+            //advance from the right bracket to the operator
+            scan.getNext();
+            //turn on the flag that says we are assigning an index
+            bIndex = true;
+        }
 
         // make sure current token is an operator
         if (scan.currentToken.primClassif != Token.OPERATOR)
@@ -372,7 +465,19 @@ public class Parser
                             ResultValue res1 = assign(variableStr, expression(), leftType);
                             return res1;
                         case ResultValue.fixedArray:
-                            ResultArray resA = assignArray(variableStr, leftType, ((ResultArray)res).iDeclaredLen);
+                            // this means that we are more than one index
+                            if (bIndex == false)
+                                resA = assignArray(variableStr, leftType, ((ResultArray)res).iDeclaredLen);
+                            // this means only one index
+                            else
+                            {
+                                //check to see if index requested is in bounds
+                                //haven't handled negatives yet
+                                if (iIndex >= ((ResultArray)res).iDeclaredLen)
+                                    error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+                                resA = assignIndex(variableStr, leftType, iIndex);
+                            }
+
                             return resA;
                         default:
                             error("ERROR: STRUCTURE TYPE '%d' IS NOT ALLOWED ON '%s'", res.structure, res.value);
@@ -446,7 +551,7 @@ public class Parser
      * variable string specified. The variable string will be the key.
      * <p>
      * Makes sure that the variable has been declared to a type already.
-     *
+     *Assume only one value in value list, and that currentToken is '='
      * @param variableStr contains the string of the variable we are assigning a value to
      * @param type Token type which we will be assigning
      * @param declared The total amount allowed to add
@@ -458,14 +563,10 @@ public class Parser
         //will add this into the arraylist
         ResultValue resExpr = new ResultValue(-1,-1);
         //to be returned
-        ResultArray resArray;
-        //the list that is set if expression is called
-        ArrayList<ResultValue> expressionVals = new ArrayList<>();
-        //will act as iPopulated
-        int iAmt = 0;
+        ResultArray resArray = new ResultArray(variableStr, -1, -1);
 
-        //this is for identifiers aka scalar with variables and arrays
-        if (scan.nextToken.subClassif == Token.IDENTIFIER)
+        //this is for operands aka scalar with variables and contstants and array to array assignment
+        if (scan.nextToken.subClassif == Token.OPERAND)
         {
             //iterate through for loop
             int i;
@@ -481,7 +582,7 @@ public class Parser
                 // make sure item has been defined
                 error("ERROR: VARIABLE '%s' IS NOT DEFINED IN THE SCOPE", scan.nextToken.tokenStr);
 
-            //if it's a variable
+            //if it's not an array
             if (value2.structure == ResultValue.primitive)
             {
                 // loop until declared length filling all values
@@ -532,6 +633,7 @@ public class Parser
                 return resArray;
                 
             }
+            //it is an array
             else if (value2.structure == ResultValue.fixedArray)
             {
                 //typecast into resultarray
@@ -591,62 +693,97 @@ public class Parser
 
 
         }
-        //MAY
-        //HAVE
-        //TO
-        //CHANGE
-        //INTO
-        //LIKE
-        //A
-        //DECLARE
-        //PART
-        // loop using expression, until ';' is found
-        while(!resExpr.terminatingStr.equals(";"))
+      return resArray;
+    }
+
+    /**
+     * Assume currentToken is on '='
+     * @param variableStr
+     * @param type
+     * @param index
+     * @return
+     * @throws Exception
+     */
+    public ResultArray assignIndex(String variableStr, int type, int index) throws Exception
+    {
+        //will add this into the arraylist
+        ResultValue resExpr = new ResultValue(-1,-1);
+        //to be returned
+        ResultArray resArray;
+
+        //this is for operands aka variables and constants
+        if (scan.nextToken.primClassif == Token.OPERAND)
         {
-            // evaluate expression to receive values for arraylist
-            resExpr = expression();
-            //increment amount populated and check to see if greater than declare
-            if (iAmt++ > declared)
-                error("ERROR: CANNOT DECLARE MORE THAN '%d' INTO ARRAY '%s'", declared, variableStr);
-            switch (type)
-            {// determine the type of value to assign to ResultValue to add to array
-                case Token.INTEGER:
-                    resExpr.value = Utilities.toInteger(this, resExpr);
-                    resExpr.type = Token.INTEGER;
-                    // add into list
-                    expressionVals.add(resExpr);
-                    break;
-                case Token.FLOAT:
-                    resExpr.value = Utilities.toFloat(this, resExpr);
-                    resExpr.type = Token.FLOAT;
-                    // add into list
-                    expressionVals.add(resExpr);
-                    break;
-                case Token.BOOLEAN:
-                    resExpr.value = Utilities.toBoolean(this, resExpr);
-                    resExpr.type = Token.BOOLEAN;
-                    // add into list
-                    expressionVals.add(resExpr);
-                    break;
-                case Token.STRING:
-                    resExpr.type = Token.STRING;
-                    // add into list
-                    expressionVals.add(resExpr);
-                    break;
-                default:
-                    error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
+            //this is the array that we need to act on
+            ResultArray array1 = (ResultArray)storageManager.getEntry(variableStr);
+            //this is the value that we need to use to assign to index
+            //if it is a variable, it should return its value, else will return value of expression
+            ResultValue value2 = expression();
 
+            if (!scan.currentToken.tokenStr.equals(";"))
+                error("ERROR: MISSING ';' TERMINATOR");
+
+            if ( array1 == null)
+                // make sure item has been defined
+                error("ERROR: VARIABLE '%s' IS NOT DEFINED IN THE SCOPE", variableStr);
+            if ( value2 == null)
+                // make sure item has been defined
+                error("ERROR: OPERAND '%s' IS NOT DEFINED IN THE SCOPE", scan.nextToken.tokenStr);
+
+            //if it's a variable
+            if (value2.structure == ResultValue.primitive)
+            {
+                //switch based on the array data type
+                switch(type)
+                {
+                    case Token.INTEGER:
+                        resExpr = value2;
+                        resExpr.value = Utilities.toInteger(this, resExpr);
+                        resExpr.type = Token.INTEGER;
+                        //set into array of first
+                        array1.array.set(index, resExpr);
+                        break;
+                    case Token.FLOAT:
+                        resExpr = value2;
+                        resExpr.value = Utilities.toFloat(this, resExpr);
+                        resExpr.type = Token.FLOAT;
+                        //set into array of first
+                        array1.array.set(index, resExpr);
+                        break;
+                    case Token.BOOLEAN:
+                        resExpr = value2;
+                        resExpr.value = Utilities.toBoolean(this, resExpr);
+                        resExpr.type = Token.BOOLEAN;
+                        //set into array of first
+                        array1.array.set(index, resExpr);
+                        break;
+                    case Token.STRING:
+                        resExpr = value2;
+                        resExpr.type = Token.STRING;
+                        //set into array of first
+                        array1.array.set(index, resExpr);
+                        break;
+                    default:
+                        error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
+                }
+                    //check if debugger is on
+                if(scan.bShowAssign)
+                    System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
             }
-            // check for debug on
-            if(scan.bShowAssign)
-                System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
-        }
-        //create ResultArray to return
-        resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.fixedArray, iAmt, declared, (declared + 1) * 1);
-        //add into storagemanager
-        storageManager.putEntry(variableStr, resArray);
+            else
+                error("ERROR: CANNOT ASSIGN STRUCTURE '%d' INTO AN INDEX", value2.structure);
+            //create resulting array
+            resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, array1.array.size()
+                                                            , array1.iDeclaredLen, (array1.iDeclaredLen+1)*1);
+            //add into storagemanager
+            storageManager.putEntry(variableStr, resArray);
 
-        return resArray;
+            return resArray;
+
+        }
+        else
+            error("ERROR: CANNOT ASSIGN '%s' INTO INDEX", scan.nextToken.tokenStr);
+        return null;
     }
 
     /**
@@ -681,7 +818,7 @@ public class Parser
         Boolean bCategory = false; //Boolean to check proper infix notation
         Boolean moveForward = true; //Boolean used to control moving forward to next token
 
-        //System.out.println("** " + scan.currentToken.tokenStr + "  Token at start of expression" + scan.iSourceLineNr);
+        System.out.println("** " + scan.currentToken.tokenStr + "  Token at start of expression" + scan.iSourceLineNr);
 
         // check if this expression was called from function()
         if(scan.currentToken.primClassif == Token.FUNCTION || scan.currentToken.tokenStr.equals(","))
@@ -697,7 +834,9 @@ public class Parser
         if(!scan.currentToken.tokenStr.equals(","))
             scan.getNext();
 
-        //System.out.println("** " + scan.currentToken.tokenStr + "  Token at start of while" + scan.iSourceLineNr);
+
+
+        System.out.println("** " + scan.currentToken.tokenStr + "  Token before start of while" + scan.iSourceLineNr);
 
         // control token used to check for unary minus
         Token prevToken = scan.currentToken;
@@ -709,7 +848,7 @@ public class Parser
                 || "()".contains(scan.currentToken.tokenStr)// check if its separator
                 || (",".contains(scan.currentToken.tokenStr) && inFunc == true))//comma if we are in function
         {
-            //System.out.println(" ** " + scan.currentToken.tokenStr + " Token in while");
+            System.out.println(" ** " + scan.currentToken.tokenStr + " Token in while");
 
             // check token type
             switch (scan.currentToken.primClassif)
@@ -763,6 +902,10 @@ public class Parser
                         // means this is our first operand, so there is no error
                     }
                     // push operand to the stack and signal that we now want an operator
+                    if(scan.nextToken.tokenStr.equals(";")) {
+                        System.out.println("This is where we fuck up");
+                        //stack.push(new Token(")"));
+                    }
                     outPutStack.push(firstResValue);
                     bCategory = true;
 
@@ -951,13 +1094,17 @@ public class Parser
         }
 
         // this should get the last result value
+        if(scan.currentToken.tokenStr.equals(";"))
+            System.out.println("*#*#*#");
         while(!stack.empty())
         {
             poppedOperator = (Token)stack.pop();
             //System.out.println(scan.currentToken.tokenStr);
-            if (poppedOperator.tokenStr.equals("("))
+            if (poppedOperator.tokenStr.equals("(")) {
                 // unmatched left parentesis
+                System.out.println(scan.currentToken.tokenStr);
                 error("ERROR: UNMATCHED LEFT PARENTHESIS FOR EXPRESSION");
+            }
             else if (poppedOperator.tokenStr.equals("u-"))
              // we have unary minus
                 outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER)
@@ -971,6 +1118,7 @@ public class Parser
         }
 
         // final value
+        //scan.currentToken.printToken();
             res = (ResultValue) outPutStack.pop();
 
         if(scan.bShowExpr)
