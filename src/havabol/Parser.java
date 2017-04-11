@@ -4,6 +4,7 @@ import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
 import java.util.ArrayList;
+import javax.lang.model.type.DeclaredType;
 import javax.xml.transform.Result;
 import java.util.ArrayList;
 import java.util.Stack;
@@ -455,65 +456,157 @@ public class Parser
      */
     private ResultArray assignArray(String variableStr, int type, int declared) throws Exception
     {
+        //will add this into the arraylist
         ResultValue resExpr = new ResultValue(-1,-1);
+        //to be returned
         ResultArray resArray;
+        //the list that is set if expression is called
         ArrayList<ResultValue> expressionVals = new ArrayList<>();
+        //will act as iPopulated
         int iAmt = 0;
 
+        //this is for identifiers aka scalar with variables and arrays
         if (scan.nextToken.subClassif == Token.IDENTIFIER)
         {
+            //iterate through for loop
             int i;
+            //this is the array that we need to act on
             ResultArray array1 = (ResultArray)storageManager.getEntry(variableStr);
-            ResultArray array2 = (ResultArray)storageManager.getEntry(scan.nextToken.tokenStr);
+            //this is the value that we need to assign to
+            ResultValue value2 = storageManager.getEntry(scan.nextToken.tokenStr);
+
             if ( array1 == null)
                 // make sure item has been defined
                 error("ERROR: VARIABLE '%s' IS NOT DEFINED IN THE SCOPE", variableStr);
-            if ( array2 == null)
+            if ( value2 == null)
                 // make sure item has been defined
                 error("ERROR: VARIABLE '%s' IS NOT DEFINED IN THE SCOPE", scan.nextToken.tokenStr);
-            if (array2.structure != ResultValue.fixedArray)
-            {
-                //FUCK! Scalar shit maybe?
-            }
-            int iFirst = array1.iDeclaredLen, iSecond = array2.iPopulatedLen;
 
-            if (iFirst < iSecond)
-                iSecond = iFirst;
-            for(i=0; i < iSecond;i++)
+            //if it's a variable
+            if (value2.structure == ResultValue.primitive)
             {
-                switch(type)
+                // loop until declared length filling all values
+                for(i=0; i < array1.iDeclaredLen;i++)
                 {
-                    case Token.INTEGER:
-                        resExpr = array2.array.get(i);
-                        resExpr.value = Utilities.toInteger(this, resExpr);
-                        resExpr.type = Token.INTEGER;
-                        array1.array.set(i, resExpr);
-                        break;
-                    case Token.FLOAT:
-                        resExpr.value = Utilities.toFloat(this, resExpr);
-                        resExpr.type = Token.FLOAT;
-                        array1.array.set(i, resExpr);
-                        break;
-                    case Token.BOOLEAN:
-                        resExpr.value = Utilities.toBoolean(this, resExpr);
-                        resExpr.type = Token.BOOLEAN;
-                        array1.array.set(i, resExpr);
-                        break;
-                    case Token.STRING:
-                        resExpr.type = Token.STRING;
-                        array1.array.set(i, resExpr);
-                        break;
-                    default:
-                        error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
+                    //switch based on the data type
+                    switch(type)
+                    {
+                        case Token.INTEGER:
+                            resExpr = value2;
+                            resExpr.value = Utilities.toInteger(this, resExpr);
+                            resExpr.type = Token.INTEGER;
+                            //set into array of first
+                            array1.array.set(i, resExpr);
+                            break;
+                        case Token.FLOAT:
+                            resExpr = value2;
+                            resExpr.value = Utilities.toFloat(this, resExpr);
+                            resExpr.type = Token.FLOAT;
+                            //set into array of first
+                            array1.array.set(i, resExpr);
+                            break;
+                        case Token.BOOLEAN:
+                            resExpr = value2;
+                            resExpr.value = Utilities.toBoolean(this, resExpr);
+                            resExpr.type = Token.BOOLEAN;
+                            //set into array of first
+                            array1.array.set(i, resExpr);
+                            break;
+                        case Token.STRING:
+                            resExpr = value2;
+                            resExpr.type = Token.STRING;
+                            //set into array of first
+                            array1.array.set(i, resExpr);
+                            break;
+                        default:
+                            error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
+                    }
+                    //check if debugger is on
+                    if(scan.bShowAssign)
+                        System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
                 }
+                //create resulting array
+                resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, array1.array.size(), declared, (declared+1)*1);
+                //add into storagemanager
+                storageManager.putEntry(variableStr, resArray);
+
+                return resArray;
+                
             }
+            else if (value2.structure == ResultValue.fixedArray)
+            {
+                //typecast into resultarray
+                ResultArray array2 = (ResultArray)value2;
+                //iFirst is declared length of first, iSecond is how much to change
+                int iFirst = array1.iDeclaredLen, iSecond = array2.iPopulatedLen;
+
+                //if the first's declared length is less than the amount to populate, truncate the populating amount
+                if (iFirst < iSecond)
+                    iSecond = iFirst;
+                //loop from 0 to amount to populate
+                for(i=0; i < iSecond;i++)
+                {
+                    //switch based on data type
+                    switch(type)
+                    {
+                        case Token.INTEGER:
+                            resExpr = array2.array.get(i);
+                            resExpr.value = Utilities.toInteger(this, resExpr);
+                            resExpr.type = Token.INTEGER;
+                            //set into array of first
+                            array1.array.set(i, resExpr);
+                            break;
+                        case Token.FLOAT:
+                            resExpr = array2.array.get(i);
+                            resExpr.value = Utilities.toFloat(this, resExpr);
+                            resExpr.type = Token.FLOAT;
+                            //set into array of first
+                            array1.array.set(i, resExpr);
+                            break;
+                        case Token.BOOLEAN:
+                            resExpr = array2.array.get(i);
+                            resExpr.value = Utilities.toBoolean(this, resExpr);
+                            resExpr.type = Token.BOOLEAN;
+                            //set into array of first
+                            array1.array.set(i, resExpr);
+                            break;
+                        case Token.STRING:
+                            resExpr = array2.array.get(i);
+                            resExpr.type = Token.STRING;
+                            //set into array of first
+                            array1.array.set(i, resExpr);
+                            break;
+                        default:
+                            error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
+                    }
+                    if(scan.bShowAssign)
+                        System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
+                }
+                //create ResultArray to return
+                resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, array1.array.size(), declared, (declared + 1) * 1);
+                //add into storagemanager
+                storageManager.putEntry(variableStr, resArray);
+
+                return resArray;
+            }
+
 
         }
+        //MAY
+        //HAVE
+        //TO
+        //CHANGE
+        //INTO
+        //LIKE
+        //A
+        //DECLARE
+        //PART
         // loop using expression, until ';' is found
         while(!resExpr.terminatingStr.equals(";"))
         {
             // evaluate expression to receive values for arraylist
             resExpr = expression();
+            //increment amount populated and check to see if greater than declare
             if (iAmt++ > declared)
                 error("ERROR: CANNOT DECLARE MORE THAN '%d' INTO ARRAY '%s'", declared, variableStr);
             switch (type)
@@ -521,20 +614,24 @@ public class Parser
                 case Token.INTEGER:
                     resExpr.value = Utilities.toInteger(this, resExpr);
                     resExpr.type = Token.INTEGER;
+                    // add into list
                     expressionVals.add(resExpr);
                     break;
                 case Token.FLOAT:
                     resExpr.value = Utilities.toFloat(this, resExpr);
                     resExpr.type = Token.FLOAT;
+                    // add into list
                     expressionVals.add(resExpr);
                     break;
                 case Token.BOOLEAN:
                     resExpr.value = Utilities.toBoolean(this, resExpr);
                     resExpr.type = Token.BOOLEAN;
+                    // add into list
                     expressionVals.add(resExpr);
                     break;
                 case Token.STRING:
                     resExpr.type = Token.STRING;
+                    // add into list
                     expressionVals.add(resExpr);
                     break;
                 default:
@@ -545,7 +642,9 @@ public class Parser
             if(scan.bShowAssign)
                 System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
         }
-        resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.fixedArray, iAmt, declared, (declared+1)*1);
+        //create ResultArray to return
+        resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.fixedArray, iAmt, declared, (declared + 1) * 1);
+        //add into storagemanager
         storageManager.putEntry(variableStr, resArray);
 
         return resArray;
