@@ -341,12 +341,15 @@ public class Parser
             error("ERROR: %s IS NOT A VALID TARGET VARIABLE FOR ASSIGNMENT"
                                                     , scan.currentToken.tokenStr);
         variableStr = scan.currentToken.tokenStr;
+
+        // pull storage manager entry of variable
         res = storageManager.getEntry(variableStr);
-        if(res == null)
+        if(res == null && bExec)
+         // undeclared variable while bExec true
             error("ERROR: ASSIGN REQUIRES THAT '%s' BE DECLARED", variableStr);
 
-        // advance to the next token
-        if (res.structure == ResultValue.fixedArray)
+        //COME BACK TO HERE advance to the next token
+        if (scan.nextToken.equals("["))
             while(scan.currentToken.primClassif != Token.OPERATOR)
                 scan.getNext();
         else
