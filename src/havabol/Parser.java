@@ -239,9 +239,9 @@ public class Parser
                     else if (scan.nextToken.tokenStr.equals("="))
                     {
                         symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
-                                , scan.currentToken.primClassif, dclType
+                                , identifier.primClassif, dclType
                                 , ResultValue.fixedArray, 1, 1));
-                        storageManager.putEntry(variableStr, new ResultArray(dclType, structure));
+                        storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, dclType, structure));
 
                         //reset position to identifier, so assignStmt can work
                         scan.setTo(identifier);
@@ -264,7 +264,7 @@ public class Parser
                         symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
                                 , identifier.primClassif, dclType
                                 , ResultValue.fixedArray, 1, 1));
-                        storageManager.putEntry(variableStr, new ResultArray(null, dclType, structure, -1, length, (length+1)*-1));
+                        storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, null, dclType, structure, -1, length, (length+1)*-1));
                         return new ResultValue("", Token.DECLARE, ResultValue.fixedArray
                                 , scan.currentToken.tokenStr);
                     }
@@ -274,7 +274,7 @@ public class Parser
                         symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
                                 , identifier.primClassif, dclType
                                 , ResultValue.fixedArray, 1, 1));
-                        storageManager.putEntry(variableStr, new ResultArray(null, dclType, structure, -1, length, (length+1)*-1));
+                        storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, null, dclType, structure, -1, length, (length+1)*-1));
 
                         //reset position to identifier, so assignStmt can work
                         scan.setTo(identifier);
@@ -460,6 +460,55 @@ public class Parser
         ArrayList<ResultValue> expressionVals = new ArrayList<>();
         int iAmt = 0;
 
+        if (scan.nextToken.subClassif == Token.IDENTIFIER)
+        {
+            int i;
+            ResultArray array1 = (ResultArray)storageManager.getEntry(variableStr);
+            ResultArray array2 = (ResultArray)storageManager.getEntry(scan.nextToken.tokenStr);
+            if ( array1 == null)
+                // make sure item has been defined
+                error("ERROR: VARIABLE '%s' IS NOT DEFINED IN THE SCOPE", variableStr);
+            if ( array2 == null)
+                // make sure item has been defined
+                error("ERROR: VARIABLE '%s' IS NOT DEFINED IN THE SCOPE", scan.nextToken.tokenStr);
+            if (array2.structure != ResultValue.fixedArray)
+            {
+                //FUCK! Scalar shit maybe?
+            }
+            int iFirst = array1.iDeclaredLen, iSecond = array2.iPopulatedLen;
+
+            if (iFirst < iSecond)
+                iSecond = iFirst;
+            for(i=0; i < iSecond;i++)
+            {
+                switch(type)
+                {
+                    case Token.INTEGER:
+                        resExpr = array2.array.get(i);
+                        resExpr.value = Utilities.toInteger(this, resExpr);
+                        resExpr.type = Token.INTEGER;
+                        array1.array.set(i, resExpr);
+                        break;
+                    case Token.FLOAT:
+                        resExpr.value = Utilities.toFloat(this, resExpr);
+                        resExpr.type = Token.FLOAT;
+                        array1.array.set(i, resExpr);
+                        break;
+                    case Token.BOOLEAN:
+                        resExpr.value = Utilities.toBoolean(this, resExpr);
+                        resExpr.type = Token.BOOLEAN;
+                        array1.array.set(i, resExpr);
+                        break;
+                    case Token.STRING:
+                        resExpr.type = Token.STRING;
+                        array1.array.set(i, resExpr);
+                        break;
+                    default:
+                        error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
+                }
+            }
+
+        }
         // loop using expression, until ';' is found
         while(!resExpr.terminatingStr.equals(";"))
         {
@@ -496,7 +545,7 @@ public class Parser
             if(scan.bShowAssign)
                 System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
         }
-        resArray = new ResultArray(expressionVals, type, ResultValue.fixedArray, iAmt, declared, (declared+1)*1);
+        resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.fixedArray, iAmt, declared, (declared+1)*1);
         storageManager.putEntry(variableStr, resArray);
 
         return resArray;

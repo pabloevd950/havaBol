@@ -24,6 +24,7 @@ public class ResultValue
      * This constructor initializes a resultValue object without a value
      *
      * @param value    The value to assign to the variable
+     *                 NOTE: If it is an array, value is the name of it
      * @param type  declare type of variable
      * @param structure   type of data structure for the variable
      * @param terminatingStr ....

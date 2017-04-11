@@ -8,18 +8,24 @@ import java.util.ArrayList;
 public class ResultArray extends ResultValue
 {
     ArrayList<ResultValue> array;
-    int iPopulatedLen, iDeclaredLen, iNegSub;
+    int iPopulatedLen, iDeclaredLen, iNegSub, type;
+    String name;
 
-    public ResultArray(ArrayList array, int type, int structure, int iPopulatedLen, int iDeclaredLen, int iNegSub)
+    public ResultArray(String name, ArrayList array, int type, int structure, int iPopulatedLen, int iDeclaredLen, int iNegSub)
     {
-        super(type, structure);
+        super(name, type, structure, "");
+        this.name = name;
         this.array = array;
+        this.type = type;
         this.iPopulatedLen = iPopulatedLen;
         this.iDeclaredLen = iDeclaredLen;
         this.iNegSub = iNegSub;
     }
-    public ResultArray(int type, int structure)
+    public ResultArray(String name, int type, int structure)
     {
-        super(type, structure);
+        super(name, type, structure, "");
+        this.name = name;
+        this.type = type;
+        this.structure = structure;
     }
 }
