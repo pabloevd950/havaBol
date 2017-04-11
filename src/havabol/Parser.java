@@ -500,7 +500,8 @@ public class Parser
                             else
                             {
                                 //check to see if index requested is in bounds
-                                //haven't handled negatives yet
+                                //haven't handle negatives yet
+                                if (iIndex < 0)
                                 if (iIndex >= ((ResultArray)res).iDeclaredLen)
                                     error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
                                 resA = assignIndex(variableStr, leftType, iIndex);
@@ -593,7 +594,7 @@ public class Parser
         //to be returned
         ResultArray resArray = new ResultArray(variableStr, -1, -1);
 
-        //this is for operands aka scalar with variables and contstants and array to array assignment
+        //this is for operands aka scalar with variables and constants and array to array assignment
         if (scan.nextToken.subClassif == Token.OPERAND)
         {
             //iterate through for loop
@@ -825,6 +826,17 @@ public class Parser
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
+    /**
+     * This method will evaluate an expression and return a ResultValue object
+     * that contains the final result.
+     * <p>
+     * Handles complex expression. This method assumes that the current token is
+     * the token before the start of the expression. When it returns, the current token is at
+     * the token succeeding the evaluated expression.
+     *
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
+     */
     public ResultValue expression() throws Exception
     {
         // result value and operand stacks
@@ -866,17 +878,20 @@ public class Parser
 
 
 
-        System.out.println("** " + scan.currentToken.tokenStr + "  Token before start of while" + scan.iSourceLineNr);
+        //System.out.println("** " + scan.currentToken.tokenStr + "  Token before start of while" + scan.iSourceLineNr);
 
         // control token used to check for unary minus
         Token prevToken = scan.currentToken;
+
 
         // loop through expression
         while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
                 || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
                 || "()".contains(scan.currentToken.tokenStr)// check if its separator
-                || (",".contains(scan.currentToken.tokenStr) && inFunc == true))//comma if we are in function
+                || (",".contains(scan.currentToken.tokenStr) && inFunc == true)//comma if we are in function
+                || semiFlag == true)
+
         {
             //System.out.println(" ** " + scan.currentToken.tokenStr + " Token in while");
 
@@ -940,7 +955,7 @@ public class Parser
                             if(test.tokenStr.equals("("))
                                 semiFlag = true;
 
-                                                }
+                        }
                         //stack.push(new Token(")"));
                     }
                     outPutStack.push(firstResValue);
@@ -1093,7 +1108,10 @@ public class Parser
                                             //scan.getNext();
                                             if(scan.currentToken.tokenStr.equals(")"))
                                             {
+//                                                System.out.println(scan.currentToken.tokenStr);
                                                 scan.getNext();
+//                                                System.out.println(scan.currentToken.tokenStr);
+
                                             }
 
                                             //System.out.println( "  **  " + scan.currentToken.tokenStr + " retrn from while");
