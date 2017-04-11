@@ -122,13 +122,15 @@ public class Scanner
                 {
                     int index = sourceLineM.get(iSourceLineNr).indexOf("//");
                     if(index == 0)
-                    {
-                        //Check if whole line is comment
-                        if (++iSourceLineNr >= sourceLineM.size())
-                        {
+                    {// check if whole line is comment
+                        if (iSourceLineNr+1 >= sourceLineM.size())
+                        {// hit EOF
                             nextToken.primClassif = Token.EOF;
                             return currentToken.tokenStr;
                         }
+                        else
+                         // set line to empty
+                            sourceLineM.set(iSourceLineNr, "");
                     }
                     else // throw away part of line that is comment
                         sourceLineM.set(iSourceLineNr, sourceLineM.get(iSourceLineNr).substring(0, index).trim());
@@ -136,7 +138,7 @@ public class Scanner
 
                 textCharM = sourceLineM.get(iSourceLineNr).toCharArray();
                 iColPos = 0;
-            } // if the line we just grabbed is empty (no tokens) advance to next line
+            } // if the line we just grabbed is empty (no tokens), advance to next line
             while (sourceLineM.get(iSourceLineNr).trim().length() == 0);
         }
 

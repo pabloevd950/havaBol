@@ -1476,12 +1476,11 @@ public class Parser
                 }
                 else if (scan.currentToken.tokenStr.equals("SPACES"))
                 {
-                    //advance to our parameter
-                    scan.getNext();
-                    scan.getNext();
+                    /*//advance to before our parameter
+                    scan.getNext();*/
 
                     //get value of parameter
-                    res = expr();
+                    res = expression();
 
                     // make sure we only have one parameter
                     if (!scan.currentToken.tokenStr.equals(")"))
@@ -1495,6 +1494,52 @@ public class Parser
 
                     // set type to a boolean
                     type = Token.BOOLEAN;
+                }
+                else if (scan.currentToken.tokenStr.equals("ELEM"))
+                {
+                    // advance to our parameter
+                    scan.getNext();
+                    scan.getNext();
+
+                    // get value of parameter
+                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
+
+                    if (array == null)
+                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
+                                                        , scan.currentToken.tokenStr);
+                    else if (array.structure != ResultValue.fixedArray)
+                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
+                                                        , scan.currentToken.tokenStr);
+
+                    value = "" + array.iPopulatedLen;
+                    type = Token.INTEGER;
+
+                    // make sure we only have one parameter
+                    if (!scan.getNext().equals(")"))
+                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
+                }
+                else if (scan.currentToken.tokenStr.equals("MAXELEM"))
+                {
+                    // advance to our parameter
+                    scan.getNext();
+                    scan.getNext();
+
+                    // get value of parameter
+                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
+
+                    if (array == null)
+                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
+                                , scan.currentToken.tokenStr);
+                    else if (array.structure != ResultValue.fixedArray)
+                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
+                                , scan.currentToken.tokenStr);
+
+                    value = "" + array.iDeclaredLen;
+                    type = Token.INTEGER;
+
+                    // make sure we only have one parameter
+                    if (!scan.getNext().equals(")"))
+                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
                 }
                 break;
             case Token.USER:
