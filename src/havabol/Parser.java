@@ -464,9 +464,8 @@ public class Parser
         scan.getNext();
 
         //check to see if array index is given
-        if (scan.currentToken.equals("["))
+        if (scan.currentToken.tokenStr.equals("["))
         {
-            System.out.println("##########I'm an array###########");
             // arrays must call expression to determine array index
             iIndex = Integer.parseInt(Utilities.toInteger(this, expression()));
             //advance from the index to right bracket
@@ -478,11 +477,9 @@ public class Parser
         }
 
         // make sure current token is an operator
-        if (scan.currentToken.primClassif != Token.OPERATOR) {
-            scan.currentToken.printToken();
-            scan.nextToken.printToken();
+        if (scan.currentToken.primClassif != Token.OPERATOR)
             error("ERROR: ASSIGN EXPECTED AN OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
-        }
+
         // determine what kind of operation to execute
         switch (scan.currentToken.tokenStr)
         {
@@ -754,8 +751,10 @@ public class Parser
             //if it is a variable, it should return its value, else will return value of expression
             ResultValue value2 = expression();
 
-            if (!scan.currentToken.tokenStr.equals(";"))
+            if (!scan.currentToken.tokenStr.equals(";")) {
+                scan.currentToken.printToken();
                 error("ERROR: MISSING ';' TERMINATOR");
+            }
 
             if ( array1 == null)
                 // make sure item has been defined
