@@ -228,7 +228,7 @@ public class Parser
                 //assign structure type
                 structure = ResultValue.fixedArray;
 
-                // check if nothing in between brackets
+                // check if nothing in between brackets aka length is not declared
                 if (scan.nextToken.tokenStr.equals("]"))
                 {
                     // advance token to right bracket
@@ -241,7 +241,9 @@ public class Parser
                     // '=' triggers assignStmt after putting into SymbolTable and StorageManager
                     else if (scan.nextToken.tokenStr.equals("="))
                     {
-                        //put array name into symboltable
+                        // advance token to equal, so declareArray is on right token
+                        scan.getNext();
+
                         symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
                                 , identifier.primClassif, dclType
                                 , ResultValue.fixedArray, 1, 1));
@@ -360,7 +362,7 @@ public class Parser
             }
 
             //increment amount populated and check to see if greater than declare
-            if (iAmt++ > declared)
+            if (declared > 0 && iAmt++ > declared)
                 error("ERROR: CANNOT DECLARE MORE THAN '%d' INTO ARRAY '%s'", declared, variableStr);
             switch (type)
             {// determine the type of value to assign to ResultValue to add to array
@@ -464,6 +466,7 @@ public class Parser
         //check to see if array index is given
         if (scan.currentToken.equals("["))
         {
+            System.out.println("##########I'm an array###########");
             // arrays must call expression to determine array index
             iIndex = Integer.parseInt(Utilities.toInteger(this, expression()));
             //advance from the index to right bracket
@@ -475,9 +478,11 @@ public class Parser
         }
 
         // make sure current token is an operator
-        if (scan.currentToken.primClassif != Token.OPERATOR)
+        if (scan.currentToken.primClassif != Token.OPERATOR) {
+            scan.currentToken.printToken();
+            scan.nextToken.printToken();
             error("ERROR: ASSIGN EXPECTED AN OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
-
+        }
         // determine what kind of operation to execute
         switch (scan.currentToken.tokenStr)
         {
@@ -826,17 +831,6 @@ public class Parser
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
-    /**
-     * This method will evaluate an expression and return a ResultValue object
-     * that contains the final result.
-     * <p>
-     * Handles complex expression. This method assumes that the current token is
-     * the token before the start of the expression. When it returns, the current token is at
-     * the token succeeding the evaluated expression.
-     *
-     * @return ResultValue object that contains the final result of execution
-     * @throws Exception generic Exception type to handle any processing errors
-     */
     public ResultValue expression() throws Exception
     {
         // result value and operand stacks
@@ -922,8 +916,8 @@ public class Parser
                         scan.getNext();
                         ResultValue arrayIndex = expression();
                         scan.getNext();
-                        System.out.println(arrayNameStr + " at " + arrayIndex.value);
-                        firstResValue = new ResultValue("100", Token.INTEGER);
+                        ResultArray firstArrValue = (ResultArray) storageManager.getEntry(arrayNameStr);
+                        firstResValue = firstArrValue.array.get((Integer.parseInt(Utilities.toInteger(this, arrayIndex))));
                     }
                     // check if the next operator is a unary minus
                     try

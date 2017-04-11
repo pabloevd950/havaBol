@@ -1,5 +1,5 @@
 debug Assign on;
-//Int kris[] = 1;
+Int kris[] = 1, 2, 3, 4, 5;
 Int pablo[3] = 5, 4, 3;
 debug Assign off;
 Int iCM[10] = 10, 20, 30, 40, 50, 60);
