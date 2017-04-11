@@ -1,5 +1,7 @@
 package havabol;
 
+import java.util.ArrayList;
+
 /**
  * Created by pablovalero on 3/3/17.
  */
@@ -14,6 +16,7 @@ public class ResultValue
     int type;
     int structure;
     String terminatingStr;
+
 
     /**
      * Creates a new ResultValue object
@@ -33,6 +36,7 @@ public class ResultValue
         this.structure = structure;
         this.terminatingStr = terminatingStr;
     }
+
 
     /**
      * Creates a new ResultValue object
@@ -58,8 +62,9 @@ public class ResultValue
      */
     public ResultValue(String value, int type)
     {
-        this.value = value;
-        this.type = type;
+        this(value, type, primitive, "");
+//        this.value = value;
+//        this.type = type;
     }
 
     /**

@@ -3,6 +3,8 @@ package havabol;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
+import javax.xml.transform.Result;
+import java.util.ArrayList;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
@@ -179,7 +181,7 @@ public class Parser
      */
     public ResultValue declareStmt(Boolean bExec) throws Exception
     {
-        int structure = -1;
+        int structure = ResultValue.primitive;
         int dclType = -1;
 
         switch (scan.currentToken.tokenStr)
@@ -211,11 +213,85 @@ public class Parser
         {// we are executing, not ignoring
             // put declaration into symbol table and storage manager
             String variableStr = scan.currentToken.tokenStr;
+            // save token to skip to in arrays for assignment
+            Token identifier = scan.currentToken;
 
-            symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
-                                                , scan.currentToken.primClassif, dclType
-                                                , 1, 1, 1));
-            storageManager.putEntry(variableStr, new ResultValue(dclType, structure));
+            // check if it's an array
+            if (scan.nextToken.tokenStr.equals("["))
+            {
+                // advance token
+                scan.getNext();
+
+                structure = ResultValue.fixedArray;
+
+                // check if nothing in between brackets
+                if (scan.nextToken.tokenStr.equals("]"))
+                {
+                    // advance token
+                    scan.getNext();
+
+                    // check what next token is
+                    if (scan.nextToken.tokenStr.equals(";"))
+                        error("ERROR: CANNOT DECLARE ARRAY WITHOUT LENGTH " +
+                                "IF VALUE LIST NOT GIVEN");
+                    // '=' triggers assignStmt after putting into SymbolTable and StorageManager
+                    else if (scan.nextToken.tokenStr.equals("="))
+                    {
+                        symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
+                                , scan.currentToken.primClassif, dclType
+                                , ResultValue.fixedArray, 1, 1));
+                        storageManager.putEntry(variableStr, new ResultArray(dclType, structure));
+
+                        //reset position to identifier, so assignStmt can work
+                        scan.setTo(identifier);
+
+                        return assignStmt(bExec);
+                    }
+                    //idklol
+                    else
+                        error("ERROR:UNEXPECTED SYMBOL %s, EXPECTED EITHER ']' OR '='", scan.nextToken.tokenStr);
+                }
+                // size is declared
+                else
+                {
+                    //do expression to find declared length
+                    int length = Integer.parseInt(Utilities.toInteger(this, expression()));
+                    scan.getNext();
+                    // value list is not given, but still declared
+                    if (scan.nextToken.tokenStr.equals(";"))
+                    {
+                        symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
+                                , identifier.primClassif, dclType
+                                , ResultValue.fixedArray, 1, 1));
+                        storageManager.putEntry(variableStr, new ResultArray(null, dclType, structure, -1, length, (length+1)*-1));
+                        return new ResultValue("", Token.DECLARE, ResultValue.fixedArray
+                                , scan.currentToken.tokenStr);
+                    }
+                    // value list is given, so send to assign
+                    else if (scan.nextToken.tokenStr.equals("="))
+                    {
+                        symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
+                                , identifier.primClassif, dclType
+                                , ResultValue.fixedArray, 1, 1));
+                        storageManager.putEntry(variableStr, new ResultArray(null, dclType, structure, -1, length, (length+1)*-1));
+
+                        //reset position to identifier, so assignStmt can work
+                        scan.setTo(identifier);
+
+                        return assignStmt(bExec);
+                    }
+
+                }
+            }
+            // it is not an array
+            else
+            {
+                symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
+                        , scan.currentToken.primClassif, dclType
+                        , 1, 1, 1));
+                storageManager.putEntry(variableStr, new ResultValue(dclType, structure));
+            }
+
         }
 
         // if the next token is '=' call assignStmt to assign value to operand
@@ -251,19 +327,28 @@ public class Parser
         Numeric nOp1;  // numeric value of first operand
         ResultValue res = null;
         ResultValue resExpr;
+        int leftType = -1;
 
         // used
         String variableStr;
-        int leftType = storageManager.getEntry(scan.currentToken.tokenStr).type;
+        if (bExec)
+            leftType = storageManager.getEntry(scan.currentToken.tokenStr).type;
 
         // make sure current token is an identifier to properly assign
         if (scan.currentToken.subClassif != Token.IDENTIFIER)
             error("ERROR: %s IS NOT A VALID TARGET VARIABLE FOR ASSIGNMENT"
                                                     , scan.currentToken.tokenStr);
         variableStr = scan.currentToken.tokenStr;
+        res = storageManager.getEntry(variableStr);
+        if(res == null)
+            error("ERROR: ASSIGN REQUIRES THAT '%s' BE DECLARED", variableStr);
 
         // advance to the next token
-        scan.getNext();
+        if (res.structure == ResultValue.fixedArray)
+            while(scan.currentToken.primClassif != Token.OPERATOR)
+                scan.getNext();
+        else
+            scan.getNext();
 
         // make sure current token is an operator
         if (scan.currentToken.primClassif != Token.OPERATOR)
@@ -275,8 +360,18 @@ public class Parser
             case "=":
                 if (bExec)
                 {
-                    ResultValue res1 = assign(variableStr, expression(), leftType);
-                    return res1;
+                    // check to see if array or not
+                    switch (res.structure)
+                    {
+                        case ResultValue.primitive:
+                            ResultValue res1 = assign(variableStr, expression(), leftType);
+                            return res1;
+                        case ResultValue.fixedArray:
+                            ResultArray resA = assignArray(variableStr, leftType, ((ResultArray)res).iDeclaredLen);
+                            return resA;
+                        default:
+                            error("ERROR: STRUCTURE TYPE '%d' IS NOT ALLOWED ON '%s'", res.structure, res.value);
+                    }
                 }
                 else
                     skipTo(scan.currentToken.tokenStr, ";");
@@ -291,6 +386,8 @@ public class Parser
             default:
                 error("ERROR: EXPECTED ASSIGNMENT OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
         }
+
+        scan.currentToken.printToken();
 
         // if we ever hit this line, bExec is false
         return new ResultValue("", Token.VOID, ResultValue.primitive
@@ -311,15 +408,11 @@ public class Parser
      */
     private ResultValue assign(String variableStr, ResultValue resExpr, int type) throws Exception
     {
-        // get entry from storage manager and make sure it is in the table
-        ResultValue res = storageManager.getEntry(variableStr);
-        if(res == null)
-            error("ERROR: ASSIGN REQUIRES THAT '%s' BE DECLARED", variableStr);
-
         switch (type)
         {// determine the type of value to assign to variable
             case Token.INTEGER:
-                 resExpr.value = Utilities.toInteger(this, resExpr);
+                resExpr.value = Utilities.toInteger(this, resExpr);
+                resExpr.type = Token.INTEGER;
                 break;
             case Token.FLOAT:
                 resExpr.value = Utilities.toFloat(this, resExpr);
@@ -327,24 +420,83 @@ public class Parser
                 break;
             case Token.BOOLEAN:
                 resExpr.value = Utilities.toBoolean(this, resExpr);
+                resExpr.type = Token.BOOLEAN;
                 break;
             case Token.STRING:
+                resExpr.type = Token.STRING;
                 break;
             default:
                 error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
         }
+            // assign value to the variable and return result value
+            storageManager.putEntry(variableStr, resExpr);
 
-        // assign value to the variable and return result value
-        storageManager.putEntry(variableStr, resExpr);
+            // check for debug on
+            if(scan.bShowAssign)
+                System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
 
-        // check for debug on
-        if(scan.bShowAssign)
+            return resExpr;
+    }
+
+    /**
+     * This method will assign the ResultValue objects returned by expression() to the
+     * variable string specified. The variable string will be the key.
+     * <p>
+     * Makes sure that the variable has been declared to a type already.
+     *
+     * @param variableStr contains the string of the variable we are assigning a value to
+     * @param type Token type which we will be assigning
+     * @param declared The total amount allowed to add
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
+     */
+    private ResultArray assignArray(String variableStr, int type, int declared) throws Exception
+    {
+        ResultValue resExpr = new ResultValue(-1,-1);
+        ResultArray resArray;
+        ArrayList<ResultValue> expressionVals = new ArrayList<>();
+        int iAmt = 0;
+
+        // loop using expression, until ';' is found
+        while(!resExpr.terminatingStr.equals(";"))
         {
-            System.out.print("\t\t...");
-            System.out.println("Variable Name: " + variableStr + " Value: " + resExpr.value);
-        }
+            // evaluate expression to receive values for arraylist
+            resExpr = expression();
+            if (iAmt++ > declared)
+                error("ERROR: CANNOT DECLARE MORE THAN '%d' INTO ARRAY '%s'", declared, variableStr);
+            switch (type)
+            {// determine the type of value to assign to ResultValue to add to array
+                case Token.INTEGER:
+                    resExpr.value = Utilities.toInteger(this, resExpr);
+                    resExpr.type = Token.INTEGER;
+                    expressionVals.add(resExpr);
+                    break;
+                case Token.FLOAT:
+                    resExpr.value = Utilities.toFloat(this, resExpr);
+                    resExpr.type = Token.FLOAT;
+                    expressionVals.add(resExpr);
+                    break;
+                case Token.BOOLEAN:
+                    resExpr.value = Utilities.toBoolean(this, resExpr);
+                    resExpr.type = Token.BOOLEAN;
+                    expressionVals.add(resExpr);
+                    break;
+                case Token.STRING:
+                    resExpr.type = Token.STRING;
+                    expressionVals.add(resExpr);
+                    break;
+                default:
+                    error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
 
-        return resExpr;
+            }
+            // check for debug on
+            if(scan.bShowAssign)
+                System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
+        }
+        resArray = new ResultArray(expressionVals, type, ResultValue.fixedArray, iAmt, declared, (declared+1)*1);
+        storageManager.putEntry(variableStr, resArray);
+
+        return resArray;
     }
 
     /**
@@ -397,7 +549,7 @@ public class Parser
         while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
                 || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
-                || "(),[]".contains(scan.currentToken.tokenStr)) // check if its separator
+                || "()[".contains(scan.currentToken.tokenStr)) // check if its separator
         {
             //System.out.println(scan.currentToken.tokenStr + " Token in while");
 
@@ -612,7 +764,7 @@ public class Parser
 
         if(scan.bShowExpr)
          // debug Expr on
-            System.out.println("\t\t...Result Value: " + res.value);
+            System.out.println("\t\t...Result Value: " + res.value + " Result Struct: " + res.structure);
 
         scan.setTo(prevToken);
         res.terminatingStr = scan.nextToken.tokenStr;
@@ -748,7 +900,7 @@ public class Parser
         operator = scan.nextToken.tokenStr;
 
         if(operator.equals(";") || operator.equals(",") || operator.equals(")") || operator.equals("to")
-                || operator.equals(":") || operator.equals("by"))
+                || operator.equals(":") || operator.equals("by") || operator.equals("]"))
         { // assign is done, so return the single value
             // check for debug on
             if(scan.bShowExpr)
