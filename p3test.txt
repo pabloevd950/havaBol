@@ -1,6 +1,7 @@
 Int pablo[1] = 5;
+print("h" , 10 , "j");
 Int iCM[10] = 10, 20, 30, 40, 50, 60);
-//print("\tC", iCM[0], iCM[1], iCM[2]);
+print("\tC", iCM[0], iCM[1], iCM[2]);
 
 
 

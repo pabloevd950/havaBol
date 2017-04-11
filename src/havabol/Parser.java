@@ -879,6 +879,9 @@ public class Parser
                         scan.getNext();
                         System.out.println(arrayNameStr + " at " + arrayIndex.value);
                         firstResValue = new ResultValue("100", Token.INTEGER);
+                        ResultArray firstArrValue = (ResultArray) storageManager.getEntry(arrayNameStr);
+                        firstResValue = firstArrValue.array.get((Integer.parseInt(arrayIndex.value)));
+
                     }
                     // check if the next operator is a unary minus
                     try
@@ -902,10 +905,17 @@ public class Parser
                         // means this is our first operand, so there is no error
                     }
                     // push operand to the stack and signal that we now want an operator
-                    if(scan.nextToken.tokenStr.equals(";")) {
-                        System.out.println("This is where we fuck up");
-                        //stack.push(new Token(")"));
-                    }
+//                    if(scan.nextToken.tokenStr.equals(";")) {
+//                        System.out.println("This is where we fuck up");
+//                        if(!stack.empty())
+//                        {
+//                            Token test = (Token) stack.peek();
+//                            System.out.println(test.tokenStr + " PEEKED");
+//                            semiFlag = true;
+//
+//                        }
+//                        //stack.push(new Token(")"));
+//                    }
                     outPutStack.push(firstResValue);
                     bCategory = true;
 
@@ -998,6 +1008,9 @@ public class Parser
                         case "(":
                             stack.push(scan.currentToken);
                             break;
+                        case ";":
+                            semiFlag = false;
+                            moveForward = false;
                         case ",":
                             if(stack.peek().equals(hashTag))
                             {
@@ -1100,7 +1113,8 @@ public class Parser
         {
             poppedOperator = (Token)stack.pop();
             //System.out.println(scan.currentToken.tokenStr);
-            if (poppedOperator.tokenStr.equals("(")) {
+            if (poppedOperator.tokenStr.equals("(") )
+            {
                 // unmatched left parentesis
                 System.out.println(scan.currentToken.tokenStr);
                 error("ERROR: UNMATCHED LEFT PARENTHESIS FOR EXPRESSION");
@@ -1126,8 +1140,9 @@ public class Parser
             System.out.println("\t\t...Result Value: " + res.value);
 
         scan.setTo(prevToken);
-
+        System.out.println(scan.currentToken.tokenStr + " CURRENT TOKEN AT END OF EXPR " + scan.nextToken.tokenStr + " NEXT TOKEN  AT LINE " + scan.iSourceLineNr);
         res.terminatingStr = scan.nextToken.tokenStr;
+        System.out.println(res.terminatingStr + " Termin string");
         //Return final result value
 
         //System.out.println(scan.currentToken.tokenStr + " retrn out of while  Value is" + res.value);
@@ -1480,6 +1495,7 @@ public class Parser
         }
 
         // did we have an 'endif;'?
+        System.out.println(resCond.terminatingStr + " **");
         if (!resCond.terminatingStr.equals("endif") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endif;' FOR 'if' EXPRESSION");
 
@@ -1516,7 +1532,10 @@ public class Parser
 
                 // did statements() end on an endwhile;?
                 if (! resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";"))
+                {
+                    System.out.println(resCond.terminatingStr);
                     error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
+                }
 
                 // reset while loop token
                 scan.setTo(whileToken);
@@ -1645,7 +1664,7 @@ public class Parser
 
                     // make sure we have an appropriate iterable object (array or string)
                     if ( resCond.structure == ResultValue.fixedArray
-                       ||resCond.structure == ResultValue.unboundedArray )
+                       ||resCond.structure == ResultValue.unboundedArray)
                     {// we are iterating through an array
                         // value should contain the array name in the case of an array
                         ResultArray array = (ResultArray)storageManager.getEntry(resCond.value);
@@ -1812,6 +1831,7 @@ public class Parser
                 else if (scan.currentToken.tokenStr.equals("print"))
                 {// print function
                     String printLine = "";
+                    Token previousToken = scan.currentToken;
 
                     // begin building the output line created by the print
                     while ( !scan.currentToken.tokenStr.equals(";") )
@@ -1829,11 +1849,14 @@ public class Parser
                 }
                 else if (scan.currentToken.tokenStr.equals("LENGTH"))
                 {// length function
+                    // advance to the left parenthesis
+                    //scan.getNext();
+
                     // get value of parameter
                     res = expression();
 
                     // make sure we only have one parameter
-                    if (scan.currentToken.tokenStr.equals(","))
+                    if (!scan.currentToken.tokenStr.equals(")"))
                         error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
 
                     // calculate length of given string
@@ -1844,6 +1867,9 @@ public class Parser
                 }
                 else if (scan.currentToken.tokenStr.equals("SPACES"))
                 {
+                    /*//advance to before our parameter
+                    scan.getNext();*/
+
                     //get value of parameter
                     res = expression();
 
@@ -1946,7 +1972,6 @@ public class Parser
                     // get value of parameter
                     //System.out.println("Start");
                     res = expression();
-                    //scan.currentToken.printToken();
                     //System.out.println("End");
 
                     // make sure we only have one parameter
