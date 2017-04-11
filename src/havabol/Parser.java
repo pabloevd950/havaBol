@@ -751,10 +751,8 @@ public class Parser
             //if it is a variable, it should return its value, else will return value of expression
             ResultValue value2 = expression();
 
-            if (!scan.currentToken.tokenStr.equals(";")) {
-                scan.currentToken.printToken();
+            if (!scan.nextToken.tokenStr.equals(";"))
                 error("ERROR: MISSING ';' TERMINATOR");
-            }
 
             if ( array1 == null)
                 // make sure item has been defined
