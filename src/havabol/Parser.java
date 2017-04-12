@@ -1500,6 +1500,7 @@ public class Parser
             // advance to the start of the control variable
             scan.getNext();
 
+
             // make sure that we have a control variable
             if (scan.currentToken.subClassif != Token.IDENTIFIER)
                 error("ERROR: EXPECTED CONTROL VARIABLE BUT FOUND %s", scan.currentToken.tokenStr);
