@@ -1705,6 +1705,9 @@ public class Parser
 
                         for (ResultValue elem : arrayList)
                         {
+                            if (elem.value == null)
+                                continue;
+
                             // update cv in storage manager
                             resCond = storageManager.getEntry(item);
                             resCond.value = "" + elem.value;
