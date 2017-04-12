@@ -515,7 +515,9 @@ public class Parser
                             else
                             {
                                 System.out.println(variableStr);
-                                res1 = assign(variableStr, expression(), leftType);
+                                ResultValue strIndex = expression();
+                                //int index = Integer.parseInt(strIndex.value);
+                                res1 = assign(variableStr, strIndex, leftType);
 
                             }
                             return res1;
@@ -924,7 +926,7 @@ public class Parser
 
 
 
-        //System.out.println("** " + scan.currentToken.tokenStr + "  Token before start of while" + scan.iSourceLineNr);
+        //System.out.println("** " + scan.currentToken.primClassif + "  Token before start of while" + scan.iSourceLineNr);
 
         // control token used to check for unary minus
         Token prevToken = scan.currentToken;
@@ -1031,7 +1033,7 @@ public class Parser
                     break;
                 // token is an operator
                 case Token.OPERATOR:
-                    if(bCategory == false && !scan.currentToken.tokenStr.equals("-"))
+                    if(bCategory == false && !scan.currentToken.tokenStr.equals("-") && !scan.currentToken.tokenStr.equals("not"))
                         // we encountered an unexpected operator, looking for an operand
                         error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND."
                                 , scan.currentToken.tokenStr);
@@ -1040,6 +1042,13 @@ public class Parser
                     switch (scan.currentToken.tokenStr)
                     {
                         // minus
+                        case "not":
+                            System.out.println("Found not");
+                            if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.equals("("))
+                            {
+                              stack.push(scan.currentToken);
+                            }
+                            break;
                         case "-":
                             // check if the previous token was an operator.
                             if(prevToken.primClassif == Token.OPERATOR || prevToken.tokenStr.equals(","))
@@ -1229,6 +1238,10 @@ public class Parser
                 // we have unary minus
                 outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER)
                         , (ResultValue) outPutStack.pop(), "*"));
+            else if (poppedOperator.tokenStr.equals("not"))
+            {
+                outPutStack.push(evaluate(null, (ResultValue) outPutStack.pop() , poppedOperator.tokenStr));
+            }
             else
             {// evaluate normally
                 ResultValue resvalue = (ResultValue) outPutStack.pop();
@@ -1308,10 +1321,13 @@ public class Parser
                 res = Utilities.notEqualTo(this, firstResValue, secondResValue);
                 break;
             case "u-":
-                //es = Utilities.mul(this, firstResValue, )
+                //res = Utilities.mul(this, firstResValue, );
                 break;
             case "#":
                 res = Utilities.concatenate(this,firstResValue, secondResValue);
+                break;
+            case"not":
+                res = Utilities.not(this, secondResValue);
                 break;
             default:
                 error("ERROR: '%s' IS NOT A VALID OPERATOR FOR EXPRESSION", operator);
