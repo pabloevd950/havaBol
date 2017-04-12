@@ -13,7 +13,7 @@ public class ResultArray extends ResultValue
 
     public ResultArray(String name, ArrayList array, int type, int structure, int iPopulatedLen, int iDeclaredLen, int iNegSub)
     {
-        super(name, type, structure, "");
+        super(name, type, structure, ";");
         this.name = name;
         this.array = array;
         this.type = type;
@@ -23,7 +23,7 @@ public class ResultArray extends ResultValue
     }
     public ResultArray(String name, int type, int structure)
     {
-        super(name, type, structure, "");
+        super(name, type, structure, ";");
         this.name = name;
         this.type = type;
         this.structure = structure;

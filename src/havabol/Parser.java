@@ -844,7 +844,8 @@ public class Parser
                 }
                 //check if debugger is on
                 if(scan.bShowAssign)
-                    System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
+                    System.out.println("\t\t...Variable Name: " + variableStr
+                            +" Index: " + index + " Value: " + resExpr.value);
             }
             else
                 error("ERROR: CANNOT ASSIGN STRUCTURE '%d' INTO AN INDEX", value2.structure);
@@ -1667,6 +1668,12 @@ public class Parser
                     int cv, ev, iv;
                     String cvStr = scan.currentToken.tokenStr;
 
+                    // check if we need to implicitly declare variable
+                    if (storageManager.getEntry(cvStr) == null)
+                        // didn't exist so we implicitly declare
+                        storageManager.putEntry(cvStr, new ResultValue("", Token.INTEGER
+                                , ResultValue.primitive, "to"));
+
                     // create int control variable
                     cv = Integer.parseInt(assignStmt(true).value);
 
@@ -1717,10 +1724,6 @@ public class Parser
                     String item = scan.currentToken.tokenStr;
                     String object;
 
-                    if (storageManager.getEntry(item) != null)
-                        // make sure item has not been already defined
-                        error("ERROR: VARIABLE '%s' IS ALREADY DEFINED IN THE SCOPE", item);
-
                     // advance to 'in' token
                     scan.getNext();
 
@@ -1745,9 +1748,11 @@ public class Parser
                         // save the array list
                         ArrayList<ResultValue> arrayList = array.array;
 
-                        // add item to storage manager as the array type
-                        storageManager.putEntry(item, new ResultValue("", array.type
-                                , ResultValue.primitive, "in"));
+                        // check if item was already declared in the scope
+                        if ( storageManager.getEntry(item) == null )
+                         // add item to storage manager as the array type
+                            storageManager.putEntry(item, new ResultValue("", array.type
+                                    , ResultValue.primitive, "in"));
 
                         for (ResultValue elem : arrayList)
                         {
