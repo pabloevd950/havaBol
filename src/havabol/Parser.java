@@ -429,7 +429,6 @@ public class Parser
      */
     public ResultValue assignStmt(Boolean bExec) throws Exception
     {
-
         // returned value
         ResultValue res;
         //leftType is the data type, index is the index being assigned to, if given
@@ -1026,7 +1025,7 @@ public class Parser
                     outPutStack.push(function(true));
 
                     // make sure we don't skip over the next operator or terminator after function call
-                    moveForward = false;
+                    moveForward = true;
 
                     // functions are considered operands, so we are now looking for an operator
                     bCategory = true;
@@ -1066,10 +1065,10 @@ public class Parser
                                 Token rightParen = new Token(")");
                                 rightParen.primClassif = Token.SEPARATOR;
                                 moveForward = false;
-                                if(prevToken.tokenStr.equals(")"))
-                                {
-                                    System.out.println("Might need to do something here");
-                                }
+                                //if(prevToken.tokenStr.equals(")"))
+                                //{
+                                //    System.out.println("Might need to do something here");
+                                //}
                                 //stack.push(rightParen);
                                 //inFunc = false;
                             }
@@ -1095,10 +1094,10 @@ public class Parser
                                         {   // next token contains our function symbol, leave
                                             res = (ResultValue)outPutStack.peek();
                                             //scan.getNext();
-                                            if(scan.currentToken.tokenStr.equals(")"))
+                                            /*if(scan.currentToken.tokenStr.equals(")"))
                                             {
                                                 scan.getNext();
-                                            }
+                                            }*/
 
                                             //System.out.println( "  **  " + scan.currentToken.tokenStr + " retrn from while");
 
@@ -1705,7 +1704,7 @@ public class Parser
 
                         for (ResultValue elem : arrayList)
                         {
-                            if (elem.value == null)
+                            if (elem == null)
                                 continue;
 
                             // update cv in storage manager
@@ -1867,10 +1866,10 @@ public class Parser
                     {// expression will return on a ',' or ';', auto add space for a ','
                         printLine += expression().value + " ";
 
-                        if ( !scan.currentToken.tokenStr.equals(",")
-                                &&!scan.currentToken.tokenStr.equals(";") )
+                        while ( scan.currentToken.tokenStr.equals(")") )
                             // print is not terminated by a ';'
-                            error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
+                            //error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
+                            scan.getNext();
                     }
 
                     // print out the line
@@ -1890,6 +1889,8 @@ public class Parser
 
                     // set type to an int
                     type = Token.INTEGER;
+
+                    //scan.getNext();
                 }
                 else if (scan.currentToken.tokenStr.equals("SPACES"))
                 {
@@ -1933,7 +1934,7 @@ public class Parser
                         error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
 
                     // advance past out right paren
-                    scan.getNext();
+                    //scan.getNext();
                 }
                 else if (scan.currentToken.tokenStr.equals("MAXELEM"))
                 {
