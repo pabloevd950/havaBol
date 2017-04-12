@@ -1935,59 +1935,6 @@ public class Parser
         return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
     }
 
-    public ResultValue testFunc() throws Exception
-    {
-        //System.out.println("Entering testFunc with current token as " + scan.currentToken.tokenStr);
-        int type = Token.BUILTIN;
-        ResultValue res;
-        String value = "";
-
-        switch (scan.currentToken.subClassif)
-        {// determine if function is built in or user defined
-            case Token.BUILTIN:
-                // make sure the function is in correct syntax
-                if (! scan.nextToken.tokenStr.equals("(") )
-                    error("ERROR: '%s' FUNCTION IS MISSING SEPARATOR '('", scan.currentToken.tokenStr);
-
-                // determine function
-                if (scan.currentToken.tokenStr.equals("LENGTH"))
-                {// length function
-                    // advance to our parameter
-                    //scan.getNext();
-                    //scan.getNext();
-                    // get value of parameter
-                    //System.out.println("Start");
-                    res = expression();
-                    //scan.currentToken.printToken();
-                    //System.out.println("End");
-
-                    // make sure we only have one parameter
-                    //                    if (!scan.currentToken.tokenStr.equals(")"))
-                    //                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
-
-                    // calculate length of given string
-                    value = "" + res.value.length();
-                    // set type to an int
-                    type = Token.INTEGER;
-                }
-
-                break;
-            case Token.USER:
-                // do other shit later
-                skipTo(scan.currentToken.tokenStr, ";");
-                break;
-            default:// should never hit this, otherwise MAJOR FUCK UP
-                error("INTERNAL ERROR: %s NOT A RECOGNIZED FUNCTION"
-                        , scan.currentToken.tokenStr);
-        }
-
-        // make sure we end on a ';'
-        // if ( !scan.currentToken.tokenStr.equals(";") )
-        //    error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
-
-        return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
-    }
-
 
     /**
      * This method is provided to the parser to simplify all processing errors encountered.
@@ -2005,9 +1952,6 @@ public class Parser
                 , String.format(fmt, varArgs)
                 , scan.sourceFileNm);
     }
-
-
-
 
     /**
      * This method recieves an operator as a token and checks it precedence.
