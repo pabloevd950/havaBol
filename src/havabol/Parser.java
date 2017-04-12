@@ -564,6 +564,8 @@ public class Parser
                 break;
             // see parsing part 2
             case "+=":
+                // ResultValue res1 = Utilities.add(this, res, expression());
+                // System.out.println(res1.value);
             case "-=":
             case "*=":
             case "/=":
@@ -925,23 +927,19 @@ public class Parser
         Boolean moveForward = true; //Boolean used to control moving forward to next token
         Boolean semiFlag = false;
 
-        //System.out.println("** " + scan.currentToken.tokenStr + "  Token at start of expression" + scan.iSourceLineNr);
-
         // check if this expression was called from function()
-        if(scan.currentToken.primClassif == Token.FUNCTION || scan.currentToken.tokenStr.equals(","))
-        {
-            inFunc = true;
-            Token paren = new Token("(");
-            paren.primClassif = Token.SEPARATOR;
-            stack.push(hashTag);
-        }
+//        if(scan.currentToken.primClassif == Token.FUNCTION || scan.currentToken.tokenStr.equals(","))
+//        {
+//            inFunc = true;
+//            Token paren = new Token("(");
+//            paren.primClassif = Token.SEPARATOR;
+//            stack.push(hashTag);
+//        }
 
         // advance to start of expression
-        if(!scan.currentToken.tokenStr.equals(","))
+        //if(!scan.currentToken.tokenStr.equals(","))
             scan.getNext();
 
-
-        //System.out.println("** " + scan.currentToken.primClassif + "  Token before start of while" + scan.iSourceLineNr);
 
         // control token used to check for unary minus
         Token prevToken = scan.currentToken;
@@ -951,11 +949,10 @@ public class Parser
                 || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
                 || "()".contains(scan.currentToken.tokenStr)// check if its separator
-                || (",".contains(scan.currentToken.tokenStr) && inFunc == true)//comma if we are in function
+               // || (",".contains(scan.currentToken.tokenStr) && inFunc == true)//comma if we are in function
                 || semiFlag == true)
 
         {
-            //System.out.println(" ** " + scan.currentToken.tokenStr + " Token in while");
             // check token type
             switch (scan.currentToken.primClassif)
             {
@@ -976,6 +973,7 @@ public class Parser
                     else
                         // create a new result value object
                         firstResValue = new ResultValue(operand.tokenStr, operand.subClassif);
+
                     if(scan.nextToken.tokenStr.equals("["))
                     {   //Dealing with an array or string
                         //Get object from storage manager
@@ -1011,8 +1009,8 @@ public class Parser
                             if(stringIndex.value.equals("-1"))
                                 stringIndex.value = String.valueOf(firstResValue.value.length()-1);
 
-                            char Hi = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, stringIndex))));
-                            firstResValue = new ResultValue(String.valueOf(Hi),1);
+                            char newChar = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, stringIndex))));
+                            firstResValue = new ResultValue(String.valueOf(newChar),1);
                         }
                     }
                     // check if the next operator is a unary minus
@@ -1042,7 +1040,7 @@ public class Parser
                         if(!stack.empty())
                         {
                             Token test = (Token) stack.peek();
-                            if(test.tokenStr.equals("("))
+                            if(test.tokenStr.equals("(")) //&& scan.currentToken.tokenStr.equals(")"))
                                 semiFlag = true;
                         }
                     }
@@ -1055,7 +1053,7 @@ public class Parser
                     if(bCategory == false && !scan.currentToken.tokenStr.equals("-")
                             && !scan.currentToken.tokenStr.equals("not"))
                         // we encountered an unexpected operator, looking for an operand
-                        error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND."
+                        error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND"
                                 , scan.currentToken.tokenStr);
 
                     // determine operator, look for unary minus
@@ -1064,10 +1062,9 @@ public class Parser
                         // minus
                         case "not":
                             if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.equals("("))
-                            {
                               stack.push(scan.currentToken);
-                            }
                             break;
+
                         case "-":
                             // check if the previous token was an operator.
                             if(prevToken.primClassif == Token.OPERATOR
@@ -1080,9 +1077,8 @@ public class Parser
                                     stack.push(new Token("u-"));
                                 //If it isn't, then we encountered an error
                                 else
-                                {
-                                    //Throw exception
-                                }
+                                    error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND"
+                                            , scan.nextToken.tokenStr);
                                 break;
                             }
                             // operator is not unary minus
@@ -1229,7 +1225,7 @@ public class Parser
         while(!stack.empty())
         {
             poppedOperator = (Token)stack.pop();
-            if (poppedOperator.tokenStr.equals("(")) {
+            if (poppedOperator.tokenStr.equals("(") && !scan.nextToken.tokenStr.equals(";")) {
                 // unmatched left parentesis
                 error("ERROR: UNMATCHED RIGHT PARENTHESIS FOR EXPRESSION");
             }
