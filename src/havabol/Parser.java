@@ -863,7 +863,7 @@ public class Parser
                 //check if debugger is on
                 if(scan.bShowAssign)
                     System.out.println("\t\t...Variable Name: " + variableStr
-                            +" Index: " + index + " Value: " + resExpr.value);
+                            +" Index: " + index + " Value: " + resExpr.value + " SIZE: " + array1.iPopulatedLen);
             }
             else
                 error("ERROR: CANNOT ASSIGN STRUCTURE '%d' INTO AN INDEX", value2.structure);
@@ -1054,7 +1054,6 @@ public class Parser
                     {
                         // minus
                         case "not":
-                            System.out.println("Found not");
                             if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.equals("("))
                             {
                               stack.push(scan.currentToken);

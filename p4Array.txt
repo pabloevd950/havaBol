@@ -62,12 +62,10 @@ for i=0 to ELEM(iDM)-1:
     bChange = F;
     for j=0 to ELEM(iDM)-i-1 by 1:
         if iDM[j+1] < iDM[j]:
-           debug Assign on;
            iTemp = iDM[j+1];
            iDM[j+1] = iDM[j];
            iDM[j] = iTemp;
            bChange = T;
-           debug Assign off;
         endif;
     endfor;
     if not bChange:
