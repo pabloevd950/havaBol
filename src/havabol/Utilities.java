@@ -631,6 +631,15 @@ public class Utilities
         return res;
     }
 
+    /**
+     * This method will perform a not operation aka '!' on the given result value
+     * <p>
+     * Only will do this in expression
+     * @param parser The caller added so that we can call error
+     * @param expr   The expression that must be performed on
+     * @return res   The result value last operated on
+     * @throws Exception A generic error to specify what user did incorrectly
+     */
     public static ResultValue not(Parser parser, ResultValue expr)
             throws Exception
     {
@@ -646,7 +655,69 @@ public class Utilities
                     res.value = "T";
                 break;
             default:
-                parser.error("ERROR: CANNOT COERCE %s TO BOOLEAN", expr.value);
+                parser.error("ERROR: CANNOT COERCE '%s' TO BOOLEAN", expr.value);
+        }
+        return res;
+    }
+
+    /**
+     * This method will perform an and operation aka '&&' on the given result values
+     * <p>
+     * Only will do this in expression
+     * @param parser The caller added so that we can call error
+     * @param expr1   The first expression that must be performed on
+     * @param expr2   The second expression that must be performed on
+     * @return res   The result value last operated on
+     * @throws Exception A generic error to specify what user did incorrectly
+     */
+    public static ResultValue and(Parser parser, ResultValue expr1, ResultValue expr2)
+            throws Exception
+    {
+        ResultValue res = new ResultValue("", Token.BOOLEAN, ResultValue.primitive, ";");
+
+        switch (expr1.type)
+        {
+            case Token.BOOLEAN: // In this case bool is the same as string
+            case Token.STRING:
+                expr2.value = toBoolean(parser, expr2);
+                if (expr1.value.equals("T") && expr2.value.equals("T"))
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            default:
+                parser.error("ERROR: CANNOT COERCE '%s' TO BOOLEAN", expr1.value);
+        }
+        return res;
+    }
+
+    /**
+     * This method will perform an or operation aka '&&' on the given result values
+     * <p>
+     * Only will do this in expression
+     * @param parser The caller added so that we can call error
+     * @param expr1   The first expression that must be performed on
+     * @param expr2   The second expression that must be performed on
+     * @return res   The result value last operated on
+     * @throws Exception A generic error to specify what user did incorrectly
+     */
+    public static ResultValue or(Parser parser, ResultValue expr1, ResultValue expr2)
+            throws Exception
+    {
+        ResultValue res = new ResultValue("", Token.BOOLEAN, ResultValue.primitive, ";");
+
+        switch (expr1.type)
+        {
+            case Token.BOOLEAN: // In this case bool is the same as string
+            case Token.STRING:
+                expr2.value = toBoolean(parser, expr2);
+                if (expr1.value.equals("T") || expr2.value.equals("T"))
+                    res.value = "T";
+                else
+                    res.value = "F";
+                break;
+            default:
+                parser.error("ERROR: CANNOT COERCE '%s' TO BOOLEAN", expr1.value);
         }
         return res;
     }
