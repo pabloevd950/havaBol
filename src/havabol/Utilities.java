@@ -631,6 +631,26 @@ public class Utilities
         return res;
     }
 
+    public static ResultValue not(Parser parser, ResultValue expr)
+            throws Exception
+    {
+        ResultValue res = new ResultValue("", Token.BOOLEAN, ResultValue.primitive, ";");
+
+        switch (expr.type)
+        {
+            case Token.BOOLEAN: // In this case bool is the same as string
+            case Token.STRING:
+                if (expr.value.equals("T"))
+                    res.value = "F";
+                else
+                    res.value = "T";
+                break;
+            default:
+                parser.error("ERROR: CANNOT COERCE %s TO BOOLEAN", expr.value);
+        }
+        return res;
+    }
+
     /**
      * This method coerces a value into a Bool type.
      * <p>
