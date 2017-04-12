@@ -1,4 +1,3 @@
-debug Token on;
 // arrays, element assignment, for loops
 // do simple variables still work?
 print("p4Array.txt");

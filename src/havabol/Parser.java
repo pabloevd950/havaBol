@@ -928,16 +928,16 @@ public class Parser
         Boolean semiFlag = false;
 
         // check if this expression was called from function()
-//        if(scan.currentToken.primClassif == Token.FUNCTION || scan.currentToken.tokenStr.equals(","))
-//        {
-//            inFunc = true;
-//            Token paren = new Token("(");
-//            paren.primClassif = Token.SEPARATOR;
-//            stack.push(hashTag);
-//        }
+        if(scan.currentToken.primClassif == Token.FUNCTION || scan.currentToken.tokenStr.equals(","))
+        {
+            inFunc = true;
+            Token paren = new Token("(");
+            paren.primClassif = Token.SEPARATOR;
+            stack.push(hashTag);
+        }
 
         // advance to start of expression
-        //if(!scan.currentToken.tokenStr.equals(","))
+        if(!scan.currentToken.tokenStr.equals(","))
             scan.getNext();
 
 
@@ -949,7 +949,7 @@ public class Parser
                 || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
                 || "()".contains(scan.currentToken.tokenStr)// check if its separator
-               // || (",".contains(scan.currentToken.tokenStr) && inFunc == true)//comma if we are in function
+                || (",".contains(scan.currentToken.tokenStr) && inFunc == true)//comma if we are in function
                 || semiFlag == true)
 
         {
@@ -1225,7 +1225,7 @@ public class Parser
         while(!stack.empty())
         {
             poppedOperator = (Token)stack.pop();
-            if (poppedOperator.tokenStr.equals("(") && !scan.nextToken.tokenStr.equals(";")) {
+            if (poppedOperator.tokenStr.equals("(")) {
                 // unmatched left parentesis
                 error("ERROR: UNMATCHED RIGHT PARENTHESIS FOR EXPRESSION");
             }
@@ -1626,7 +1626,7 @@ public class Parser
 
                     // make sure we have an appropriate iterable object (array or string)
                     if ( resCond.structure == ResultValue.fixedArray
-                       ||resCond.structure == ResultValue.unboundedArray )
+                            ||resCond.structure == ResultValue.unboundedArray )
                     {// we are iterating through an array
                         // value should contain the array name in the case of an array
                         ResultArray array = (ResultArray)storageManager.getEntry(resCond.value);
