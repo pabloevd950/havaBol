@@ -502,8 +502,7 @@ public class Parser
                             else
                             {
                                 //check to see if index requested is in bounds
-                                //haven't handle negatives yet
-                                if (iIndex < 0)
+                                //haven't handled negatives yet
                                 if (iIndex >= ((ResultArray)res).iDeclaredLen)
                                     error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
                                 resA = assignIndex(variableStr, leftType, iIndex);
@@ -869,11 +868,10 @@ public class Parser
 
 
 
-        //System.out.println("** " + scan.currentToken.tokenStr + "  Token before start of while" + scan.iSourceLineNr);
+//        System.out.println("** " + scan.currentToken.tokenStr + "  Token before start of while" + scan.iSourceLineNr);
 
         // control token used to check for unary minus
         Token prevToken = scan.currentToken;
-
 
         // loop through expression
         while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
@@ -1099,10 +1097,7 @@ public class Parser
                                             //scan.getNext();
                                             if(scan.currentToken.tokenStr.equals(")"))
                                             {
-//                                                System.out.println(scan.currentToken.tokenStr);
                                                 scan.getNext();
-//                                                System.out.println(scan.currentToken.tokenStr);
-
                                             }
 
                                             //System.out.println( "  **  " + scan.currentToken.tokenStr + " retrn from while");
@@ -1880,7 +1875,7 @@ public class Parser
                     res = expression();
 
                     // make sure we only have one parameter
-                    if (scan.currentToken.tokenStr.equals(")"))
+                    if (scan.currentToken.tokenStr.equals(","))
                         error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
 
                     // calculate length of given string
@@ -1929,6 +1924,9 @@ public class Parser
                     // make sure we only have one parameter
                     if (!scan.getNext().equals(")"))
                         error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
+
+                    // advance past out right paren
+                    scan.getNext();
                 }
                 else if (scan.currentToken.tokenStr.equals("MAXELEM"))
                 {
