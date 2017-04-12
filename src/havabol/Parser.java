@@ -1094,9 +1094,11 @@ public class Parser
                             while(!stack.empty())
                             {
                                 // check precedence
-                                if(getPrecedence(scan.currentToken) < getPrecedence((Token)stack.peek()))
+                                if(getPrecedence(scan.currentToken, false) < getPrecedence((Token)stack.peek(), true))
+                                {
                                     // precedence of current operator is higher, break
                                     break;
+                                }
                                 else if(!stack.empty())
                                 {// stack is not empty and precedence is right, evaluate
                                     // pop operator
@@ -1336,7 +1338,7 @@ public class Parser
                 res = Utilities.notEqualTo(this, firstResValue, secondResValue);
                 break;
             case "u-":
-                //res = Utilities.mul(this, firstResValue, );
+                //res = Utilities.mul(this, firstResValue, secondResValue);
                 break;
             case "#":
                 res = Utilities.concatenate(this,firstResValue, secondResValue);
@@ -1959,7 +1961,7 @@ public class Parser
      * @param operator
      * @return int value of precedence.
      */
-    public int getPrecedence(Token operator)
+    public int getPrecedence(Token operator, Boolean inStack)
     {   int precedence;
         switch(operator.tokenStr)
         {
@@ -1967,7 +1969,9 @@ public class Parser
                 precedence = 0;
                 break;
             case "^":
-                precedence = 1;
+                precedence = 0;
+                if(inStack)
+                    precedence = 1;
                 break;
             case "*":
                 precedence = 2;
