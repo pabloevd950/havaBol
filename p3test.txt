@@ -1,9 +1,10 @@
-debug Assign on;
-Int kris[] = 1, 2, 3, 4, 5;
-Int pablo[3] = 5, 4, 3;
-debug Assign off;
-Int iCM[10] = 10, 20, 30, 40, 50, 60);
-//print("\tC", iCM[0], iCM[1], iCM[2]);
+Int pablo[1] = 5;
+print("h=" , LENGTH("SEX"),"j");
+Int iCM[10] = 10, 20, 30, 40, 50, 60;
+print("\tC", iCM[0], iCM[1], iCM[2]);
+
+
+
 Int zx = LENGTH(5 + (LENGTH(10) + 3));
 String str = "hello";
 print(zx , str , "j", LENGTH(10),"h");

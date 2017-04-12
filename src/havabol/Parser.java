@@ -1231,6 +1231,10 @@ public class Parser
                 break;
             case "u-":
                 //es = Utilities.mul(this, firstResValue, )
+                break;
+            case "#":
+                res = Utilities.concatenate(this,firstResValue, secondResValue);
+                break;
             default:
                 error("ERROR: '%s' IS NOT A VALID OPERATOR FOR EXPRESSION", operator);
         }
