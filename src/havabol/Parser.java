@@ -514,10 +514,15 @@ public class Parser
                                 res1 = assign(variableStr, expression(), leftType);
                             else
                             {
-                                System.out.println(variableStr);
-                                ResultValue strIndex = expression();
-                                //int index = Integer.parseInt(strIndex.value);
-                                res1 = assign(variableStr, strIndex, leftType);
+                                ResultValue newSubString = expression();
+                                String value = storageManager.getEntry(variableStr).value;
+                                if(iIndex == -1)
+                                {
+                                    iIndex = value.length()-1;
+                                }
+                                String newValue = value.substring(0,iIndex) + newSubString.value + value.substring(iIndex+1);
+                                ResultValue finalString = new ResultValue(newValue, Token.STRING);
+                                res1 = assign(variableStr, finalString, leftType);
 
                             }
                             return res1;
@@ -998,7 +1003,7 @@ public class Parser
                             String strVal = firstResValue.value;
                             if(stringIndex.value.equals("-1"))
                             {
-                                //stringIndex.value =
+                                stringIndex.value = String.valueOf(firstResValue.value.length()-1);
                             }
                             char Hi = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, stringIndex))));
                             firstResValue = new ResultValue(String.valueOf(Hi),1);

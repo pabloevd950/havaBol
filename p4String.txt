@@ -5,7 +5,7 @@ sA[2] = "p";
 print("Replaced 'Pike' in slot 2 with 'p' giving", sA);
 
 sA = "dog house";
-sA[0] = "l";
+sA[-1] = "l";
 print("Replaced 'dog house' in slot 0 with 'l' giving", sA);
 Int i = 2;
 String sB = "brace";
