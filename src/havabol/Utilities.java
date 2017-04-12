@@ -644,7 +644,6 @@ public class Utilities
             throws Exception
     {
         ResultValue res = new ResultValue("", Token.BOOLEAN, ResultValue.primitive, ";");
-
         switch (expr.type)
         {
             case Token.BOOLEAN: // In this case bool is the same as string
