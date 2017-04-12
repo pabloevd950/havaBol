@@ -564,6 +564,8 @@ public class Parser
                 break;
             // see parsing part 2
             case "+=":
+                // ResultValue res1 = Utilities.add(this, res, expression());
+                // System.out.println(res1.value);
             case "-=":
             case "*=":
             case "/=":
@@ -925,8 +927,6 @@ public class Parser
         Boolean moveForward = true; //Boolean used to control moving forward to next token
         Boolean semiFlag = false;
 
-        //System.out.println("** " + scan.currentToken.tokenStr + "  Token at start of expression" + scan.iSourceLineNr);
-
         // check if this expression was called from function()
         if(scan.currentToken.primClassif == Token.FUNCTION || scan.currentToken.tokenStr.equals(","))
         {
@@ -941,8 +941,6 @@ public class Parser
             scan.getNext();
 
 
-        //System.out.println("** " + scan.currentToken.primClassif + "  Token before start of while" + scan.iSourceLineNr);
-
         // control token used to check for unary minus
         Token prevToken = scan.currentToken;
 
@@ -955,7 +953,6 @@ public class Parser
                 || semiFlag == true)
 
         {
-            //System.out.println(" ** " + scan.currentToken.tokenStr + " Token in while");
             // check token type
             switch (scan.currentToken.primClassif)
             {
@@ -976,6 +973,7 @@ public class Parser
                     else
                         // create a new result value object
                         firstResValue = new ResultValue(operand.tokenStr, operand.subClassif);
+
                     if(scan.nextToken.tokenStr.equals("["))
                     {   //Dealing with an array or string
                         //Get object from storage manager
@@ -1011,8 +1009,8 @@ public class Parser
                             if(stringIndex.value.equals("-1"))
                                 stringIndex.value = String.valueOf(firstResValue.value.length()-1);
 
-                            char Hi = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, stringIndex))));
-                            firstResValue = new ResultValue(String.valueOf(Hi),1);
+                            char newChar = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, stringIndex))));
+                            firstResValue = new ResultValue(String.valueOf(newChar),1);
                         }
                     }
                     // check if the next operator is a unary minus
@@ -1042,7 +1040,7 @@ public class Parser
                         if(!stack.empty())
                         {
                             Token test = (Token) stack.peek();
-                            if(test.tokenStr.equals("("))
+                            if(test.tokenStr.equals("(")) //&& scan.currentToken.tokenStr.equals(")"))
                                 semiFlag = true;
                         }
                     }
@@ -1055,7 +1053,7 @@ public class Parser
                     if(bCategory == false && !scan.currentToken.tokenStr.equals("-")
                             && !scan.currentToken.tokenStr.equals("not"))
                         // we encountered an unexpected operator, looking for an operand
-                        error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND."
+                        error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND"
                                 , scan.currentToken.tokenStr);
 
                     // determine operator, look for unary minus
@@ -1064,10 +1062,9 @@ public class Parser
                         // minus
                         case "not":
                             if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.equals("("))
-                            {
                               stack.push(scan.currentToken);
-                            }
                             break;
+
                         case "-":
                             // check if the previous token was an operator.
                             if(prevToken.primClassif == Token.OPERATOR
@@ -1080,9 +1077,8 @@ public class Parser
                                     stack.push(new Token("u-"));
                                 //If it isn't, then we encountered an error
                                 else
-                                {
-                                    //Throw exception
-                                }
+                                    error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND"
+                                            , scan.nextToken.tokenStr);
                                 break;
                             }
                             // operator is not unary minus
@@ -1630,7 +1626,7 @@ public class Parser
 
                     // make sure we have an appropriate iterable object (array or string)
                     if ( resCond.structure == ResultValue.fixedArray
-                       ||resCond.structure == ResultValue.unboundedArray )
+                            ||resCond.structure == ResultValue.unboundedArray )
                     {// we are iterating through an array
                         // value should contain the array name in the case of an array
                         ResultArray array = (ResultArray)storageManager.getEntry(resCond.value);
