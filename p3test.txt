@@ -1,0 +1,5 @@
+Int x = 5 + 5;
+Int y = LENGTH(5+5);
+Int iCM[10] = 10, 20, 30, 40, 50, (60+3);
+
+print(x, y, "hi", iCM[1], LENGTH("SEX"));

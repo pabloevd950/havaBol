@@ -353,21 +353,21 @@ public class Parser
         //will act as iPopulated
         int iAmt = 1;
         //boolean to work with pablo's code
-        Boolean bFirst = true;
+        //Boolean bFirst = true;
 
         // loop using expression, until ';' is found
         while(!resExpr.terminatingStr.equals(";") && !scan.currentToken.tokenStr.equals(";"))
         {
             // evaluate expression to receive values for arraylist
             resExpr = expression();
-
+            scan.getNext();
             //to fix pablo's shit
-            if (bFirst == true)
-            {
-                //if it's the first one, need to do an additional getNext to realign
-                scan.getNext();
-                bFirst = false;
-            }
+//            if (bFirst == true)
+//            {
+//                //if it's the first one, need to do an additional getNext to realign
+//                scan.getNext();
+//                bFirst = false;
+//            }
 
             //increment amount populated and check to see if greater than declare when value list not given
             if (iAmt++ > declared && declared > 0 )
@@ -925,37 +925,29 @@ public class Parser
         Boolean moveForward = true; //Boolean used to control moving forward to next token
         Boolean semiFlag = false;
 
-        //System.out.println("** " + scan.currentToken.tokenStr + "  Token at start of expression" + scan.iSourceLineNr);
-
+        System.out.println("** Token starting expr " + scan.currentToken.tokenStr);
         // check if this expression was called from function()
-        if(scan.currentToken.primClassif == Token.FUNCTION || scan.currentToken.tokenStr.equals(","))
+        if(scan.currentToken.primClassif == Token.FUNCTION )
         {
             inFunc = true;
-            Token paren = new Token("(");
-            paren.primClassif = Token.SEPARATOR;
-            stack.push(hashTag);
+            scan.getNext();
         }
 
         // advance to start of expression
-        if(!scan.currentToken.tokenStr.equals(","))
-            scan.getNext();
-
-
-        //System.out.println("** " + scan.currentToken.primClassif + "  Token before start of while" + scan.iSourceLineNr);
+        scan.getNext();
 
         // control token used to check for unary minus
         Token prevToken = scan.currentToken;
+        System.out.println("*** Token before expr while loop " + scan.currentToken.tokenStr);
 
         // loop through expression
         while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
                 || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
-                || "()".contains(scan.currentToken.tokenStr)// check if its separator
-                || (",".contains(scan.currentToken.tokenStr) && inFunc == true)//comma if we are in function
-                || semiFlag == true)
-
+                || "()".contains(scan.currentToken.tokenStr))// check if its separator
         {
-            //System.out.println(" ** " + scan.currentToken.tokenStr + " Token in while");
+            System.out.println("**** Token in expr while loop " + scan.currentToken.tokenStr);
+
             // check token type
             switch (scan.currentToken.primClassif)
             {
@@ -976,6 +968,7 @@ public class Parser
                     else
                         // create a new result value object
                         firstResValue = new ResultValue(operand.tokenStr, operand.subClassif);
+
                     if(scan.nextToken.tokenStr.equals("["))
                     {   //Dealing with an array or string
                         //Get object from storage manager
@@ -1011,8 +1004,8 @@ public class Parser
                             if(stringIndex.value.equals("-1"))
                                 stringIndex.value = String.valueOf(firstResValue.value.length()-1);
 
-                            char Hi = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, stringIndex))));
-                            firstResValue = new ResultValue(String.valueOf(Hi),1);
+                            char newChar = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, stringIndex))));
+                            firstResValue = new ResultValue(String.valueOf(newChar),1);
                         }
                     }
                     // check if the next operator is a unary minus
@@ -1037,15 +1030,15 @@ public class Parser
                         // means this is our first operand, so there is no error
                     }
                     // push operand to the stack and signal that we now want an operator
-                    if(scan.nextToken.tokenStr.equals(";"))
-                    {
-                        if(!stack.empty())
-                        {
-                            Token test = (Token) stack.peek();
-                            if(test.tokenStr.equals("("))
-                                semiFlag = true;
-                        }
-                    }
+//                    if(scan.nextToken.tokenStr.equals(";"))
+//                    {
+//                        if(!stack.empty())
+//                        {
+//                            Token test = (Token) stack.peek();
+//                            if(test.tokenStr.equals("(")) //&& scan.currentToken.tokenStr.equals(")"))
+//                                semiFlag = true;
+//                        }
+//                    }
                     outPutStack.push(firstResValue);
                     bCategory = true;
 
@@ -1055,7 +1048,7 @@ public class Parser
                     if(bCategory == false && !scan.currentToken.tokenStr.equals("-")
                             && !scan.currentToken.tokenStr.equals("not"))
                         // we encountered an unexpected operator, looking for an operand
-                        error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND."
+                        error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND"
                                 , scan.currentToken.tokenStr);
 
                     // determine operator, look for unary minus
@@ -1064,10 +1057,9 @@ public class Parser
                         // minus
                         case "not":
                             if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.equals("("))
-                            {
-                              stack.push(scan.currentToken);
-                            }
+                                stack.push(scan.currentToken);
                             break;
+
                         case "-":
                             // check if the previous token was an operator.
                             if(prevToken.primClassif == Token.OPERATOR
@@ -1078,11 +1070,10 @@ public class Parser
                                 if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.tokenStr.equals("("))
                                     // unary minus is true. Change the "-" to "u-"
                                     stack.push(new Token("u-"));
-                                //If it isn't, then we encountered an error
+                                    //If it isn't, then we encountered an error
                                 else
-                                {
-                                    //Throw exception
-                                }
+                                    error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND"
+                                            , scan.nextToken.tokenStr);
                                 break;
                             }
                             // operator is not unary minus
@@ -1102,9 +1093,9 @@ public class Parser
                                     // pop last value
                                     firstResValue = (ResultValue) outPutStack.pop();
                                     if (poppedOperator.tokenStr.equals("u-"))
-                                    // we have unary minus
-                                    res = (evaluate(new ResultValue("-1", Token.INTEGER)
-                                            , firstResValue, "*"));
+                                        // we have unary minus
+                                        res = (evaluate(new ResultValue("-1", Token.INTEGER)
+                                                , firstResValue, "*"));
                                     else
                                     {
                                         // pop second value
@@ -1145,27 +1136,6 @@ public class Parser
                         case "(":
                             stack.push(scan.currentToken);
                             break;
-                        case ";":
-                            semiFlag = false;
-                            moveForward = false;
-                        case ",":
-                            if(stack.peek().equals(hashTag))
-                            {
-                                //Replace commas with parentheses
-
-                                //Token used to determine when to return
-                                Token commasymbol = new Token("#");
-                                commasymbol.primClassif = Token.SEPARATOR;
-
-                                //Token to simulate left paren
-                                Token leftParen = new Token("(");
-                                leftParen.primClassif = Token.SEPARATOR;
-
-                                //Push these on to stack
-                                stack.push(commasymbol);
-                                stack.push(leftParen);
-                                break;
-                            }
                         case ")":
                             // right parenthesis found, set flag false until we find matching left paren
                             bFound = false;
@@ -1193,9 +1163,9 @@ public class Parser
                                     break;
                                 }
                                 else if (poppedOperator.tokenStr.equals("u-"))
-                                // we have unary minus
-                                outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER)
-                                        , (ResultValue) outPutStack.pop(), "*"));
+                                    // we have unary minus
+                                    outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER)
+                                            , (ResultValue) outPutStack.pop(), "*"));
 
                                 else
                                 {// not a left paren, work with stack
@@ -1208,11 +1178,11 @@ public class Parser
                                     outPutStack.push(res);
                                 }
                             }
-                            if (bFound == false)
+                            if ((bFound == false)) //&& !scan.nextToken.tokenStr.equals(";"))
                                 // left paren was not encountered
-                                error("ERROR: EXPECTED LEFT PARENTHESIS");
+//                                error("ERROR: EXPECTED LEFT PARENTHESIS");
 
-                                break;
+                            break;
                     }
             }
             // set previous token to the current token
@@ -1259,8 +1229,6 @@ public class Parser
         scan.setTo(prevToken);
 
         res.terminatingStr = scan.nextToken.tokenStr;
-
-        //System.out.println(scan.currentToken.tokenStr + " retrn out of while  Value is" + res.value);
 
         //Return final result value
         return res;
@@ -1806,7 +1774,10 @@ public class Parser
                     // begin building the output line created by the print
                     while ( !scan.currentToken.tokenStr.equals(";") )
                     {// expression will return on a ',' or ';', auto add space for a ','
+                        System.out.println(scan.currentToken.tokenStr);
                         printLine += expression().value + " ";
+                        scan.getNext();
+
 
                         while ( scan.currentToken.tokenStr.equals(")") )
                             // print is not terminated by a ';'
