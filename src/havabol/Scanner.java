@@ -273,6 +273,9 @@ public class Scanner
             else if (entry.definedBy == Token.USER)
                 nextToken.subClassif = Token.USER;
         }
+        else if (symbolTable.getSymbol(token).primClassif == Token.OPERATOR)
+         // operator token recognized
+            nextToken.primClassif = Token.OPERATOR;
 
         // pablo wtf is this? you added a step to add quotation marks to
         // strings on line 189 and now you're taking them back off? -_-
