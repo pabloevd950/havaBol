@@ -413,7 +413,7 @@ public class Parser
             declared = expressionVals.size();
 
         //create ResultArray to return
-        resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.fixedArray, expressionVals.size(), declared, (declared + 1) * 1);
+        resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.fixedArray, --iAmt, declared, (declared + 1));
 
         //check for debug to be on
         if(scan.bShowAssign)
@@ -425,8 +425,8 @@ public class Parser
         }
 
         //fill with garbage to be able to assign
-        while(expressionVals.size() < declared)
-            expressionVals.add(null);
+        while(resArray.array.size() < declared)
+            resArray.array.add(null);
 
         //add into storagemanager
         storageManager.putEntry(variableStr, resArray);
@@ -631,6 +631,8 @@ public class Parser
         ResultValue resExpr = new ResultValue(-1,-1);
         //to be returned
         ResultArray resArray = new ResultArray(variableStr, -1, -1);
+        //the populated length
+        int len = 0;
 
         //this is for operands (aka scalar assignment with variables and constants) and array to array assignment
         if (scan.nextToken.primClassif == Token.OPERAND)
@@ -691,7 +693,7 @@ public class Parser
                 }
 
                 //create resulting array
-                resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, array1.array.size(), declared, (declared+1)*1);
+                resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, declared, declared, (declared+1)*1);
 
                 //check if debugger is on
                 if(scan.bShowAssign)
@@ -755,8 +757,11 @@ public class Parser
                             error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
                     }
                 }
+                for(ResultValue yes : array1.array)
+                    if(yes!=null)
+                        len++;
                 //create ResultArray to return
-                resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, array1.array.size(), declared, (declared + 1) * 1);
+                resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, len, declared, (declared + 1));
 
                 //check if debugger is on
                 if(scan.bShowAssign)
@@ -795,6 +800,8 @@ public class Parser
         ResultValue resExpr = new ResultValue(-1,-1);
         //to be returned
         ResultArray resArray;
+        //populated length
+        int iLen = 0;
 
         //this is for operands aka variables and constants
         if (scan.nextToken.primClassif == Token.OPERAND)
@@ -858,9 +865,13 @@ public class Parser
             }
             else
                 error("ERROR: CANNOT ASSIGN STRUCTURE '%d' INTO AN INDEX", value2.structure);
+            //count populated values
+            for(ResultValue res : array1.array)
+                if(res != null)
+                    iLen++;
             //create resulting array
-            resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, array1.array.size()
-                    , array1.iDeclaredLen, (array1.iDeclaredLen+1)*1);
+            resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, iLen
+                    , array1.iDeclaredLen, (array1.iDeclaredLen+1));
             //add into storagemanager
             storageManager.putEntry(variableStr, resArray);
 
