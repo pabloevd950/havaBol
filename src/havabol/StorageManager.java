@@ -26,8 +26,11 @@ public class StorageManager
      * @param key String to use as a key to get value from hashmap sT
      * @return ResultValue entry from hasMap
      */
-    public ResultValue getEntry(String key)
+    public ResultValue getEntry(String key) throws Exception
     {
+
+            ResultValue getKey = sT.get(key);
+
         return sT.get(key);
     }
 

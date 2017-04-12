@@ -509,7 +509,15 @@ public class Parser
                     {
                         case ResultValue.primitive:
                             //not an array, so do basic assign
-                            ResultValue res1 = assign(variableStr, expression(), leftType);
+                            ResultValue res1;
+                            if(bIndex == false)
+                                res1 = assign(variableStr, expression(), leftType);
+                            else
+                            {
+                                System.out.println(variableStr);
+                                res1 = assign(variableStr, expression(), leftType);
+
+                            }
                             return res1;
                         case ResultValue.fixedArray:
                             // this means that more than one index is being changed, so change array
@@ -590,6 +598,7 @@ public class Parser
                 resExpr.type = Token.BOOLEAN;
                 break;
             case Token.STRING:
+
                 resExpr.type = Token.STRING;
                 break;
             default:
@@ -915,7 +924,7 @@ public class Parser
 
 
 
-//        System.out.println("** " + scan.currentToken.tokenStr + "  Token before start of while" + scan.iSourceLineNr);
+        //System.out.println("** " + scan.currentToken.tokenStr + "  Token before start of while" + scan.iSourceLineNr);
 
         // control token used to check for unary minus
         Token prevToken = scan.currentToken;
@@ -954,12 +963,34 @@ public class Parser
 
                     if(scan.nextToken.tokenStr.equals("["))
                     {
-                        String arrayNameStr = scan.currentToken.tokenStr;
-                        scan.getNext();
-                        ResultValue arrayIndex = expression();
-                        scan.getNext();
-                        ResultArray firstArrValue = (ResultArray) storageManager.getEntry(arrayNameStr);
-                        firstResValue = firstArrValue.array.get((Integer.parseInt(Utilities.toInteger(this, arrayIndex))));
+                        ResultValue arrayOrStr = storageManager.getEntry(scan.currentToken.tokenStr);
+
+                        if(arrayOrStr.structure == 2)
+                        {
+                            String arrayNameStr = scan.currentToken.tokenStr;
+                            scan.getNext();
+                            ResultValue arrayIndex = expression();
+                            scan.getNext();
+                            ResultArray firstArrValue = (ResultArray) storageManager.getEntry(arrayNameStr);
+                            //CHECK if null "ERROR: '%s[%s]' WAS NEVER INITIALIZED", arrayNameStr, arrayIndex.value
+                            firstResValue = firstArrValue.array.get((Integer.parseInt(Utilities.toInteger(this, arrayIndex))));
+                        }
+                        else
+                        {
+                            String stringNameStr = scan.currentToken.tokenStr;
+                            scan.getNext();
+                            ResultValue stringIndex = expression();
+                            scan.getNext();
+                            firstResValue = storageManager.getEntry(stringNameStr);
+                            String strVal = firstResValue.value;
+                            if(stringIndex.value.equals("-1"))
+                            {
+                                //stringIndex.value =
+                            }
+                            char Hi = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, stringIndex))));
+                            firstResValue = new ResultValue(String.valueOf(Hi),1);
+
+                        }
                     }
                     // check if the next operator is a unary minus
                     try
@@ -1147,8 +1178,8 @@ public class Parser
                                                 scan.getNext();
                                             }*/
 
-                                            //System.out.println( "  **  " + scan.currentToken.tokenStr + " retrn from while");
-
+                                            //System.out.println( "  **  Current " + scan.currentToken.tokenStr + " return from while   Prev is " + prevToken.tokenStr);
+                                            //scan.setTo(prevToken);
                                             return res;
                                         }
                                     }
@@ -1977,6 +2008,15 @@ public class Parser
                 break;
             case "#":
                 precedence = 4;
+                break;
+            case"not":
+                precedence = 6;
+                break;
+            case"and":
+                precedence = 7;
+                break;
+            case"or":
+                precedence = 7;
                 break;
             default:
                 precedence = 5;
