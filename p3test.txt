@@ -1,10 +1,14 @@
-Int pablo[1] = 5;
-print("h=" , LENGTH("SEX"),"j");
+debug Assign on;
+Int kris[] = 1, 2, 3, 4, 5;
+Int pablo[3] = 5;
+pablo = kris;
+print(kris[0], kris[1], kris[2], kris[3], kris[4]);
+print(pablo[0], pablo[1], pablo[2]);
+pablo[-2] = 3;
+print(pablo[0], pablo[1], pablo[2]);
+debug Assign off;
 Int iCM[10] = 10, 20, 30, 40, 50, 60;
-print("\tC", iCM[0], iCM[1], iCM[2]);
-
-
-
+//print("\tC", iCM[0], iCM[1], iCM[2]);
 Int zx = LENGTH(5 + (LENGTH(10) + 3));
 String str = "hello";
 print(zx , str , "j", LENGTH(10),"h");

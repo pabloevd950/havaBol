@@ -250,7 +250,7 @@ public class Parser
                         //store into storagemanager
                         storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, dclType, structure));
 
-                        return declareArray(bExec, variableStr, dclType, 0);
+                        return declareArray(variableStr, dclType, 0);
                     }
                     //anything else is an error
                     else
@@ -278,7 +278,10 @@ public class Parser
                                 , identifier.primClassif, dclType
                                 , ResultValue.fixedArray, 1, 1));
                         //store in storagemanager
-                        storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, null, dclType, structure, 0, length, (length + 1) * -1));
+                        ArrayList<ResultValue> garbo = new ArrayList<>();
+                        for (int z = 0; z < length; z++)
+                            garbo.add(null);
+                        storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, garbo, dclType, structure, 0, length, (length + 1) * -1));
 
                         return new ResultValue("", Token.DECLARE, ResultValue.fixedArray
                                 , scan.currentToken.tokenStr);
@@ -293,7 +296,7 @@ public class Parser
                         //put entry into storagemanager
                         storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, null, dclType, structure, 0, length, (length+1)*-1));
 
-                        return declareArray(bExec, variableStr, dclType, length);
+                        return declareArray(variableStr, dclType, length);
                     }
                     else
                         error("ERROR: EXPECTED EITHER ';' OR '=', UNEXPECTED TOKEN '%s'", scan.currentToken.tokenStr);
@@ -329,16 +332,19 @@ public class Parser
     }
 
     /**
+     * This method will assign the ResultValue objects returned by expression() to the
+     * variable specified in order to add it to the StorageManager. The variable string will be the key.
+     * <p>
      * assume currentToken is '='
-     * @param bExec
-     * @param type
-     * @param declared
-     * @return
-     * @throws Exception
+     * @param type  The data type of the variable
+     * @param declared how many items were declared
+     *                 if 0, length was not given
+     * @return resArray the ResultArray object that was last changed
+     * @throws Exception a generic exception to catch errors
      */
-    public ResultArray declareArray(Boolean bExec, String variableStr, int type, int declared) throws Exception
+    public ResultArray declareArray(String variableStr, int type, int declared) throws Exception
     {
-        //will add this into the arraylist
+        //will add this into the array list
         ResultValue resExpr = new ResultValue(-1,-1);
         //to be returned
         ResultArray resArray;
@@ -346,7 +352,9 @@ public class Parser
         ArrayList<ResultValue> expressionVals = new ArrayList<>();
         //will act as iPopulated
         int iAmt = 1;
+        //boolean to work with pablo's code
         Boolean bFirst = true;
+
         // loop using expression, until ';' is found
         while(!resExpr.terminatingStr.equals(";") && !scan.currentToken.tokenStr.equals(";"))
         {
@@ -361,8 +369,8 @@ public class Parser
                 bFirst = false;
             }
 
-            //increment amount populated and check to see if greater than declare
-            if (declared > 0 && iAmt++ > declared)
+            //increment amount populated and check to see if greater than declare when value list not given
+            if (iAmt++ > declared && declared > 0 )
                 error("ERROR: CANNOT DECLARE MORE THAN '%d' INTO ARRAY '%s'", declared, variableStr);
             switch (type)
             {// determine the type of value to assign to ResultValue to add to array
@@ -397,9 +405,15 @@ public class Parser
 
             }
         }
+        // missing terminator
+        if (!scan.currentToken.tokenStr.equals(";"))
+            error("ERROR: EXPECTED ';', BUT FOUND '%s'", scan.currentToken.tokenStr);
+        //change declare size if original length was not given i.e arr[] = 1, 2, 3;
+        if (expressionVals.size() > declared)
+            declared = expressionVals.size();
 
         //create ResultArray to return
-        resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.fixedArray, iAmt, declared, (declared + 1) * 1);
+        resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.fixedArray, expressionVals.size(), declared, (declared + 1) * 1);
 
         //check for debug to be on
         if(scan.bShowAssign)
@@ -409,6 +423,10 @@ public class Parser
                 System.out.print(" " + z.value);
             System.out.println();
         }
+
+        //fill with garbage to be able to assign
+        while(expressionVals.size() < declared)
+            expressionVals.add(null);
 
         //add into storagemanager
         storageManager.putEntry(variableStr, resArray);
@@ -437,7 +455,7 @@ public class Parser
         String variableStr;
         //flag to determine if assigning to index or entire array
         Boolean bIndex = false;
-        //temporary resultarray object
+        //temporary result array object
         ResultArray resA;
 
         //if executing, then get its saved data type
@@ -501,9 +519,21 @@ public class Parser
                             else
                             {
                                 //check to see if index requested is in bounds
-                                //haven't handled negatives yet
                                 if (iIndex >= ((ResultArray)res).iDeclaredLen)
                                     error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
+                                //if index is negative
+                                if (iIndex < 0)
+                                {
+                                    //check to see if negative subscript is too small
+                                    if (iIndex <=  ((ResultArray)res).iNegSub*-1)
+                                        error("ERROR: CANNOT ACCESS INDEX '%d', MAX NEGATIVE SUBSCRIPT IS '%d'"
+                                                , iIndex, ((ResultArray)res).iNegSub*-1);
+                                    //subscript is in bounds
+                                    else
+                                        //add declared length in order to get positive subscript
+                                        iIndex += ((ResultArray)res).iDeclaredLen;
+                                }
                                 resA = assignIndex(variableStr, leftType, iIndex);
                             }
 
@@ -577,32 +607,31 @@ public class Parser
 
     /**
      * This method will assign the ResultValue objects returned by expression() to the
-     * variable string specified. The variable string will be the key.
+     * variable specified in order to add it to the StorageManager. The variable string will be the key.
      * <p>
-     * Makes sure that the variable has been declared to a type already.
-     *Assume only one value in value list, and that currentToken is '='
+     * Assume only one value in value list, and that currentToken is '='
      * @param variableStr contains the string of the variable we are assigning a value to
      * @param type Token type which we will be assigning
-     * @param declared The total amount allowed to add
-     * @return ResultValue object that contains the final result of execution
+     * @param declared The total amount allowed to add to first array
+     * @return ResultArray object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
     private ResultArray assignArray(String variableStr, int type, int declared) throws Exception
     {
-        //will add this into the arraylist
+        //will add this into the array list
         ResultValue resExpr = new ResultValue(-1,-1);
         //to be returned
         ResultArray resArray = new ResultArray(variableStr, -1, -1);
 
-        //this is for operands aka scalar with variables and constants and array to array assignment
-        if (scan.nextToken.subClassif == Token.OPERAND)
+        //this is for operands (aka scalar assignment with variables and constants) and array to array assignment
+        if (scan.nextToken.primClassif == Token.OPERAND)
         {
             //iterate through for loop
             int i;
-            //this is the array that we need to act on
+            //this is the array of the varaible that we need to act on
             ResultArray array1 = (ResultArray)storageManager.getEntry(variableStr);
             //this is the value that we need to assign to
-            ResultValue value2 = storageManager.getEntry(scan.nextToken.tokenStr);
+            ResultValue value2 = expression();
 
             if ( array1 == null)
                 // make sure item has been defined
@@ -650,12 +679,19 @@ public class Parser
                         default:
                             error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
                     }
-                    //check if debugger is on
-                    if(scan.bShowAssign)
-                        System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
                 }
+
                 //create resulting array
                 resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, array1.array.size(), declared, (declared+1)*1);
+
+                //check if debugger is on
+                if(scan.bShowAssign)
+                {
+                    System.out.print("\t\t...Variable Name: " + variableStr + " Values:");
+                    for(ResultValue z : resArray.array)
+                        System.out.print(" " + z.value);
+                    System.out.println();
+                }
                 //add into storagemanager
                 storageManager.putEntry(variableStr, resArray);
 
@@ -709,11 +745,19 @@ public class Parser
                         default:
                             error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
                     }
-                    if(scan.bShowAssign)
-                        System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
                 }
                 //create ResultArray to return
                 resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, array1.array.size(), declared, (declared + 1) * 1);
+
+                //check if debugger is on
+                if(scan.bShowAssign)
+                {
+                    System.out.print("\t\t...Variable Name: " + variableStr + " Values:");
+                    for(ResultValue z : resArray.array)
+                        System.out.print(" " + z.value);
+                    System.out.println();
+                }
+
                 //add into storagemanager
                 storageManager.putEntry(variableStr, resArray);
 
@@ -726,12 +770,15 @@ public class Parser
     }
 
     /**
-     * Assume currentToken is on '='
-     * @param variableStr
-     * @param type
-     * @param index
-     * @return
-     * @throws Exception
+     * This method will assign the ResultValue object returned by expression to the
+     * variable specified in order to add it to the StorageManager. The variable string will be the key.
+     * <p>
+     * Assume currentToken is on '='.
+     * @param variableStr the name of the variable
+     * @param type the data type of variable
+     * @param index the index that is getting assigned
+     * @return resArray this contains the last changed ResultArray object
+     * @throws Exception generic exception that catches errors
      */
     public ResultArray assignIndex(String variableStr, int type, int index) throws Exception
     {
