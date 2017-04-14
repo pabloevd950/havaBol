@@ -564,12 +564,24 @@ public class Parser
                 break;
             // see parsing part 2
             case "+=":
-                // ResultValue res1 = Utilities.add(this, res, expression());
-                // System.out.println(res1.value);
+                ResultValue resPlus = Utilities.add(this, res, expression());
+                assign(variableStr, resPlus , leftType);
+                break;
             case "-=":
+                ResultValue resMin = Utilities.sub(this, res, expression());
+                assign(variableStr, resMin , leftType);
+                break;
             case "*=":
+                ResultValue resMul = Utilities.mul(this, res, expression());
+                assign(variableStr, resMul , leftType);
+                break;
             case "/=":
+                ResultValue resDiv = Utilities.div(this, res, expression());
+                assign(variableStr, resDiv , leftType);
+                break;
             case "^=":
+                ResultValue resPow = Utilities.exp(this, res, expression());
+                assign(variableStr, resPow , leftType);
                 break;
             default:
                 error("ERROR: EXPECTED ASSIGNMENT OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
