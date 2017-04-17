@@ -4,10 +4,6 @@ import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
 import java.util.ArrayList;
-import javax.lang.model.type.DeclaredType;
-import javax.xml.transform.Result;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
@@ -460,8 +456,10 @@ public class Parser
 
         //if executing, then get its saved data type
         if (bExec)
+        {
+            //System.out.println("***  * " + scan.currentToken.tokenStr);
             leftType = storageManager.getEntry(scan.currentToken.tokenStr).type;
-
+        }
         // make sure current token is an identifier to properly assign
         if (scan.currentToken.subClassif != Token.IDENTIFIER)
             error("ERROR: %s IS NOT A VALID TARGET VARIABLE FOR ASSIGNMENT"
@@ -911,25 +909,18 @@ public class Parser
 
         // operator and operand tokens
         Token poppedOperator;
-        Token operand;
-
-        Token hashTag = new Token("#");
-        hashTag.primClassif = Token.SEPARATOR;
+        Token startToken = scan.currentToken;
 
         // result value for operands and final result
         ResultValue firstResValue, secondResValue, res;
 
         Boolean bFound; //Boolean to determine if we found left paren
-        Boolean inFunc = false; //Boolean to signal if we are in an expression called from function
         Boolean bCategory = false; //Boolean to check proper infix notation
-        Boolean moveForward = true; //Boolean used to control moving forward to next token
-        Boolean semiFlag = false;
 
-        System.out.println("** Token starting expr " + scan.currentToken.tokenStr);
-        // check if this expression was called from function()
-        if(scan.currentToken.primClassif == Token.FUNCTION )
+        //If we are calling from a function like print, skip name.
+        if(scan.currentToken.primClassif == Token.FUNCTION)
         {
-            inFunc = true;
+            //stack.push(scan.currentToken);
             scan.getNext();
         }
 
@@ -938,7 +929,7 @@ public class Parser
 
         // control token used to check for unary minus
         Token prevToken = scan.currentToken;
-        System.out.println("*** Token before expr while loop " + scan.currentToken.tokenStr);
+        //System.out.println("*** Token before expr while loop " + scan.currentToken.tokenStr);
 
         // loop through expression
         while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
@@ -946,7 +937,7 @@ public class Parser
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
                 || "()".contains(scan.currentToken.tokenStr))// check if its separator
         {
-            System.out.println("**** Token in expr while loop " + scan.currentToken.tokenStr);
+            //System.out.println("**** Token in expr while loop " + scan.currentToken.tokenStr);
 
             // check token type
             switch (scan.currentToken.primClassif)
@@ -957,92 +948,25 @@ public class Parser
                         // we encountered an unexpected operand, looking for an operator
                         error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR."
                                 , scan.currentToken.tokenStr);
-
-                    // set operand equal to current token
-                    operand = scan.currentToken;
-
-                    // get result value of operand. If its an identifier, get it from the storage manager
-                    if(operand.subClassif == Token.IDENTIFIER)
-                        // if identifier get its result value
-                        firstResValue = storageManager.getEntry(operand.tokenStr);
-                    else
-                        // create a new result value object
-                        firstResValue = new ResultValue(operand.tokenStr, operand.subClassif);
-
-                    if(scan.nextToken.tokenStr.equals("["))
-                    {   //Dealing with an array or string
-                        //Get object from storage manager
-                        ResultValue arrayOrStr = storageManager.getEntry(scan.currentToken.tokenStr);
-                        if(arrayOrStr == null)
-                            error("ERROR: '%s' WAS NEVER INITIALIZED", scan.currentToken.tokenStr);
-
-                        //If the structure is 2, it is an array
-                        if(arrayOrStr.structure == 2)
-                        {
-                            //Get variable name
-                            String arrayNameStr = scan.currentToken.tokenStr;
-                            scan.getNext(); //Skip over bracket
-                            ResultValue arrayIndex = expression(); //Get desired index
-                            scan.getNext(); //Skip over next bracket
-                            //Get value of index of the array
-                            ResultArray firstArrValue = (ResultArray) storageManager.getEntry(arrayNameStr);
-                            //CHECK if null "ERROR: '%s[%s]' WAS NEVER INITIALIZED", arrayNameStr, arrayIndex.value
-                            firstResValue = firstArrValue.array.get((Integer.parseInt(Utilities.toInteger(this, arrayIndex))));
-                            if(firstResValue == null)
-                                error("ERROR: '%s[%s]' WAS NEVER INITIALIZED", arrayNameStr, arrayIndex.value);
-
-                        }
-                        else
-                        {
-                            String stringNameStr = scan.currentToken.tokenStr;
-                            scan.getNext();
-                            ResultValue stringIndex = expression();
-                            scan.getNext();
-                            firstResValue = storageManager.getEntry(stringNameStr);
-                            String strVal = firstResValue.value;
-
-                            if(stringIndex.value.equals("-1"))
-                                stringIndex.value = String.valueOf(firstResValue.value.length()-1);
-
-                            char newChar = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, stringIndex))));
-                            firstResValue = new ResultValue(String.valueOf(newChar),1);
-                        }
-                    }
+                    firstResValue = getOperand();
                     // check if the next operator is a unary minus
-                    try
+                    if(!stack.empty())
                     {
-                        // take a look at the top of the stack, no pop
                         poppedOperator = (Token)stack.peek();
-
                         if(poppedOperator.tokenStr.equals("u-"))
                         {// top of the stack contained a unary minus
                             // pop it off the stack
                             stack.pop();
-
                             // negate the operand before we push it on the stack
                             firstResValue = Utilities.mul(this,
                                     new ResultValue("-1",Token.INTEGER), firstResValue);
                         }
                     }
-                    catch (Exception e)
-                    {
-                        // catch empty stack exception and do nothing
-                        // means this is our first operand, so there is no error
-                    }
                     // push operand to the stack and signal that we now want an operator
-//                    if(scan.nextToken.tokenStr.equals(";"))
-//                    {
-//                        if(!stack.empty())
-//                        {
-//                            Token test = (Token) stack.peek();
-//                            if(test.tokenStr.equals("(")) //&& scan.currentToken.tokenStr.equals(")"))
-//                                semiFlag = true;
-//                        }
-//                    }
                     outPutStack.push(firstResValue);
                     bCategory = true;
-
                     break;
+
                 // token is an operator
                 case Token.OPERATOR:
                     if(bCategory == false && !scan.currentToken.tokenStr.equals("-")
@@ -1110,22 +1034,18 @@ public class Parser
                             // push the current token to the operator stack
                             stack.push(scan.currentToken);
                             break;
-
                     }
                     // we are now expecting an operand
                     bCategory = false;
                     break;
 
+
                 // handle functions
                 case Token.FUNCTION:
                     // call function to get result value
-                    outPutStack.push(function(true));
-
-                    // make sure we don't skip over the next operator or terminator after function call
-                    moveForward = true;
-
-                    // functions are considered operands, so we are now looking for an operator
-                    bCategory = true;
+                    //outPutStack.push(function(true));
+                    stack.push(scan.currentToken);
+                    scan.getNext();
                     break;
 
                 // handle separators
@@ -1145,20 +1065,14 @@ public class Parser
                             {// stack is not empty and left paren not found, pop top of stack
                                 poppedOperator = (Token)stack.pop();
                                 //System.out.println(popped.tokenStr + " Popped **");
-                                if (poppedOperator.tokenStr.equals("("))
+                                if (poppedOperator.tokenStr.equals("(") || poppedOperator.primClassif == Token.FUNCTION)
                                 {// left paren found, set flag to true and break
                                     bFound = true;
-
-                                    if (inFunc == true)
-                                    {// we are in a function call
-                                        poppedOperator = (Token)stack.peek();
-                                        if(poppedOperator.tokenStr.equals("#"))
-                                        {   // next token contains our function symbol, leave
-                                            res = (ResultValue)outPutStack.peek();
-                                            return res;
-                                        }
+                                    if(poppedOperator.primClassif == Token.FUNCTION)
+                                    {
+                                        ResultValue temp = (ResultValue) outPutStack.pop();
+                                        outPutStack.push(function2(poppedOperator, temp));
                                     }
-
                                     // not in a function and left paren found, leave while loop
                                     break;
                                 }
@@ -1178,21 +1092,22 @@ public class Parser
                                     outPutStack.push(res);
                                 }
                             }
-                            if ((bFound == false)) //&& !scan.nextToken.tokenStr.equals(";"))
+
+
+
+                            if ((bFound == false) && !scan.nextToken.tokenStr.equals(";"))
+                            {
                                 // left paren was not encountered
-//                                error("ERROR: EXPECTED LEFT PARENTHESIS");
+                                error("ERROR: EXPECTED LEFT PARENTHESIS");
+                            }
 
                             break;
                     }
             }
             // set previous token to the current token
             prevToken = scan.currentToken;
-
+            scan.getNext();
             // advance token unless returned from function call
-            if(moveForward)
-                scan.getNext();
-
-            moveForward = true;
         }
 
         // this should get the last result value
@@ -1208,17 +1123,14 @@ public class Parser
                 outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER)
                         , (ResultValue) outPutStack.pop(), "*"));
             else if (poppedOperator.tokenStr.equals("not"))
-            {
                 outPutStack.push(evaluate(null, (ResultValue) outPutStack.pop() , poppedOperator.tokenStr));
-            }
             else
-            {// evaluate normally
+            {   // evaluate normally
                 ResultValue resvalue = (ResultValue) outPutStack.pop();
                 ResultValue res2value = (ResultValue) outPutStack.pop();
                 outPutStack.push(evaluate(res2value, resvalue, poppedOperator.tokenStr));
             }
         }
-
         // final value
         res = (ResultValue) outPutStack.pop();
 
@@ -1230,6 +1142,7 @@ public class Parser
 
         res.terminatingStr = scan.nextToken.tokenStr;
 
+//        System.out.println("***  " + scan.currentToken.tokenStr + " As Current token at end ***");
         //Return final result value
         return res;
     }
@@ -1287,13 +1200,25 @@ public class Parser
                 res = Utilities.notEqualTo(this, firstResValue, secondResValue);
                 break;
             case "u-":
-                //res = Utilities.mul(this, firstResValue, secondResValue);
+                res = Utilities.mul(this, firstResValue, secondResValue);
                 break;
             case "#":
                 res = Utilities.concatenate(this,firstResValue, secondResValue);
                 break;
             case"not":
                 res = Utilities.not(this, secondResValue);
+                break;
+            case"and":
+                res = Utilities.and(this,firstResValue, secondResValue);
+                break;
+            case"or":
+                res = Utilities.or(this,firstResValue, secondResValue);
+                break;
+            case"notin":
+                System.out.println("NEED TO CALL SOMETHING FOR NOTIN");
+                break;
+            case"in":
+                System.out.println("NEED TO CALL SOMETHING FOR IN");
                 break;
             default:
                 error("ERROR: '%s' IS NOT A VALID OPERATOR FOR EXPRESSION", operator);
@@ -1739,6 +1664,71 @@ public class Parser
         return new ResultValue("", Token.END, ResultValue.primitive, ";");
     }
 
+
+    private ResultValue function2(Token functionName, ResultValue parameter) throws Exception
+    {
+        ResultValue res;
+        String value = "";
+        int type = Token.BUILTIN;
+
+        if (functionName.tokenStr.equals("LENGTH"))
+         {  // length function
+            // get value of parameter
+
+            // calculate length of given string
+            value = "" + parameter.value.length();
+
+            // set type to an int
+            type = Token.INTEGER;
+
+         //scan.getNext();
+        }
+        else if (functionName.tokenStr.equals("SPACES"))
+        {
+            // determine if string contains only spaces or is empty
+            if (parameter.value.trim().length() == 0)
+                value = "T";
+            else
+                value = "F";
+
+            // set type to a boolean
+            type = Token.BOOLEAN;
+        }
+        else if (functionName.tokenStr.equals("ELEM"))
+        {
+
+            // get value of parameter
+            ResultArray array = (ResultArray) parameter;
+            if (array == null)
+                error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
+                        , scan.currentToken.tokenStr);
+            else if (array.structure != ResultValue.fixedArray)
+                error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
+                        , scan.currentToken.tokenStr);
+
+            value = "" + array.iPopulatedLen;
+            type = Token.INTEGER;
+
+            // make sure we only have one parameter
+        }
+        else if (functionName.tokenStr.equals("MAXELEM"))
+        {
+
+            // get value of parameter
+            ResultArray array = (ResultArray) parameter;
+            if (array == null)
+                error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
+                        , scan.currentToken.tokenStr);
+            else if (array.structure != ResultValue.fixedArray)
+                error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
+                        , scan.currentToken.tokenStr);
+
+            value = "" + array.iDeclaredLen;
+            type = Token.INTEGER;
+
+        }
+        return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
+    }
     /**
      * This method is provided to Parser to execute HavaBol builtin and user
      * defined functions.
@@ -1774,7 +1764,6 @@ public class Parser
                     // begin building the output line created by the print
                     while ( !scan.currentToken.tokenStr.equals(";") )
                     {// expression will return on a ',' or ';', auto add space for a ','
-                        System.out.println(scan.currentToken.tokenStr);
                         printLine += expression().value + " ";
                         scan.getNext();
 
@@ -1788,90 +1777,90 @@ public class Parser
                     // print out the line
                     System.out.println(printLine);
                 }
-                else if (scan.currentToken.tokenStr.equals("LENGTH"))
-                {// length function
-                    // get value of parameter
-                    res = expression();
-
-                    // make sure we only have one parameter
-                    if (scan.currentToken.tokenStr.equals(","))
-                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
-
-                    // calculate length of given string
-                    value = "" + res.value.length();
-
-                    // set type to an int
-                    type = Token.INTEGER;
-
-                    //scan.getNext();
-                }
-                else if (scan.currentToken.tokenStr.equals("SPACES"))
-                {
-                    //get value of parameter
-                    res = expression();
-
-                    // make sure we only have one parameter
-                    if (scan.currentToken.tokenStr.equals(","))
-                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
-
-                    // determine if string contains only spaces or is empty
-                    if (res.value.trim().length() == 0)
-                        value = "T";
-                    else
-                        value = "F";
-
-                    // set type to a boolean
-                    type = Token.BOOLEAN;
-                }
-                else if (scan.currentToken.tokenStr.equals("ELEM"))
-                {
-                    // advance to our parameter
-                    scan.getNext();
-                    scan.getNext();
-
-                    // get value of parameter
-                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
-
-                    if (array == null)
-                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
-                                , scan.currentToken.tokenStr);
-                    else if (array.structure != ResultValue.fixedArray)
-                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
-                                , scan.currentToken.tokenStr);
-
-                    value = "" + array.iPopulatedLen;
-                    type = Token.INTEGER;
-
-                    // make sure we only have one parameter
-                    if (!scan.getNext().equals(")"))
-                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
-
-                    // advance past out right paren
-                    //scan.getNext();
-                }
-                else if (scan.currentToken.tokenStr.equals("MAXELEM"))
-                {
-                    // advance to our parameter
-                    scan.getNext();
-                    scan.getNext();
-
-                    // get value of parameter
-                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
-
-                    if (array == null)
-                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
-                                , scan.currentToken.tokenStr);
-                    else if (array.structure != ResultValue.fixedArray)
-                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
-                                , scan.currentToken.tokenStr);
-
-                    value = "" + array.iDeclaredLen;
-                    type = Token.INTEGER;
-
-                    // make sure we only have one parameter
-                    if (!scan.getNext().equals(")"))
-                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
-                }
+//                else if (scan.currentToken.tokenStr.equals("LENGTH"))
+//                {// length function
+//                    // get value of parameter
+//                    res = expression();
+//
+//                    // make sure we only have one parameter
+//                    if (scan.currentToken.tokenStr.equals(","))
+//                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
+//
+//                    // calculate length of given string
+//                    value = "" + res.value.length();
+//
+//                    // set type to an int
+//                    type = Token.INTEGER;
+//
+//                    //scan.getNext();
+//                }
+//                else if (scan.currentToken.tokenStr.equals("SPACES"))
+//                {
+//                    //get value of parameter
+//                    res = expression();
+//
+//                    // make sure we only have one parameter
+//                    if (scan.currentToken.tokenStr.equals(","))
+//                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
+//
+//                    // determine if string contains only spaces or is empty
+//                    if (res.value.trim().length() == 0)
+//                        value = "T";
+//                    else
+//                        value = "F";
+//
+//                    // set type to a boolean
+//                    type = Token.BOOLEAN;
+//                }
+//                else if (scan.currentToken.tokenStr.equals("ELEM"))
+//                {
+//                    // advance to our parameter
+//                    scan.getNext();
+//                    scan.getNext();
+//
+//                    // get value of parameter
+//                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
+//
+//                    if (array == null)
+//                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
+//                                , scan.currentToken.tokenStr);
+//                    else if (array.structure != ResultValue.fixedArray)
+//                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
+//                                , scan.currentToken.tokenStr);
+//
+//                    value = "" + array.iPopulatedLen;
+//                    type = Token.INTEGER;
+//
+//                    // make sure we only have one parameter
+//                    if (!scan.getNext().equals(")"))
+//                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
+//
+//                    // advance past out right paren
+//                    //scan.getNext();
+//                }
+//                else if (scan.currentToken.tokenStr.equals("MAXELEM"))
+//                {
+//                    // advance to our parameter
+//                    scan.getNext();
+//                    scan.getNext();
+//
+//                    // get value of parameter
+//                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
+//
+//                    if (array == null)
+//                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
+//                                , scan.currentToken.tokenStr);
+//                    else if (array.structure != ResultValue.fixedArray)
+//                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
+//                                , scan.currentToken.tokenStr);
+//
+//                    value = "" + array.iDeclaredLen;
+//                    type = Token.INTEGER;
+//
+//                    // make sure we only have one parameter
+//                    if (!scan.getNext().equals(")"))
+//                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
+//                }
                 break;
             case Token.USER:
                 // do other shit later
@@ -1907,6 +1896,58 @@ public class Parser
                 , scan.sourceFileNm);
     }
 
+    public ResultValue getOperand() throws Exception
+    {
+        Token operand;
+        ResultValue firstResValue;
+        // set operand equal to current token
+        operand = scan.currentToken;
+
+        // get result value of operand. If its an identifier, get it from the storage manager
+        if(operand.subClassif == Token.IDENTIFIER)
+            // if identifier get its result value
+            firstResValue = storageManager.getEntry(operand.tokenStr);
+        else
+            // create a new result value object
+            firstResValue = new ResultValue(operand.tokenStr, operand.subClassif);
+
+        //Array and string handling
+        if(scan.nextToken.tokenStr.equals("["))
+        {   //Dealing with an array or string
+            //Get object from storage manager
+            ResultValue arrayOrStr = storageManager.getEntry(scan.currentToken.tokenStr);
+            if(arrayOrStr == null)
+                error("ERROR: '%s' WAS NEVER INITIALIZED", scan.currentToken.tokenStr);
+
+            String name = scan.currentToken.tokenStr;
+            scan.getNext();
+            ResultValue index = expression();
+            scan.getNext();
+
+            //If the structure is 2, it is an array
+            if(arrayOrStr.structure == 2)
+            {
+                //Get value of index of the array
+                ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
+                firstResValue = firstArrValue.array.get((Integer.parseInt(Utilities.toInteger(this, index))));
+                if(firstResValue == null)
+                    error("ERROR: '%s[%s]' WAS NEVER INITIALIZED", name, index.value);
+            }
+            else
+            {
+                firstResValue = storageManager.getEntry(name);
+                String strVal = firstResValue.value;
+                if(index.value.equals("-1"))
+                    index.value = String.valueOf(firstResValue.value.length()-1);
+                char newChar = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, index))));
+                firstResValue = new ResultValue(String.valueOf(newChar),1);
+            }
+        }
+
+        return firstResValue;
+    }
+
+
     /**
      * This method recieves an operator as a token and checks it precedence.
      * Operators with higher precedence have lower int value. As precedence decreases, int value goes up.
@@ -1917,40 +1958,49 @@ public class Parser
     {   int precedence;
         switch(operator.tokenStr)
         {
+//            case "(":
+//                precedence = 0;
+//                if(inStack)
+//                    precedence = 1;
+                //break;
             case "u-":
-                precedence = 0;
+                precedence = 2;
                 break;
             case "^":
-                precedence = 0;
+                precedence = 3;
                 if(inStack)
-                    precedence = 1;
+                    precedence = 4;
                 break;
             case "*":
-                precedence = 2;
+                precedence = 5;
                 break;
             case "/":
-                precedence = 2;
+                precedence = 5;
                 break;
             case "+":
-                precedence = 3;
-                break;
-            case "-":
-                precedence = 3;
-                break;
-            case "#":
-                precedence = 4;
-                break;
-            case"not":
                 precedence = 6;
                 break;
-            case"and":
+            case "-":
+                precedence = 6;
+                break;
+            case "#":
                 precedence = 7;
+                break;
+            case "in":
+            case "not in":
+                precedence = 8;
+                break;
+            case"not":
+                precedence = 9;
+                break;
+            case"and":
+                precedence = 10;
                 break;
             case"or":
-                precedence = 7;
+                precedence = 10;
                 break;
             default:
-                precedence = 5;
+                precedence = 8;
         }
 
         return precedence;

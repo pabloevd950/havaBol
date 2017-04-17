@@ -8,7 +8,7 @@ print("name=", name, "length=", LENGTH(name));
 
 name = "Joe";
 print("concat name=", name#' '#"King", "length=", LENGTH(name#' '#"King"));
-
+print("*************");
 Float gradeM[10] = 100, 99, 70.5;  // max elements of 10, but
                                    // only 3 populated
 print("gradeM has max elements of", MAXELEM(gradeM)
