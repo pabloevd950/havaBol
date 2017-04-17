@@ -98,7 +98,7 @@ public class Scanner
 
         // set currentToken to nextToken object to keep track of tokens and reset nextToken
         clone(nextToken);
-        nextToken = new Token();
+        nextToken = new Token("");
 
         // check if we encountered EOF
         if (currentToken.primClassif == Token.EOF)
