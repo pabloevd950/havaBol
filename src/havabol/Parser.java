@@ -515,18 +515,23 @@ public class Parser
                             if (bIndex == false)
                             {
                                 res1 = assign(variableStr, expression(), leftType);
+
+                                // TEMP
                                 if (scan.currentToken.primClassif != Token.OPERAND)
                                     scan.getNext();
-                            } else
+                            }
+                            else
                             {
                                 ResultValue newSubString = expression();
                                 String value = storageManager.getEntry(variableStr).value;
+
                                 if (iIndex == -1)
                                 {
                                     iIndex = value.length() - 1;
                                 }
                                 if (iIndex > value.length() - 1)
                                     error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
                                 String newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex + 1);
                                 ResultValue finalString = new ResultValue(newValue, Token.STRING);
                                 res1 = assign(variableStr, finalString, leftType);
@@ -1834,9 +1839,11 @@ public class Parser
                     // get value of parameter
                     res = expression();
 
-                    // make sure we only have one parameter
+                    // make sure we only have one primitive parameter
                     if (scan.currentToken.tokenStr.equals(","))
                         error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
+                    else if (res.type != ResultValue.primitive)
+                        error("ERROR: UH FUCK YOU, I WANT A STRING");
 
                     // calculate length of given string
                     value = "" + res.value.length();
@@ -1851,9 +1858,11 @@ public class Parser
                     //get value of parameter
                     res = expression();
 
-                    // make sure we only have one parameter
+                    // make sure we only have one primitive parameter
                     if (scan.currentToken.tokenStr.equals(","))
                         error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
+                    else if (res.type != ResultValue.primitive)
+                        error("ERROR: UH FUCK YOU, I WANT A STRING");
 
                     // determine if string contains only spaces or is empty
                     if (res.value.trim().length() == 0)
@@ -1876,7 +1885,8 @@ public class Parser
                     if (array == null)
                         error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
                                 , scan.currentToken.tokenStr);
-                    else if (array.structure != ResultValue.fixedArray)
+                    else if (array.structure != ResultValue.fixedArray
+                           ||array.structure != ResultValue.unboundedArray)
                         error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
                                 , scan.currentToken.tokenStr);
 
