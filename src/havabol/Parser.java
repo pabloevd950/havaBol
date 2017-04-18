@@ -1886,7 +1886,7 @@ public class Parser
                         error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
                                 , scan.currentToken.tokenStr);
                     else if (array.structure != ResultValue.fixedArray
-                           ||array.structure != ResultValue.unboundedArray)
+                           &&array.structure != ResultValue.unboundedArray)
                         error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
                                 , scan.currentToken.tokenStr);
 
