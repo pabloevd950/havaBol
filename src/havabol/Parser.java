@@ -1,6 +1,5 @@
 package havabol;
 
-import com.sun.org.apache.xpath.internal.SourceTree;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
@@ -570,23 +569,23 @@ public class Parser
                 break;
             // see parsing part 2
             case "+=":
-                ResultValue resPlus = Utilities.add(this, res, expression());
+                ResultValue resPlus = Utilities.add(this, res, expression(false));
                 assign(variableStr, resPlus , leftType);
                 break;
             case "-=":
-                ResultValue resMin = Utilities.sub(this, res, expression());
+                ResultValue resMin = Utilities.sub(this, res, expression(false));
                 assign(variableStr, resMin , leftType);
                 break;
             case "*=":
-                ResultValue resMul = Utilities.mul(this, res, expression());
+                ResultValue resMul = Utilities.mul(this, res, expression(false));
                 assign(variableStr, resMul , leftType);
                 break;
             case "/=":
-                ResultValue resDiv = Utilities.div(this, res, expression());
+                ResultValue resDiv = Utilities.div(this, res, expression(false));
                 assign(variableStr, resDiv , leftType);
                 break;
             case "^=":
-                ResultValue resPow = Utilities.exp(this, res, expression());
+                ResultValue resPow = Utilities.exp(this, res, expression(false));
                 assign(variableStr, resPow , leftType);
                 break;
             default:
@@ -1086,7 +1085,7 @@ public class Parser
                                     if(poppedOperator.primClassif == Token.FUNCTION)
                                     {
                                         ResultValue temp = (ResultValue) outPutStack.pop();
-                                        outPutStack.push(function2(poppedOperator, temp));
+                                        outPutStack.push(builtInFuncs(poppedOperator, temp));
                                     }
                                     // not in a function and left paren found, leave while loop
                                     break;
@@ -1679,7 +1678,7 @@ public class Parser
     }
 
 
-    private ResultValue function2(Token functionName, ResultValue parameter) throws Exception
+    private ResultValue builtInFuncs(Token functionName, ResultValue parameter) throws Exception
     {
         ResultValue res;
         String value = "";
@@ -1688,7 +1687,6 @@ public class Parser
         if (functionName.tokenStr.equals("LENGTH"))
          {  // length function
             // get value of parameter
-
             // calculate length of given string
             value = "" + parameter.value.length();
 
