@@ -1,5 +1,6 @@
 package havabol;
 
+import com.sun.org.apache.xpath.internal.SourceTree;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
@@ -55,7 +56,9 @@ public class Parser
 
         // determine what to do with the current token
         switch (scan.currentToken.primClassif)
-        {// CONTROL, OPERAND, FUNCTION, OPERATOR, SEPARATOR, EOF, DEBUG, or defaults to error
+        {// EOF, CONTROL, OPERAND, FUNCTION, OPERATOR, SEPARATOR, DEBUG, or defaults to error
+            case Token.EOF:
+                return new ResultValue("", Token.EOF, Token.VOID, "");
             case Token.CONTROL:
                 switch (scan.currentToken.subClassif)
                 { // control token found, so determine the sub type for proper execution
@@ -86,7 +89,6 @@ public class Parser
                 return function(bExec);
             case Token.OPERATOR:
             case Token.SEPARATOR:
-            case Token.EOF:
                 break;
             case Token.DEBUG:
                 switch ( scan.getNext() )
@@ -456,10 +458,8 @@ public class Parser
 
         //if executing, then get its saved data type
         if (bExec)
-        {
-            //System.out.println("***  * " + scan.currentToken.tokenStr);
             leftType = storageManager.getEntry(scan.currentToken.tokenStr).type;
-        }
+
         // make sure current token is an identifier to properly assign
         if (scan.currentToken.subClassif != Token.IDENTIFIER)
             error("ERROR: %s IS NOT A VALID TARGET VARIABLE FOR ASSIGNMENT"
@@ -508,19 +508,27 @@ public class Parser
                         case ResultValue.primitive:
                             //not an array, so do basic assign
                             ResultValue res1;
-                            if(bIndex == false)
+                            if (bIndex == false)
+                            {
                                 res1 = assign(variableStr, expression(false), leftType);
+
+                                // TEMP
+                                if (scan.currentToken.primClassif != Token.OPERAND)
+                                    scan.getNext();
+                            }
                             else
                             {
                                 ResultValue newSubString = expression(false);
                                 String value = storageManager.getEntry(variableStr).value;
-                                if(iIndex == -1)
+
+                                if (iIndex == -1)
                                 {
-                                    iIndex = value.length()-1;
+                                    iIndex = value.length() - 1;
                                 }
-                                if(iIndex > value.length()-1)
+                                if (iIndex > value.length() - 1)
                                     error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
-                                String newValue = value.substring(0,iIndex) + newSubString.value + value.substring(iIndex+1);
+
+                                String newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex + 1);
                                 ResultValue finalString = new ResultValue(newValue, Token.STRING);
                                 res1 = assign(variableStr, finalString, leftType);
 
@@ -562,10 +570,24 @@ public class Parser
                 break;
             // see parsing part 2
             case "+=":
+                ResultValue resPlus = Utilities.add(this, res, expression());
+                assign(variableStr, resPlus , leftType);
+                break;
             case "-=":
+                ResultValue resMin = Utilities.sub(this, res, expression());
+                assign(variableStr, resMin , leftType);
+                break;
             case "*=":
+                ResultValue resMul = Utilities.mul(this, res, expression());
+                assign(variableStr, resMul , leftType);
+                break;
             case "/=":
+                ResultValue resDiv = Utilities.div(this, res, expression());
+                assign(variableStr, resDiv , leftType);
+                break;
             case "^=":
+                ResultValue resPow = Utilities.exp(this, res, expression());
+                assign(variableStr, resPow , leftType);
                 break;
             default:
                 error("ERROR: EXPECTED ASSIGNMENT OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
@@ -605,7 +627,6 @@ public class Parser
                 resExpr.type = Token.BOOLEAN;
                 break;
             case Token.STRING:
-
                 resExpr.type = Token.STRING;
                 break;
             default:
@@ -1960,11 +1981,6 @@ public class Parser
     {   int precedence;
         switch(operator.tokenStr)
         {
-//            case "(":
-//                precedence = 0;
-//                if(inStack)
-//                    precedence = 1;
-                //break;
             case "u-":
                 precedence = 2;
                 break;

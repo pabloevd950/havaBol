@@ -1,0 +1,50 @@
+print("HavaBol extensive test file");
+
+print("\nChecking comments, should only print an empty line");
+// This line will test comment ignoring for havabol
+// print("Comment ignoring not working");
+print("");
+
+// Check declare and assigning
+print("Checking declare statements");
+Int iX;
+Int iY;
+print("iX and iY declared as Int");
+
+print("Checking assign statements");
+iX = 6;
+iY = 9;
+Bool worked = T;
+print("Declare and assign statements worked:", worked);
+print("iX =", iX, "iY =", iY);
+
+// check expressions and concatenation
+print("\nChecking expressions and concatenation");
+Int two = 2;
+Int three = 3;
+Int four = 4;
+Int five = 5;
+print("constants: 3 + 4 * 5 =", 3+4*5);
+print("variables: 3 + 4 * 5 =", three+four*five);
+print("mix: 2 * 3 + 4 =", 2 * three + four);
+
+String strA = "Climb";
+String strB = "every";
+String strC;
+strC = strA # " " # strB # " mountain";
+print("strC is", strC);
+
+// check expressions with if statements
+print("\nChecking expressions with if statements");
+if three*four > four+five:
+    print("right:", three*four, ">", 4+5);
+else:
+    print("wrong:", three*four, ">", 4+5);
+endif;
+
+if "1" # "2" > 4+5:
+    print("wrong: string", "1" # "2", ">", 4+5, "should be F");
+else:
+    print("right: string", "1" # "2", ">", 4+5);
+endif;
+

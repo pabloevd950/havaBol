@@ -91,14 +91,14 @@ public class Scanner
     {
         String token = "";                  // string used to create the token from the source file
         String operator = "+-*/<>!=#^";     // list of operators
-        String separator = ",():;[]";        // list of separators
-        String operators = "<>!=^*/";       // list of potential two character operations
+        String separator = ",():;[]~";        // list of separators
+        String operators = "-+<>!=^*/";       // list of potential two character operations
         String operations = "<= >= != == += -= *= /= ^=";
         String escapeChars = "t\"na\\\''";
 
         // set currentToken to nextToken object to keep track of tokens and reset nextToken
         clone(nextToken);
-        nextToken = new Token();
+        nextToken = new Token("");
 
         // check if we encountered EOF
         if (currentToken.primClassif == Token.EOF)
