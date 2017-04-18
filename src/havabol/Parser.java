@@ -256,7 +256,7 @@ public class Parser
                 else
                 {
                     //do expression to find declared length
-                    int length = Integer.parseInt(Utilities.toInteger(this, expression()));
+                    int length = Integer.parseInt(Utilities.toInteger(this, expression(false)));
 
                     //check to see if length is reasonable
                     if (length < 0)
@@ -355,7 +355,7 @@ public class Parser
         while(!resExpr.terminatingStr.equals(";") && !scan.currentToken.tokenStr.equals(";"))
         {
             // evaluate expression to receive values for arraylist
-            resExpr = expression();
+            resExpr = expression(false);
             scan.getNext();
             //to fix pablo's shit
 //            if (bFirst == true)
@@ -482,7 +482,7 @@ public class Parser
         if (scan.currentToken.tokenStr.equals("["))
         {
             // arrays must call expression to determine array index
-            iIndex = Integer.parseInt(Utilities.toInteger(this, expression()));
+            iIndex = Integer.parseInt(Utilities.toInteger(this, expression(false)));
             //advance from the index to right bracket
             scan.getNext();
             //advance from the right bracket to the operator
@@ -509,10 +509,10 @@ public class Parser
                             //not an array, so do basic assign
                             ResultValue res1;
                             if(bIndex == false)
-                                res1 = assign(variableStr, expression(), leftType);
+                                res1 = assign(variableStr, expression(false), leftType);
                             else
                             {
-                                ResultValue newSubString = expression();
+                                ResultValue newSubString = expression(false);
                                 String value = storageManager.getEntry(variableStr).value;
                                 if(iIndex == -1)
                                 {
@@ -649,7 +649,7 @@ public class Parser
             //this is the array of the varaible that we need to act on
             ResultArray array1 = (ResultArray)storageManager.getEntry(variableStr);
             //this is the value that we need to assign to
-            ResultValue value2 = expression();
+            ResultValue value2 = expression(false);
 
             if ( array1 == null)
                 // make sure item has been defined
@@ -817,7 +817,7 @@ public class Parser
             ResultArray array1 = (ResultArray)storageManager.getEntry(variableStr);
             //this is the value that we need to use to assign to index
             //if it is a variable, it should return its value, else will return value of expression
-            ResultValue value2 = expression();
+            ResultValue value2 = expression(false);
 
             if (!scan.nextToken.tokenStr.equals(";"))
                 error("ERROR: MISSING ';' TERMINATOR");
@@ -901,7 +901,7 @@ public class Parser
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
-    public ResultValue expression() throws Exception
+    public ResultValue expression(Boolean infunc) throws Exception
     {
         // result value and operand stacks
         Stack outPutStack = new Stack<ResultValue>();
@@ -929,7 +929,6 @@ public class Parser
 
         // control token used to check for unary minus
         Token prevToken = scan.currentToken;
-        //System.out.println("*** Token before expr while loop " + scan.currentToken.tokenStr);
 
         // loop through expression
         while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
@@ -937,17 +936,13 @@ public class Parser
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
                 || "()".contains(scan.currentToken.tokenStr))// check if its separator
         {
-            //System.out.println("**** Token in expr while loop " + scan.currentToken.tokenStr);
-
             // check token type
             switch (scan.currentToken.primClassif)
             {
-                // token is an operand
                 case Token.OPERAND:
                     if(bCategory == true)
                         // we encountered an unexpected operand, looking for an operator
-                        error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR."
-                                , scan.currentToken.tokenStr);
+                        error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR.", scan.currentToken.tokenStr);
                     firstResValue = getOperand();
                     // check if the next operator is a unary minus
                     if(!stack.empty())
@@ -969,11 +964,11 @@ public class Parser
 
                 // token is an operator
                 case Token.OPERATOR:
-                    if(bCategory == false && !scan.currentToken.tokenStr.equals("-")
+                    if(bCategory == false
+                            && !scan.currentToken.tokenStr.equals("-")
                             && !scan.currentToken.tokenStr.equals("not"))
                         // we encountered an unexpected operator, looking for an operand
-                        error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND"
-                                , scan.currentToken.tokenStr);
+                        error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND", scan.currentToken.tokenStr);
 
                     // determine operator, look for unary minus
                     switch (scan.currentToken.tokenStr)
@@ -985,15 +980,15 @@ public class Parser
                             break;
 
                         case "-":
-                            // check if the previous token was an operator.
+                            // check if the previous token was an operator. If so, we want operator or u-
                             if(prevToken.primClassif == Token.OPERATOR
                                     || prevToken.tokenStr.equals(",")
                                     || prevToken.tokenStr.equals("("))
-                            {// previous token was an operator, either want an operand or unary minus
+                            {
                                 //Check if next token is an operand or separator.
                                 if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.tokenStr.equals("("))
-                                    // unary minus is true. Change the "-" to "u-"
-                                    stack.push(new Token("u-"));
+                                    stack.push(new Token("u-"));// unary minus is true. Change the "-" to "u-"
+
                                     //If it isn't, then we encountered an error
                                 else
                                     error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND"
@@ -1011,7 +1006,7 @@ public class Parser
                                     break;
 
                                 else if(!stack.empty())
-                                {// stack is not empty and precedence is right, evaluate
+                                {   // stack is not empty and precedence is right, evaluate
                                     // pop operator
                                     poppedOperator = (Token)stack.pop();
                                     // pop last value
@@ -1058,6 +1053,8 @@ public class Parser
                             break;
                         case ")":
                             // right parenthesis found, set flag false until we find matching left paren
+                            if(infunc && scan.nextToken.tokenStr.equals(";"))
+                                break;
                             bFound = false;
 
                             // loop through stack until matching left paren is found
@@ -1095,7 +1092,7 @@ public class Parser
 
 
 
-                            if ((bFound == false) && !scan.nextToken.tokenStr.equals(";"))
+                            if ((bFound == false) )//&& !scan.nextToken.tokenStr.equals(";"))
                             {
                                 // left paren was not encountered
                                 error("ERROR: EXPECTED LEFT PARENTHESIS");
@@ -1142,7 +1139,7 @@ public class Parser
 
         res.terminatingStr = scan.nextToken.tokenStr;
 
-//        System.out.println("***  " + scan.currentToken.tokenStr + " As Current token at end ***");
+        //System.out.println("***  " + scan.currentToken.tokenStr + " As Current token at end ***");
         //Return final result value
         return res;
     }
@@ -1302,7 +1299,7 @@ public class Parser
         if (bExec)
         {// we are executing, not ignoring
             // evaluate expression
-            resCond = expression();
+            resCond = expression(false);
 
             // did the condition return true?
             if (resCond.value.equals("T"))
@@ -1384,7 +1381,7 @@ public class Parser
             Token whileToken = scan.currentToken;
 
             // evaluate expression
-            resCond = expression();
+            resCond = expression(false);
 
             while (resCond.value.equals("T"))
             {// did the condition return true?
@@ -1398,7 +1395,7 @@ public class Parser
                 scan.setTo(whileToken);
 
                 // check expression case
-                resCond = expression();
+                resCond = expression(false);
             }
 
             // expr() returned false, so skip ahead to the end of the while
@@ -1465,12 +1462,12 @@ public class Parser
                         error("ERROR: EXPECTED END VARIABLE BUT FOUND %s", scan.currentToken.tokenStr);
 
                     // create end variable
-                    ev = Integer.parseInt(expression().value);
+                    ev = Integer.parseInt(expression(false).value);
 
                     // check if we have an increment variable, default to 1
                     if ( scan.getNext().equals("by"))
                     {
-                        iv = Integer.parseInt(expression().value);
+                        iv = Integer.parseInt(expression(false).value);
 
                         // advance token to the expected ':'
                         scan.getNext();
@@ -1515,7 +1512,7 @@ public class Parser
                         error("ERROR: EXPECTED VARIABLE BUT FOUND %s", scan.nextToken.tokenStr);
 
                     // evaluate iterable expression
-                    resCond = expression();
+                    resCond = expression(false);
 
                     // make sure we end on an ':'
                     if ( !scan.getNext().equals(":"))
@@ -1604,14 +1601,14 @@ public class Parser
                         error("ERROR: EXPECTED VARIABLE BUT FOUND %s", scan.nextToken.tokenStr);
 
                     // save string value to iter on
-                    string = expression().value;
+                    string = expression(false).value;
 
                     if ( !scan.getNext().equals("by") )
                         // make sure we have our delimiter
                         error("ERROR: MISSING 'BY' SEPARATOR FOR DELIMITER");
 
                     // save delimiter
-                    delimiter = expression().value;
+                    delimiter = expression(false).value;
 
                     if ( !scan.getNext().equals(":") )
                         // make sure we have our ending ':'
@@ -1764,7 +1761,7 @@ public class Parser
                     // begin building the output line created by the print
                     while ( !scan.currentToken.tokenStr.equals(";") )
                     {// expression will return on a ',' or ';', auto add space for a ','
-                        printLine += expression().value + " ";
+                        printLine += expression(true).value + " ";
                         scan.getNext();
 
 
@@ -1921,7 +1918,7 @@ public class Parser
 
             String name = scan.currentToken.tokenStr;
             scan.getNext();
-            ResultValue index = expression();
+            ResultValue index = expression(false);
             scan.getNext();
 
             //If the structure is 2, it is an array

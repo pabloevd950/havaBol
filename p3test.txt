@@ -1,5 +1,6 @@
 Int x = 5 - 4;
 Int xy = x + x;
+Int danny[10] = 1, 2, 3, 4;
 Int y = LENGTH(5+5);
 print(-(5) * 2 + (2  - -3));
 
@@ -10,4 +11,3 @@ print(F or F);
 print(x, y, "hi", 1 < -(-5), iCM[1+LENGTH("4")], "**", LENGTH("sex" # "hi") > 4  , y + -5, LENGTH("sex"));
 Int z = 5;
 debug Token off;
-//print("J");
