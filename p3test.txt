@@ -1,13 +1,26 @@
-Int x = 5 - 4;
+Int x = (5) - (-5);
+print((x));
 Int xy = x + x;
 Int danny[10] = 1, 2, 3, 4;
 Int y = LENGTH(5+5);
-print(-(5) * 2 + (2  - -3));
-
+print(-(5) * 2 + -(2  - -3), "**");
+LENGTH("SEX");
 Int iCM[10] = 10, 20, 30, 40, 50, LENGTH(60+3);
 print(F or F);
-//debug Token on;
+
+print("***", LENGTH(iCM) + 5);
+print("***", SPACES("    dd"));
+print("***", MAXELEM(iCM));
+print("***", ELEM(iCM));
+
+
+LENGTH(iCM);
+SPACES("");
+MAXELEM(iCM);
+ELEM(iCM);
+
+Int abc = 5;
+print(abc);
 //Int z = 5;
-print(x, y, "hi", 1 < -(-5), iCM[1+LENGTH("4")], "**", LENGTH("sex" # "hi") > 4  , y + -5, LENGTH("sex"), iCM[5]);
+print(x, y, "hi", 1 < -(-5), iCM[1+LENGTH("4")] + 20 # "hi", "**", LENGTH("sex" # "hi") > 4  , y + -5, LENGTH("sex"), iCM[5]);
 Int z = 5;
-debug Token off;

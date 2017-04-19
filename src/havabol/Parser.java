@@ -1,5 +1,6 @@
 package havabol;
 
+import com.sun.xml.internal.bind.v2.TODO;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
 
@@ -923,24 +924,18 @@ public class Parser
      */
     public ResultValue expression(Boolean infunc) throws Exception
     {
-        // result value and operand stacks
-        Stack outPutStack = new Stack<ResultValue>();
-        Stack stack = new Stack<Token>();
-
-        // operator and operand tokens
-        Token poppedOperator;
-
-        // result value for operands and final result
-        ResultValue firstResValue, secondResValue, res;
-
-        Boolean bFound; //Boolean to determine if we found left paren
-        Boolean bCategory = false; //Boolean to check proper infix notation
+        Stack outPutStack = new Stack<ResultValue>();         // Stack for Result values
+        Stack stack = new Stack<Token>();                     // Stack for operator tokens
+        Token poppedOperator;                                 // Operator and operand tokens
+        ResultValue firstResValue, secondResValue, res;       // Result value for operands and final result
+        Boolean bFound;                                       // Boolean to determine if we found left paren
+        Boolean bCategory = false;                            // Boolean to check proper infix notation
 
         //If we are calling from a function like print, or built in skip name.
         if(scan.currentToken.primClassif == Token.FUNCTION)
             scan.getNext();
 
-        // Advance to start of expression. This skips parentheses in case of function call
+        // Advance to start of expression.
         scan.getNext();
 
         // control token used to check for unary minus, and return at desired token.
@@ -950,34 +945,20 @@ public class Parser
         while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
                 || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
-                || "()".contains(scan.currentToken.tokenStr))// check if its separator
+                || "()".contains(scan.currentToken.tokenStr)) // check if its separator
         {
-            // check token type
             switch (scan.currentToken.primClassif)
             {
+                //If token is operand
                 case Token.OPERAND:
                     if(bCategory == true)
                         // we encountered an unexpected operand, looking for an operator
                         error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR.", scan.currentToken.tokenStr);
 
-                    //Get result value of operand
+                    //Get result value of operand and push to stack
                     firstResValue = getOperand();
-
-                    // check if the next operator is a unary minus
-                    if(!stack.empty())
-                    {
-                        poppedOperator = (Token)stack.peek();
-                        if(poppedOperator.tokenStr.equals("u-"))
-                        {// top of the stack contained a unary minus
-                            // pop it off the stack
-                            stack.pop();
-                            // negate the operand before we push it on the stack
-                            firstResValue = Utilities.mul(this,
-                                    new ResultValue("-1",Token.INTEGER), firstResValue);
-                        }
-                    }
-                    // push operand to the stack and signal that we now want an operator
                     outPutStack.push(firstResValue);
+                    //Next operand should be operator
                     bCategory = true;
                     break;
 
@@ -1107,13 +1088,9 @@ public class Parser
                                 }
                             }
 
-
-
-                            if ((bFound == false) )//&& !scan.nextToken.tokenStr.equals(";"))
-                            {
+                            if ((bFound == false))
                                 // left paren was not encountered
                                 error("ERROR: EXPECTED LEFT PARENTHESIS");
-                            }
 
                             break;
                     }
@@ -1121,7 +1098,6 @@ public class Parser
             // set previous token to the current token
             prevToken = scan.currentToken;
             scan.getNext();
-            // advance token unless returned from function call
         }
 
         // this should get the last result value
@@ -1134,8 +1110,7 @@ public class Parser
             }
             else if (poppedOperator.tokenStr.equals("u-"))
                 // we have unary minus
-                outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER)
-                        , (ResultValue) outPutStack.pop(), "*"));
+                outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER), (ResultValue) outPutStack.pop(), "*"));
             else if (poppedOperator.tokenStr.equals("not"))
                 outPutStack.push(evaluate(null, (ResultValue) outPutStack.pop() , poppedOperator.tokenStr));
             else
@@ -1710,16 +1685,22 @@ public class Parser
         {
 
             // get value of parameter
-            ResultArray array = (ResultArray) parameter;
-            if (array == null)
-                error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
-                        , scan.currentToken.tokenStr);
-            else if (array.structure != ResultValue.fixedArray)
-                error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
-                        , scan.currentToken.tokenStr);
+            try
+            {
+                ResultArray array = (ResultArray) parameter;
 
-            value = "" + array.iPopulatedLen;
-            type = Token.INTEGER;
+                if (array == null)
+                    error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()", scan.currentToken.tokenStr);
+                else if (array.structure != ResultValue.fixedArray)
+                    error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'", scan.currentToken.tokenStr);
+
+                value = "" + array.iPopulatedLen;
+                type = Token.INTEGER;
+            }
+            catch (Exception e)
+            {
+                error("INCORRECT PARAMETER FOR ELEM");
+            }
 
             // make sure we only have one parameter
         }
@@ -1727,16 +1708,24 @@ public class Parser
         {
 
             // get value of parameter
-            ResultArray array = (ResultArray) parameter;
-            if (array == null)
-                error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
-                        , scan.currentToken.tokenStr);
-            else if (array.structure != ResultValue.fixedArray)
-                error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
-                        , scan.currentToken.tokenStr);
+            try
+            {
+                ResultArray array = (ResultArray) parameter;
+                if (array == null)
+                    error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
+                            , scan.currentToken.tokenStr);
+                else if (array.structure != ResultValue.fixedArray)
+                    error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
+                            , scan.currentToken.tokenStr);
 
-            value = "" + array.iDeclaredLen;
-            type = Token.INTEGER;
+                value = "" + array.iDeclaredLen;
+                type = Token.INTEGER;
+            }
+            catch(Exception e)
+            {
+                error("INCORRECT PARAMETER FOR MAXELEM");
+            }
+
 
         }
         return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
@@ -1754,7 +1743,12 @@ public class Parser
      */
     private ResultValue function(Boolean bExec) throws Exception
     {
+        /**TODO
+         * There is some redundancy involving built in functions right now
+         * that I need to fix.
+         */
         int type = Token.BUILTIN;
+        Token funcName;
         ResultValue res;
         String value = "";
 
@@ -1789,90 +1783,87 @@ public class Parser
                     // print out the line
                     System.out.println(printLine);
                 }
-//                else if (scan.currentToken.tokenStr.equals("LENGTH"))
-//                {// length function
-//                    // get value of parameter
-//                    res = expression();
-//
-//                    // make sure we only have one parameter
-//                    if (scan.currentToken.tokenStr.equals(","))
-//                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
-//
-//                    // calculate length of given string
-//                    value = "" + res.value.length();
-//
-//                    // set type to an int
-//                    type = Token.INTEGER;
-//
-//                    //scan.getNext();
-//                }
-//                else if (scan.currentToken.tokenStr.equals("SPACES"))
-//                {
-//                    //get value of parameter
-//                    res = expression();
-//
-//                    // make sure we only have one parameter
-//                    if (scan.currentToken.tokenStr.equals(","))
-//                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
-//
-//                    // determine if string contains only spaces or is empty
-//                    if (res.value.trim().length() == 0)
-//                        value = "T";
-//                    else
-//                        value = "F";
-//
-//                    // set type to a boolean
-//                    type = Token.BOOLEAN;
-//                }
-//                else if (scan.currentToken.tokenStr.equals("ELEM"))
-//                {
-//                    // advance to our parameter
-//                    scan.getNext();
-//                    scan.getNext();
-//
-//                    // get value of parameter
-//                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
-//
-//                    if (array == null)
-//                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
-//                                , scan.currentToken.tokenStr);
-//                    else if (array.structure != ResultValue.fixedArray)
-//                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
-//                                , scan.currentToken.tokenStr);
-//
-//                    value = "" + array.iPopulatedLen;
-//                    type = Token.INTEGER;
-//
-//                    // make sure we only have one parameter
-//                    if (!scan.getNext().equals(")"))
-//                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
-//
-//                    // advance past out right paren
-//                    //scan.getNext();
-//                }
-//                else if (scan.currentToken.tokenStr.equals("MAXELEM"))
-//                {
-//                    // advance to our parameter
-//                    scan.getNext();
-//                    scan.getNext();
-//
-//                    // get value of parameter
-//                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
-//
-//                    if (array == null)
-//                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
-//                                , scan.currentToken.tokenStr);
-//                    else if (array.structure != ResultValue.fixedArray)
-//                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
-//                                , scan.currentToken.tokenStr);
-//
-//                    value = "" + array.iDeclaredLen;
-//                    type = Token.INTEGER;
-//
-//                    // make sure we only have one parameter
-//                    if (!scan.getNext().equals(")"))
-//                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
-//                }
+                else if (scan.currentToken.tokenStr.equals("LENGTH"))
+                {// length function
+                    // get func name
+                    funcName =  scan.currentToken;
+                    //Skip paren
+                    scan.getNext();
+                    //Get parameter value
+                    ResultValue parameter = expression(true);
+                    //Check and make sure we only have one parameter
+                    if (scan.currentToken.tokenStr.equals(","))
+                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
+
+                    res = builtInFuncs(funcName, parameter);
+                    value = res.value;
+                    // set type to an int
+                    type = Token.INTEGER;
+
+                }
+                else if (scan.currentToken.tokenStr.equals("SPACES"))
+                {
+                    // get func name
+                    funcName =  scan.currentToken;
+                    //Skip paren
+                    scan.getNext();
+                    //Get parameter value
+                    ResultValue parameter = expression(true);
+
+                    // make sure we only have one parameter
+                    if (scan.currentToken.tokenStr.equals(","))
+                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
+
+                    res = builtInFuncs(funcName, parameter);
+                    value = res.value;
+                    // set type to a boolean
+                    type = Token.BOOLEAN;
+                }
+                else if (scan.currentToken.tokenStr.equals("ELEM"))
+                {
+                    scan.getNext();
+                    scan.getNext();
+
+                    // get value of parameter
+                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
+
+                    if (array == null)
+                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
+                                , scan.currentToken.tokenStr);
+                    else if (array.structure != ResultValue.fixedArray)
+                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
+                                , scan.currentToken.tokenStr);
+
+                    value = "" + array.iPopulatedLen;
+                    type = Token.INTEGER;
+                    // make sure we only have one parameter
+                    if (!scan.getNext().equals(")"))
+                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
+
+                }
+                else if (scan.currentToken.tokenStr.equals("MAXELEM"))
+                {
+                    // advance to our parameter
+                    scan.getNext();
+                    scan.getNext();
+
+                    // get value of parameter
+                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
+
+                    if (array == null)
+                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
+                                , scan.currentToken.tokenStr);
+                    else if (array.structure != ResultValue.fixedArray)
+                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
+                                , scan.currentToken.tokenStr);
+
+                    value = "" + array.iDeclaredLen;
+                    type = Token.INTEGER;
+
+                    // make sure we only have one parameter
+                    if (!scan.getNext().equals(")"))
+                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
+                }
                 break;
             case Token.USER:
                 // do other shit later
@@ -1886,7 +1877,6 @@ public class Parser
         // make sure we end on a ';'
         /*if ( !scan.getNext().equals(";") )
             error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");*/
-
         return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
     }
 
