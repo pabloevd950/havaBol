@@ -1800,11 +1800,12 @@ public class Parser
                             //error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
                             scan.getNext();
                     }
-                    // print out the line
-                    //if(!prevToken.tokenStr.equals(")"))
-                      //  error("ERROR: PRINT FUNCTION IS MISSING COSING ')'");
 
-                        System.out.println(printLine);
+//                    // print out the line
+                    if(!prevToken.tokenStr.equals(")") && scan.nextToken.primClassif != Token.EOF)
+                        error("ERROR: PRINT FUNCTION IS MISSING ClOSING ')'");
+
+                    System.out.println(printLine);
                 }
                 else if (scan.currentToken.tokenStr.equals("LENGTH"))
                 {// length function
