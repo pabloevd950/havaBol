@@ -936,7 +936,7 @@ public class Parser
 
         // Advance to start of expression.
         if(scan.currentToken.primClassif != Token.FUNCTION || scan.currentToken.tokenStr.equals("print"))
-        scan.getNext();
+            scan.getNext();
 
         // control token used to check for unary minus, and return at desired token.
         Token prevToken = scan.currentToken;
@@ -1006,17 +1006,17 @@ public class Parser
                                     break;
                                 else if(!stack.empty())
                                 {   // stack is not empty and precedence is right, evaluate
-                                    // pop operator
+
+                                    // pop operator and operands
                                     poppedOperator = (Token)stack.pop();
-                                    // pop last value
                                     firstResValue = (ResultValue) outPutStack.pop();
+
                                     if (poppedOperator.tokenStr.equals("u-"))
-                                        // we have unary minus
+                                        // we have unary minus so we only need one operand
                                         res = (evaluate(new ResultValue("-1", Token.INTEGER)
                                                 , firstResValue, "*"));
                                     else
                                     {
-                                        // pop second value
                                         secondResValue = (ResultValue) outPutStack.pop();
                                         res = evaluate(secondResValue, firstResValue, poppedOperator.tokenStr);
                                     }
@@ -1140,7 +1140,6 @@ public class Parser
             System.out.println("\t\t...Result Value: " + res.value);
 
         scan.setTo(prevToken);
-
         res.terminatingStr = scan.nextToken.tokenStr;
 
         //Return final result value
