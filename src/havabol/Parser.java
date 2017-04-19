@@ -1801,8 +1801,8 @@ public class Parser
                             scan.getNext();
                     }
                     // print out the line
-                    if(!prevToken.tokenStr.equals(")"))
-                        error("ERROR: PRINT FUNCTION IS MISSING COSING ')'");
+                    //if(!prevToken.tokenStr.equals(")"))
+                      //  error("ERROR: PRINT FUNCTION IS MISSING COSING ')'");
 
                         System.out.println(printLine);
                 }
