@@ -1653,6 +1653,14 @@ public class Parser
     }
 
 
+    /**
+     * This method is called by expression to get the result value of an encountered
+     * built in function.
+     * @param functionName name of built in function called
+     * @param parameter parameter to pass into built in function
+     * @return Result value of value returned by function
+     * @throws Exception
+     */
     private ResultValue builtInFuncs(Token functionName, ResultValue parameter) throws Exception
     {
         ResultValue res;
