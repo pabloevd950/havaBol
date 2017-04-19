@@ -225,7 +225,6 @@ public class Parser
 
                 //assign structure type
                 structure = ResultValue.fixedArray;
-
                 // check if nothing in between brackets aka length is not declared
                 if (scan.nextToken.tokenStr.equals("]"))
                 {
@@ -932,10 +931,11 @@ public class Parser
         Boolean bCategory = false;                            // Boolean to check proper infix notation
 
         //If we are calling from a function like print, or built in skip name.
-        if(scan.currentToken.primClassif == Token.FUNCTION)
+        if(scan.currentToken.primClassif == Token.FUNCTION && scan.currentToken.tokenStr.equals("print"))
             scan.getNext();
 
         // Advance to start of expression.
+        if(scan.currentToken.primClassif != Token.FUNCTION || scan.currentToken.tokenStr.equals("print"))
         scan.getNext();
 
         // control token used to check for unary minus, and return at desired token.
@@ -947,6 +947,7 @@ public class Parser
                 || scan.currentToken.primClassif == Token.FUNCTION // check for functions
                 || "()".contains(scan.currentToken.tokenStr)) // check if its separator
         {
+            //System.out.println(scan.currentToken.tokenStr);
             switch (scan.currentToken.primClassif)
             {
                 //If token is operand
@@ -1034,6 +1035,10 @@ public class Parser
 
                 // handle functions
                 case Token.FUNCTION:
+                    if(bCategory == true)
+                        // we encountered an unexpected operand, looking for an operator
+                        error("ERROR: UNEXPECTED FUNCTION CALL '%s', EXPECTED OPERATOR OR TERMINATOR."
+                                , scan.currentToken.tokenStr);
                     // call function to get result value
                     stack.push(scan.currentToken);
                     scan.getNext();
@@ -1115,9 +1120,16 @@ public class Parser
                 outPutStack.push(evaluate(null, (ResultValue) outPutStack.pop() , poppedOperator.tokenStr));
             else
             {   // evaluate normally
-                ResultValue resvalue = (ResultValue) outPutStack.pop();
-                ResultValue res2value = (ResultValue) outPutStack.pop();
-                outPutStack.push(evaluate(res2value, resvalue, poppedOperator.tokenStr));
+                try
+                {
+                    ResultValue resvalue = (ResultValue) outPutStack.pop();
+                    ResultValue res2value = (ResultValue) outPutStack.pop();
+                    outPutStack.push(evaluate(res2value, resvalue, poppedOperator.tokenStr));
+                }
+                catch (Exception e)
+                {
+                    error("ERROR: INCORRECT PARAMETERS");
+                }
             }
         }
         // final value
@@ -1774,11 +1786,12 @@ public class Parser
                 else if (scan.currentToken.tokenStr.equals("print"))
                 {// print function
                     String printLine = "";
-
+                    Token prevToken = null;
                     // begin building the output line created by the print
                     while ( !scan.currentToken.tokenStr.equals(";") )
                     {// expression will return on a ',' or ';', auto add space for a ','
                         printLine += expression(true).value + " ";
+                        prevToken = scan.currentToken;
                         scan.getNext();
 
 
@@ -1787,90 +1800,36 @@ public class Parser
                             //error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
                             scan.getNext();
                     }
-
                     // print out the line
-                    System.out.println(printLine);
+                    if(!prevToken.tokenStr.equals(")"))
+                        error("ERROR: PRINT FUNCTION IS MISSING COSING ')'");
+
+                        System.out.println(printLine);
                 }
                 else if (scan.currentToken.tokenStr.equals("LENGTH"))
                 {// length function
-                    // get func name
-                    funcName =  scan.currentToken;
-                    //Skip paren
-                    scan.getNext();
-                    //Get parameter value
-                    ResultValue parameter = expression(true);
-                    //Check and make sure we only have one parameter
-                    if (scan.currentToken.tokenStr.equals(","))
-                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR LENGTH FUNCTION");
-
-                    res = builtInFuncs(funcName, parameter);
+                    res = expression(false);
                     value = res.value;
                     // set type to an int
                     type = Token.INTEGER;
-
                 }
                 else if (scan.currentToken.tokenStr.equals("SPACES"))
                 {
-                    // get func name
-                    funcName =  scan.currentToken;
-                    //Skip paren
-                    scan.getNext();
-                    //Get parameter value
-                    ResultValue parameter = expression(true);
-
-                    // make sure we only have one parameter
-                    if (scan.currentToken.tokenStr.equals(","))
-                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
-
-                    res = builtInFuncs(funcName, parameter);
+                    res = expression(false);
                     value = res.value;
                     // set type to a boolean
                     type = Token.BOOLEAN;
                 }
                 else if (scan.currentToken.tokenStr.equals("ELEM"))
                 {
-                    scan.getNext();
-                    scan.getNext();
-
-                    // get value of parameter
-                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
-
-                    if (array == null)
-                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
-                                , scan.currentToken.tokenStr);
-                    else if (array.structure != ResultValue.fixedArray)
-                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
-                                , scan.currentToken.tokenStr);
-
-                    value = "" + array.iPopulatedLen;
+                    res = expression(false);
                     type = Token.INTEGER;
-                    // make sure we only have one parameter
-                    if (!scan.getNext().equals(")"))
-                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
-
+                    value = res.value;
                 }
                 else if (scan.currentToken.tokenStr.equals("MAXELEM"))
                 {
-                    // advance to our parameter
-                    scan.getNext();
-                    scan.getNext();
-
-                    // get value of parameter
-                    ResultArray array = (ResultArray)storageManager.getEntry(scan.currentToken.tokenStr);
-
-                    if (array == null)
-                        error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()"
-                                , scan.currentToken.tokenStr);
-                    else if (array.structure != ResultValue.fixedArray)
-                        error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'"
-                                , scan.currentToken.tokenStr);
-
-                    value = "" + array.iDeclaredLen;
+                    value = expression(false).value;
                     type = Token.INTEGER;
-
-                    // make sure we only have one parameter
-                    if (!scan.getNext().equals(")"))
-                        error("ERROR: EXPECTED ONLY ONE PARAMETER FOR SPACES FUNCTION");
                 }
                 break;
             case Token.USER:
@@ -1883,8 +1842,9 @@ public class Parser
         }
 
         // make sure we end on a ';'
-        /*if ( !scan.getNext().equals(";") )
-            error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");*/
+        if ( !scan.nextToken.tokenStr.equals(";") && !scan.currentToken.tokenStr.equals(";"))
+            error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
+
         return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
     }
 
@@ -1917,10 +1877,8 @@ public class Parser
      */
     public ResultValue getOperand() throws Exception
     {
-        Token operand;
-        ResultValue firstResValue;
-        // set operand equal to current token
-        operand = scan.currentToken;
+        Token operand = scan.currentToken; // Operand
+        ResultValue firstResValue;         // Result value of operand to return
 
         // get result value of operand. If its an identifier, get it from the storage manager
         if(operand.subClassif == Token.IDENTIFIER)
