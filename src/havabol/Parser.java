@@ -501,7 +501,14 @@ public class Parser
 
         //if executing, then get its saved data type
         if (bExec)
-            leftType = storageManager.getEntry(scan.currentToken.tokenStr).type;
+            try
+            {
+                leftType = storageManager.getEntry(scan.currentToken.tokenStr).type;
+            }
+            catch (Exception e)
+            {
+                error("ERROR: VARIABLE %s NOT YET DECLARED", scan.currentToken.tokenStr);
+            }
 
         // make sure current token is an identifier to properly assign
         if (scan.currentToken.subClassif != Token.IDENTIFIER)
@@ -1907,7 +1914,7 @@ public class Parser
 
 //                    // print out the line
                     if(!prevToken.tokenStr.equals(")") && scan.nextToken.primClassif != Token.EOF)
-                        error("ERROR: PRINT FUNCTION IS MISSING ClOSING ')'");
+                        error("ERROR: FUNCTION MISSING ClOSING ')'");
 
                     System.out.println(printLine);
                 }
@@ -1984,7 +1991,7 @@ public class Parser
     {
         Token operand = scan.currentToken; // Operand
         ResultValue firstResValue;         // Result value of operand to return
-
+        ResultValue index, index2 = null;
         // get result value of operand. If its an identifier, get it from the storage manager
         if(operand.subClassif == Token.IDENTIFIER)
             // if identifier get its result value
@@ -1997,32 +2004,66 @@ public class Parser
         if(scan.nextToken.tokenStr.equals("["))
         {   //Dealing with an array or string
             //Get object from storage manager
+            int first, second;
             ResultValue arrayOrStr = storageManager.getEntry(scan.currentToken.tokenStr);
             if(arrayOrStr == null)
                 error("ERROR: '%s' WAS NEVER INITIALIZED", scan.currentToken.tokenStr);
 
             String name = scan.currentToken.tokenStr;
-            scan.getNext();
-            ResultValue index = expression(false);
-            scan.getNext();
 
+            scan.getNext();
+            if(scan.nextToken.tokenStr.equals("~"))
+                index = new ResultValue("0", 1);
+            else
+                index = expression(false);
+
+            if(scan.nextToken.tokenStr.equals("~"))
+            {
+                scan.getNext();
+                if(scan.nextToken.tokenStr.equals("]"))
+                    index2 = new ResultValue("-1", 1);
+                else
+                    index2 = expression(false);
+            }
+
+            scan.getNext();
             //If the structure is 2, it is an array
             if(arrayOrStr.structure > ResultValue.primitive)
             {
-                //Get value of index of the array
-                ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
-                firstResValue = firstArrValue.array.get((Integer.parseInt(Utilities.toInteger(this, index))));
+                if (index2 == null)
+                {
+                    //Get value of index of the array
+                    ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
+                    firstResValue = firstArrValue.array.get((Integer.parseInt(Utilities.toInteger(this, index))));
+                }
+                else
+                {
+                    ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
+                    firstResValue = firstArrValue;
+                }
                 if(firstResValue == null)
                     error("ERROR: '%s[%s]' WAS NEVER INITIALIZED", name, index.value);
             }
             else
             {
-                firstResValue = storageManager.getEntry(name);
-                String strVal = firstResValue.value;
-                if(index.value.equals("-1"))
-                    index.value = String.valueOf(firstResValue.value.length()-1);
-                char newChar = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, index))));
-                firstResValue = new ResultValue(String.valueOf(newChar),1);
+                if(index2 == null)
+                {
+                    firstResValue = storageManager.getEntry(name);
+                    String strVal = firstResValue.value;
+                    if (index.value.equals("-1")) index.value = String.valueOf(firstResValue.value.length() - 1);
+                    char newChar = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, index))));
+                    firstResValue = new ResultValue(String.valueOf(newChar), 1);
+                }
+                else
+                {
+                    firstResValue = storageManager.getEntry(name);
+                    String strVal = firstResValue.value;
+                    if (index2.value.equals("-1")) index2.value = String.valueOf(firstResValue.value.length());
+
+                    strVal = strVal.substring((Integer.parseInt(Utilities.toInteger(this, index)))
+                            , (Integer.parseInt(Utilities.toInteger(this, index2))));
+                    firstResValue = new ResultValue(strVal, 1);
+                }
             }
         }
 
