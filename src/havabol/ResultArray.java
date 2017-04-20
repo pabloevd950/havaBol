@@ -8,7 +8,7 @@ import java.util.ArrayList;
 public class ResultArray extends ResultValue
 {
     ArrayList<ResultValue> array;
-    int iPopulatedLen, iDeclaredLen, iNegSub, type;
+    int iPopulatedLen=0, iDeclaredLen=-1, iNegSub=0, type;
     String name;
 
     public ResultArray(String name, ArrayList array, int type, int structure, int iPopulatedLen, int iDeclaredLen, int iNegSub)

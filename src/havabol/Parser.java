@@ -253,9 +253,54 @@ public class Parser
                     else
                         error("ERROR:UNEXPECTED SYMBOL %s, EXPECTED EITHER ']' OR '='", scan.nextToken.tokenStr);
                 }
-                // size is declared
+                // size is declared or unbound
                 else
                 {
+                    //it is an unbounded array
+                    if(scan.nextToken.tokenStr.equals("unbound"))
+                    {
+                        //set to unbound
+                        structure = ResultValue.unboundedArray;
+
+                        // advance token to 'unbound'
+                        scan.getNext();
+                        // advance token to ']'
+                        scan.getNext();
+                        // check what next token is
+                        if (scan.nextToken.tokenStr.equals(";"))
+                        {
+                            //advance to ';'
+                            scan.getNext();
+
+                            //unbounded array is declared, without valuelist
+                            symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
+                                    , identifier.primClassif, dclType
+                                    , ResultValue.unboundedArray, 1, 1));
+                            //store into storagemanager
+                            storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr,
+                                    new ArrayList<ResultValue>(), dclType, structure,
+                                        0, -1, 0));
+                            return new ResultValue("", Token.DECLARE, ResultValue.primitive
+                                    , scan.currentToken.tokenStr);
+                        }
+                            // '=' triggers assignStmt after putting into SymbolTable and StorageManager
+                        else if (scan.nextToken.tokenStr.equals("="))
+                        {
+                            // advance token to '=', so declareArray is on right token
+                            scan.getNext();
+
+                            symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
+                                    , identifier.primClassif, dclType
+                                    , ResultValue.unboundedArray, 1, 1));
+                            //store into storagemanager
+                            storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, dclType, structure));
+
+                            return declareArray(variableStr, dclType, -1);
+                        }
+                        //anything else is an error
+                        else
+                            error("ERROR:UNEXPECTED SYMBOL %s, EXPECTED EITHER ';' OR '='", scan.nextToken.tokenStr);
+                    }
                     //do expression to find declared length
                     int length = Integer.parseInt(Utilities.toInteger(this, expression(false)));
 
@@ -357,17 +402,13 @@ public class Parser
         {
             // evaluate expression to receive values for arraylist
             resExpr = expression(false);
+            //advance past comma
             scan.getNext();
-            //to fix pablo's shit
-//            if (bFirst == true)
-//            {
-//                //if it's the first one, need to do an additional getNext to realign
-//                scan.getNext();
-//                bFirst = false;
-//            }
+            //increment
+            iAmt++;
 
             //increment amount populated and check to see if greater than declare when value list not given
-            if (iAmt++ > declared && declared > 0 )
+            if (declared != -1 && iAmt-1 > declared && declared > 0 )
                 error("ERROR: CANNOT DECLARE MORE THAN '%d' INTO ARRAY '%s'", declared, variableStr);
             switch (type)
             {// determine the type of value to assign to ResultValue to add to array
@@ -406,11 +447,14 @@ public class Parser
         if (!scan.currentToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED ';', BUT FOUND '%s'", scan.currentToken.tokenStr);
         //change declare size if original length was not given i.e arr[] = 1, 2, 3;
-        if (expressionVals.size() > declared)
+        if (declared != -1 && expressionVals.size() > declared)
             declared = expressionVals.size();
 
         //create ResultArray to return
-        resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.fixedArray, --iAmt, declared, (declared + 1));
+        if (declared == -1)
+            resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.unboundedArray, --iAmt, declared, iAmt);
+        else
+            resArray = new ResultArray(variableStr, expressionVals, type, ResultValue.fixedArray, --iAmt, declared, iAmt);
 
         //check for debug to be on
         if(scan.bShowAssign)
@@ -533,6 +577,7 @@ public class Parser
 
                             }
                             return res1;
+                        case ResultValue.unboundedArray:
                         case ResultValue.fixedArray:
                             // this means that more than one index is being changed, so change array
                             if (bIndex == false)
@@ -541,20 +586,23 @@ public class Parser
                             else
                             {
                                 //check to see if index requested is in bounds
-                                if (iIndex >= ((ResultArray)res).iDeclaredLen)
+                                if (res.structure != ResultValue.unboundedArray && iIndex >= ((ResultArray)res).iDeclaredLen)
                                     error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
 
                                 //if index is negative
                                 if (iIndex < 0)
                                 {
                                     //check to see if negative subscript is too small
-                                    if (iIndex <=  ((ResultArray)res).iNegSub*-1)
+                                    if (res.structure != ResultValue.unboundedArray && iIndex <= ((ResultArray) res).iNegSub * -1) {
                                         error("ERROR: CANNOT ACCESS INDEX '%d', MAX NEGATIVE SUBSCRIPT IS '%d'"
-                                                , iIndex, ((ResultArray)res).iNegSub*-1);
+                                                , iIndex, ((ResultArray) res).iNegSub * -1);
+                                    }
                                     //subscript is in bounds
-                                    else
+                                    else {
+                                        System.out.println(((ResultArray) res).iDeclaredLen);
                                         //add declared length in order to get positive subscript
-                                        iIndex += ((ResultArray)res).iDeclaredLen;
+                                        iIndex += ((ResultArray) res).iDeclaredLen;
+                                    }
                                 }
                                 resA = assignIndex(variableStr, leftType, iIndex);
                             }
@@ -660,7 +708,6 @@ public class Parser
         ResultArray resArray = new ResultArray(variableStr, -1, -1);
         //the populated length
         int len = 0;
-
         //this is for operands (aka scalar assignment with variables and constants) and array to array assignment
         if (scan.nextToken.primClassif == Token.OPERAND)
         {
@@ -677,6 +724,9 @@ public class Parser
             if ( value2 == null)
                 // make sure item has been defined
                 error("ERROR: VARIABLE '%s' IS NOT DEFINED IN THE SCOPE", scan.nextToken.tokenStr);
+            //if it's not an unbounded array adn trying to do scalar assignment
+            if (array1.structure == ResultValue.unboundedArray && value2.structure == ResultValue.primitive)
+                error("ERROR: CANNOT ASSIGN A SCALAR TO AN UNBOUNDED ARRAY");
 
             //if it's not an array
             if (value2.structure == ResultValue.primitive)
@@ -745,7 +795,8 @@ public class Parser
                 int iFirst = array1.iDeclaredLen, iSecond = array2.iPopulatedLen;
 
                 //if the first's declared length is less than the amount to populate, truncate the populating amount
-                if (iFirst < iSecond)
+                //only if not an unbounded array, otherwise copy as many as possible
+                if (declared != -1 && iFirst < iSecond)
                     iSecond = iFirst;
                 //loop from 0 to amount to populate
                 for(i=0; i < iSecond;i++)
@@ -758,37 +809,86 @@ public class Parser
                             resExpr.value = Utilities.toInteger(this, resExpr);
                             resExpr.type = Token.INTEGER;
                             //set into array of first
-                            array1.array.set(i, resExpr);
+                            //you need to do in assignIndex
+                            //you also need to check to see if arraylist for unbound was never initialized
+                            //if first array is fixed, simply set
+                            if (declared != -1)
+                                array1.array.set(i, resExpr);
+                            //if unbounded
+                            else
+                            {
+                                //if the array list corresponding to unbounded array is smaller than index, add null
+                                if (array1.array.size() <= i)
+                                    array1.array.add(i, null);
+                                //set into array
+                                array1.array.set(i, resExpr);
+                            }
                             break;
                         case Token.FLOAT:
                             resExpr = array2.array.get(i);
                             resExpr.value = Utilities.toFloat(this, resExpr);
                             resExpr.type = Token.FLOAT;
                             //set into array of first
-                            array1.array.set(i, resExpr);
+                            //if first array is fixed, simply set
+                            if (declared != -1)
+                                array1.array.set(i, resExpr);
+                                //if unbounded
+                            else
+                            {
+                                //if the array list corresponding to unbounded array is smaller than index, add null
+                                if (array1.array.size() <= i)
+                                    array1.array.add(i, null);
+                                //set into array
+                                array1.array.set(i, resExpr);
+                            }
                             break;
                         case Token.BOOLEAN:
                             resExpr = array2.array.get(i);
                             resExpr.value = Utilities.toBoolean(this, resExpr);
                             resExpr.type = Token.BOOLEAN;
                             //set into array of first
-                            array1.array.set(i, resExpr);
+                            //if first array is fixed, simply set
+                            if (declared != -1)
+                                array1.array.set(i, resExpr);
+                                //if unbounded
+                            else
+                            {
+                                //if the array list corresponding to unbounded array is smaller than index, add null
+                                if (array1.array.size() <= i)
+                                    array1.array.add(i, null);
+                                //set into array
+                                array1.array.set(i, resExpr);
+                            }
                             break;
                         case Token.STRING:
                             resExpr = array2.array.get(i);
                             resExpr.type = Token.STRING;
                             //set into array of first
-                            array1.array.set(i, resExpr);
+                            //if first array is fixed, simply set
+                            if (declared != -1)
+                                array1.array.set(i, resExpr);
+                                //if unbounded
+                            else
+                            {
+                                //if the array list corresponding to unbounded array is smaller than index, add null
+                                if (array1.array.size() <= i)
+                                    array1.array.add(i, null);
+                                //set into array
+                                array1.array.set(i, resExpr);
+                            }
                             break;
                         default:
                             error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
                     }
                 }
-                for(ResultValue yes : array1.array)
-                    if(yes!=null)
+                for(ResultValue res : array1.array)
+                    if(res!=null)
                         len++;
                 //create ResultArray to return
-                resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, len, declared, (declared + 1));
+                if (declared == -1)
+                    resArray = new ResultArray(variableStr, array1.array, type, ResultValue.unboundedArray, len, declared, len);
+                else
+                    resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, len, declared, len);
 
                 //check if debugger is on
                 if(scan.bShowAssign)
@@ -807,6 +907,8 @@ public class Parser
 
 
         }
+        else
+            error("ERROR: EXPECTED OPERAND, BUT FOUND '%s'", scan.nextToken.tokenStr);
         return resArray;
     }
 
@@ -1798,6 +1900,9 @@ public class Parser
                             // print is not terminated by a ';'
                             //error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
                             scan.getNext();
+                        //check to see if end of file, if it is, bad
+                        if (scan.currentToken.primClassif == Token.EOF)
+                            error("ERROR: MISSING ';'");
                     }
 
 //                    // print out the line
@@ -1902,7 +2007,7 @@ public class Parser
             scan.getNext();
 
             //If the structure is 2, it is an array
-            if(arrayOrStr.structure == 2)
+            if(arrayOrStr.structure > ResultValue.primitive)
             {
                 //Get value of index of the array
                 ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
