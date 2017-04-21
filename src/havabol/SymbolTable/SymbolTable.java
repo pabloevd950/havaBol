@@ -64,6 +64,10 @@ public class SymbolTable
         ht.put("endfor", new STControl("endfor", Token.CONTROL, Token.END));
         ht.put("while", new STControl("while", Token.CONTROL, Token.FLOW));
         ht.put("endwhile", new STControl("endwhile", Token.CONTROL, Token.END));
+        ht.put("select", new STControl("select", Token.CONTROL, Token.FLOW));
+        ht.put("when", new STControl("when", Token.CONTROL, Token.END));
+        ht.put("default", new STControl("default", Token.CONTROL, Token.END));
+        ht.put("endselect", new STControl("endselect", Token.CONTROL, Token.END));
         ht.put("print", new STFunction("print",Token.FUNCTION,Token.VOID, Token.BUILTIN, VAR_ARGS, parmArgs));
         ht.put("Int", new STControl("Int",Token.CONTROL,Token.DECLARE));
         ht.put("Float", new STControl("Float",Token.CONTROL,Token.DECLARE));
@@ -82,5 +86,6 @@ public class SymbolTable
         ht.put("notin", new STEntry("notin", Token.OPERATOR));
         ht.put("by", new STControl("by", Token.CONTROL, Token.FLOW));
         ht.put("to", new STControl("to", Token.CONTROL, Token.FLOW));
+        //ht.put("unbound", new );
     }
 }

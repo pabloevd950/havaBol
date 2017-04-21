@@ -36,7 +36,7 @@ public class HavaBol
 
             // begin parsing file
             while (scan.currentToken.primClassif != Token.EOF)
-                parser.statement(true);
+                parser.statement(parser.EXECUTING);
 
         }
         catch (Exception e)

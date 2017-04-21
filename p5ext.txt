@@ -48,3 +48,10 @@ else:
     print("right: string", "1" # "2", ">", 4+5);
 endif;
 
+print("\nyes");
+
+Int one[1];
+Int two[1] = 1;
+one = two;
+print(one[0], one[1]);
+
