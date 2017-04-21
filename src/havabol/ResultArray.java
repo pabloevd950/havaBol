@@ -28,4 +28,8 @@ public class ResultArray extends ResultValue
         this.type = type;
         this.structure = structure;
     }
+    public ResultArray(String value, int type, int structure , String terminatingStr)
+    {
+        super(value, type, structure, terminatingStr);
+    }
 }
