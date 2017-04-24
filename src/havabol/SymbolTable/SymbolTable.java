@@ -86,6 +86,7 @@ public class SymbolTable
         ht.put("notin", new STEntry("notin", Token.OPERATOR));
         ht.put("by", new STControl("by", Token.CONTROL, Token.FLOW));
         ht.put("to", new STControl("to", Token.CONTROL, Token.FLOW));
-        //ht.put("unbound", new );
+        ht.put("break", new STControl("break", Token.CONTROL, Token.END));
+        ht.put("continue", new STControl("continue", Token.CONTROL, Token.END));
     }
 }

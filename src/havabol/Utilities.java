@@ -632,6 +632,132 @@ public class Utilities
     }
 
     /**
+     *
+     * @param parser
+     * @param item
+     * @param list
+     * @return
+     * @throws Exception
+     */
+    public static ResultValue in(Parser parser, ResultValue item, ResultArray list) throws Exception
+    {
+        ResultValue res = new ResultValue(Token.BOOLEAN, -1);
+        String temp;
+
+        res.value = "F";
+        switch (item.type)
+        {
+            case Token.INTEGER:
+                for (ResultValue element : list.array)
+                {
+                    temp = Utilities.toInteger(parser, element);
+                    int i = Integer.parseInt(item.value);
+                    int e = Integer.parseInt(temp);
+
+                    if (i == e)
+                    {// value in list, so logical operator is false
+                        res.value = "T";
+                        break;
+                    }
+                }
+                break;
+            case Token.FLOAT:
+                for (ResultValue element : list.array)
+                {
+                    temp = Utilities.toFloat(parser, element);
+                    double i = Double.parseDouble(item.value);
+                    double e = Double.parseDouble(temp);
+
+                    if (i == e)
+                    {// value in list, so logical operator is false
+                        res.value = "T";
+                        break;
+                    }
+                }
+                break;
+            case Token.BOOLEAN: // in this case, bool is the same as string
+            case Token.STRING:
+                for (ResultValue element : list.array)
+                    if ( item.value.compareTo(element.value) == 0 )
+                    {
+                        res.value = "T";
+                        break;
+                    }
+                break;
+            case Token.DATE:
+                break;
+            default:
+                parser.error("ERROR: UNKNOWN TYPE %s", item.type);
+        }
+
+        return res;
+    }
+
+
+
+    /**
+     *
+     * @param parser
+     * @param item
+     * @param list
+     * @return
+     * @throws Exception
+     */
+    public static ResultValue notin(Parser parser, ResultValue item, ResultArray list) throws Exception
+    {
+        ResultValue res = new ResultValue(Token.BOOLEAN, -1);
+        String temp;
+
+        res.value = "T";
+        switch (item.type)
+        {
+            case Token.INTEGER:
+                for (ResultValue element : list.array)
+                {
+                    temp = Utilities.toInteger(parser, element);
+                    int i = Integer.parseInt(item.value);
+                    int e = Integer.parseInt(temp);
+
+                    if (i == e)
+                    {// value in list, so logical operator is false
+                        res.value = "F";
+                        break;
+                    }
+                }
+                break;
+            case Token.FLOAT:
+                for (ResultValue element : list.array)
+                {
+                    temp = Utilities.toFloat(parser, element);
+                    double i = Double.parseDouble(item.value);
+                    double e = Double.parseDouble(temp);
+
+                    if (i == e)
+                    {// value in list, so logical operator is false
+                        res.value = "F";
+                        break;
+                    }
+                }
+                break;
+            case Token.BOOLEAN: // in this case, bool is the same as string
+            case Token.STRING:
+                for (ResultValue element : list.array)
+                    if ( item.value.compareTo(element.value) == 0 )
+                    {
+                        res.value = "F";
+                        break;
+                    }
+                break;
+            case Token.DATE:
+                break;
+            default:
+                parser.error("ERROR: UNKNOWN TYPE %s", item.type);
+        }
+
+        return res;
+    }
+
+    /**
      * This method will perform a not operation aka '!' on the given result value
      * <p>
      * Only will do this in expression
@@ -660,8 +786,10 @@ public class Utilities
     }
 
     /**
-     * This method will perform an and operation aka '&&' on the given result values
+     * This method will perform an 'and' (&&) operation on the given result values
      * <p>
+     * returns a Boolean of T or F for expression
+     *
      * Only will do this in expression
      * @param parser The caller added so that we can call error
      * @param expr1   The first expression that must be performed on
@@ -691,9 +819,10 @@ public class Utilities
     }
 
     /**
-     * This method will perform an or operation aka '&&' on the given result values
+     * This method will perform an 'or; (||) operation on the given result values
      * <p>
      * Only will do this in expression
+     *
      * @param parser The caller added so that we can call error
      * @param expr1   The first expression that must be performed on
      * @param expr2   The second expression that must be performed on
