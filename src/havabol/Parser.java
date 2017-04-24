@@ -580,7 +580,7 @@ public class Parser
         // returned value
         ResultValue res;
         //leftType is the data type, index is the index being assigned to, if given
-        int leftType = -1, iIndex = 0;
+        int leftType = -1, iIndex = 0, iIndex2 = 0;
         //name of the variable
         String variableStr;
         //flag to determine if assigning to index or entire array
@@ -621,13 +621,30 @@ public class Parser
         //check to see if array index is given
         if (scan.currentToken.tokenStr.equals("["))
         {
-            // arrays must call expression to determine array index
-            iIndex = Integer.parseInt(Utilities.toInteger(this, expression(false)));
+            //If "~" is first. starting slice index is 0
+            if(scan.nextToken.tokenStr.equals("~"))
+                iIndex = 0;
+            //Else get value
+            else
+                // arrays must call expression to determine array index
+                iIndex = Integer.parseInt(Utilities.toInteger(this, expression(false)));
             //advance from the index to right bracket
             scan.getNext();
+            //get next operand in slice
+            if(scan.currentToken.tokenStr.equals("~"))
+            {
+                //If following token is "]" index2 is length of the string
+                if(scan.nextToken.tokenStr.equals("]"))
+                    iIndex2 = storageManager.getEntry(variableStr).value.length();
+                //Otherwise we get the value of operand
+                else
+                    iIndex2 = Integer.parseInt(Utilities.toInteger(this, expression(false)));
+                scan.getNext();
+
+            }
             //advance from the right bracket to the operator
             scan.getNext();
-            //turn on the flag that says we are assigning an index
+            //turn on the flag that says we are assigning an index or slice
             bIndex = true;
         }
 
@@ -668,7 +685,14 @@ public class Parser
                                 if (iIndex > value.length() - 1)
                                     error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
 
-                                String newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex + 1);
+                                String newValue;
+                                //If assignment goes into string slice
+                                if(iIndex2 == 0)
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex + 1);
+                                //Do regular assignment
+                                else
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex2, value.length());
+
                                 ResultValue finalString = new ResultValue(newValue, Token.STRING);
                                 res1 = assign(variableStr, finalString, leftType);
 
@@ -2319,8 +2343,22 @@ public class Parser
                 }
                 else
                 {
+                    ArrayList<ResultValue> newArray = new ArrayList<>();
                     ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
-                    firstResValue = firstArrValue;
+
+                    int indexInt = (Integer.parseInt(Utilities.toInteger(this, index)));
+                    int index2Int = (Integer.parseInt(Utilities.toInteger(this, index2)));
+                    if(index2Int == -1)
+                        index2Int = firstArrValue.iPopulatedLen;
+
+                    for(int i = indexInt; i < index2Int; i++)
+                    {
+                        newArray.add(firstArrValue.array.get(i));
+                        System.out.println(firstArrValue.array.get(i).value);
+                    }
+                    ResultArray newArrValue = new ResultArray("Splice", newArray,firstArrValue.type,ResultValue.fixedArray
+                            , index2Int- indexInt, index2Int - indexInt, -1);
+                    return newArrValue;
                 }
                 if(firstResValue == null)
                     error("ERROR: '%s[%s]' WAS NEVER INITIALIZED", name, index.value);
