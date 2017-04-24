@@ -1,9 +1,7 @@
 package havabol;
 
-import com.sun.xml.internal.bind.v2.TODO;
 import havabol.SymbolTable.STIdentifier;
 import havabol.SymbolTable.SymbolTable;
-
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.regex.Pattern;
@@ -19,7 +17,6 @@ public class Parser
     public static final int IGNORING = 2;
     public static final int CONTINUE = 3;
     public static final int BREAK = 4;
-
 
     // public values to help keep track of our havabol objects and execution status
     public SymbolTable symbolTable;
@@ -79,6 +76,8 @@ public class Parser
                             return whileStmt(iExec);
                         else if (scan.currentToken.tokenStr.equals("for"))
                             return forStmt(iExec);
+                        else if (scan.currentToken.tokenStr.equals("select"))
+                            return selectStmt(iExec);
                         break;
                     case Token.END:
                         // end token so return
@@ -554,7 +553,7 @@ public class Parser
             while (resArray.array.size() < declared)
                 resArray.array.add(null);
 
-            //add into storagemanager
+            //add into storage manager
             storageManager.putEntry(variableStr, resArray);
 
             return resArray;
@@ -1212,24 +1211,24 @@ public class Parser
         Token prevToken = scan.currentToken;
 
         // loop through expression
-        while(scan.currentToken.primClassif == Token.OPERAND // check if token is operand
-                || scan.currentToken.primClassif == Token.OPERATOR // check if it is an operator
-                || scan.currentToken.primClassif == Token.FUNCTION // check for functions
-                || "()".contains(scan.currentToken.tokenStr)) // check if its separator
+        while(scan.currentToken.primClassif == Token.OPERAND    // check if token is operand
+           || scan.currentToken.primClassif == Token.OPERATOR   // check if it is an operator
+           || scan.currentToken.primClassif == Token.FUNCTION   // check for functions
+           || "()".contains(scan.currentToken.tokenStr))        // check if its separator
         {
-            //System.out.println(scan.currentToken.tokenStr);
             switch (scan.currentToken.primClassif)
             {
-                //If token is operand
+                // if token is operand
                 case Token.OPERAND:
                     if(bCategory == true)
                         // we encountered an unexpected operand, looking for an operator
                         error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR.", scan.currentToken.tokenStr);
 
-                    //Get result value of operand and push to stack
+                    // get result value of operand and push to stack
                     firstResValue = getOperand();
                     outPutStack.push(firstResValue);
-                    //Next operand should be operator
+
+                    // next operand should be operator
                     bCategory = true;
                     break;
 
@@ -1248,7 +1247,7 @@ public class Parser
                             if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.equals("("))
                                 stack.push(scan.currentToken);
                             break;
-                        //Check if we have unary minus
+                        // check for unary minus
                         case "-":
                             // check if the previous token was an operator. If so, we want operator or u-
                             if(prevToken.primClassif == Token.OPERATOR
@@ -1690,10 +1689,16 @@ public class Parser
     }
 
     /**
+     * This method executes 'for' statements for HavaBol. It uses iExec and the
+     * ResultValue object returned from calling expression to determine how many iterartions
+     * are left to complete the for loop.
+     * <p>
+     * If we are not executing, we will still look over the lines to help error trap
      *
-     * @param iExec
-     * @return
-     * @throws Exception
+     * @param iExec Tells the statement function whether we need to execute the code we find or
+     *              just look at it
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
      */
     public ResultValue forStmt(int iExec) throws Exception
     {
@@ -1933,79 +1938,124 @@ public class Parser
         return new ResultValue("", Token.END, ResultValue.primitive, ";");
     }
 
-
-    /*public ResultValue selectStmt(int iExec) throws Exception
+    /**
+     * This method executes 'select' statements for HavaBol. It uses iExec and the
+     * ResultValue object returned from calling expression in order to determine
+     * if we keep executing.
+     * <p>
+     * If we are not executing, we will still look over the lines to catch errors
+     *
+     * @param iExec Tells the statement function whether we need to execute the code we find or
+     *              just look at it
+     * @return ResultValue object that contains the final result of execution
+     * @throws Exception generic Exception type to handle any processing errors
+     */
+    public ResultValue selectStmt(int iExec) throws Exception
     {
-        ResultValue resCond;
+        ResultValue selectVar;
+        ResultValue resCond = null;
+        Boolean bExec = false;
 
         // do we need to evaluate the condition
         if (iExec == EXECUTING)
         {// we are executing, not ignoring
-            // evaluate expression
-            resCond = expression(false);
+            // save select variable
+            selectVar = expression(false);
 
-            // did the condition return true?
-            if (resCond.value.equals("T"))
-            {// condition returned true, execute statements on the true part
-                resCond = statements(EXECUTING, "endif else");
+            if (!scan.getNext().equals(":"))
+                // make sure we have our ending ':'
+                error("ERROR: MISSING ':' SEPARATOR AT END OF SELECT DECLARATION");
 
-                // what ended the statements after the true part? else of endif
-                if (resCond.terminatingStr.equals("else"))
-                {// has an else
-                    if (! scan.getNext().equals(":"))
-                        error("ERROR: EXPECTED ':' AFTER ELSE");
+            // advance token to either an expected when or default
+            scan.getNext();
 
-                    resCond = statements(IGNORING, "endif");
+            // parse through 'when' test case
+            while (scan.currentToken.tokenStr.equals("when"))
+            {
+                // only parse case conditional if we have not found a match
+                if (bExec == false)
+                {// have not yet found a match
+                    do
+                    {
+                        // get the next value in the case
+                        resCond = expression(false);
+
+                        // check if we found a match with the select variable
+                        resCond = Utilities.isEqual(this, selectVar, resCond);
+
+                        if (resCond.value.equals("T"))
+                        {// we had a match, set boolean to ignore execution and break
+                            bExec = true;
+
+                            // skip to end of conditional before executing
+                            skipTo(scan.currentToken.tokenStr, ":");
+                            resCond = statements(EXECUTING, "when default endselect");
+                            break;
+                        }
+
+                        // advance to the separator, check for another case
+                        scan.getNext();
+                    }
+                    while (!scan.currentToken.tokenStr.equals(":"));
+
+                    if (bExec == false)
+                        // match was not found, ignore execution
+                        resCond = statements(IGNORING, "when default endselect");
+                } else
+                {// we already found a match, so ignore
+                    // ignore case conditional
+                    skipTo(scan.currentToken.tokenStr, ":");
+
+                    // ignore statements
+                    resCond = statements(IGNORING, "when default endselect");
                 }
             }
-            else if (resCond.value.equals("F"))
-            {// condition returned false, ignore all statements after the if
-                resCond = statements(IGNORING, "endif else");
 
-                // check for else
-                if (resCond.terminatingStr.equals("else"))
-                { // if it is an 'else', execute
-                    if (! scan.getNext().equals(":"))
-                        error("ERROR: EXPECTED ':' AFTER ELSE");
-
-                    resCond = statements(EXECUTING, "endif");
-                }
+            // did we end on default
+            if (resCond.terminatingStr.equals("default"))
+            {// ended on default, if we haven't already executed, execute otherwise ignore
+                if (bExec)
+                 // already executed, ignore
+                    resCond = statements(IGNORING, "endselect");
+                else
+                 // no match found, execute
+                    resCond = statements(EXECUTING, "endselect");
             }
-            else
-                // resCond value was not a boolean so it is an error
-                error("ERROR: EXPECTED BOOLEAN FOR IF STATEMENT " +
-                        "BUT FOUND %s", scan.currentToken.tokenStr);
         }
         else
-        {// we are ignoring execution, so ignore conditional, true and false part
-            // ignore conditional
-            skipTo("if", ":");
+        {// we are ignoring statements
+            // ignore select variable and advance to the first case
+            skipTo(scan.currentToken.tokenStr, ":");
+            scan.getNext();
 
-            // ignore true part
-            resCond = statements(IGNORING, "endif else");
+            // loop through all cases
+            while (scan.currentToken.tokenStr.equals("when"))
+            {
+                // ignore conditional
+                skipTo(scan.currentToken.tokenStr, ":");
 
-            // if the statements terminated with an 'else', we need to parse statements
-            if (resCond.terminatingStr.equals("else"))
-            { // it is an else, so we need to skip statements
-                if (! scan.getNext().equals(":"))
-                    error("ERROR: EXPECTED ':' AFTER ELSE");
+                // ignore statements
+                resCond = statements(IGNORING, "when default endselect");
+            }
 
-                // ignore false part
-                resCond = statements(IGNORING, "endif");
+            // did we end on default
+            if (resCond.terminatingStr.equals("default"))
+            {// default encountered
+                // make sure we have a ':'
+                if (!scan.getNext().equals(":"))
+                    error("ERROR: SELECT 'DEFAULT' CASE MISSING ':'");
+
+                // ignore execution
+                resCond = statements(IGNORING, "endselect");
             }
         }
 
-        // did we have an 'endif;'?
-        if (!resCond.terminatingStr.equals("endif") || !scan.nextToken.tokenStr.equals(";"))
-            error("ERROR: EXPECTED 'endif;' FOR 'if' EXPRESSION");
+        // did we have an 'endselect;'?
+        if (!resCond.terminatingStr.equals("endselect") || !scan.nextToken.tokenStr.equals(";"))
+            error("ERROR: EXPECTED 'endselect;' FOR 'select' EXPRESSION");
 
         return new ResultValue("", Token.END, ResultValue.primitive, ";");
-    }*/
-
-
-
-
-
+    }
 
     /**
      * This method is called by expression to get the result value of an encountered
@@ -2022,15 +2072,12 @@ public class Parser
         int type = Token.BUILTIN;
 
         if (functionName.tokenStr.equals("LENGTH"))
-         {  // length function
-            // get value of parameter
-            // calculate length of given string
+        {// length function
+            // calculate length of given string parameter
             value = "" + parameter.value.length();
 
             // set type to an int
             type = Token.INTEGER;
-
-         //scan.getNext();
         }
         else if (functionName.tokenStr.equals("SPACES"))
         {
@@ -2045,7 +2092,6 @@ public class Parser
         }
         else if (functionName.tokenStr.equals("ELEM"))
         {
-
             // get value of parameter
             try
             {
@@ -2092,6 +2138,7 @@ public class Parser
         }
         return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
     }
+
     /**
      * This method is provided to Parser to execute HavaBol builtin and user
      * defined functions.
@@ -2357,5 +2404,4 @@ public class Parser
 
         return precedence;
     }
-
 }
