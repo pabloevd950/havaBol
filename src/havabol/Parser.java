@@ -1344,6 +1344,8 @@ public class Parser
                             }
                             break;
                         case "notin":
+                            stack.push(scan.currentToken);
+
                             if(scan.nextToken.tokenStr.equals("{"))
                             {
                                 int type = scan.nextToken.subClassif;
@@ -1593,7 +1595,7 @@ public class Parser
                 res = Utilities.or(this,firstResValue, secondResValue);
                 break;
             case"notin":
-                System.out.println("NEED TO CALL SOMETHING FOR NOTIN");
+                res = Utilities.notin(this, firstResValue, (ResultArray) secondResValue);
                 break;
             case"in":
                 res = Utilities.in(this, firstResValue, (ResultArray) secondResValue);
