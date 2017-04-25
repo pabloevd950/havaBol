@@ -650,14 +650,9 @@ public class Utilities
             case Token.INTEGER:
                 for (ResultValue element : list.array)
                 {
-                    if(!element.equals(null))
-                    {
-                        System.out.println(element.value);
-                    }
-                    else
-                    {
-                        System.out.println("NULL HERE");
-                    }
+                    if (element == null)
+                        continue;
+
                     temp = Utilities.toInteger(parser, element);
                     int i = Integer.parseInt(item.value);
                     int e = Integer.parseInt(temp);
@@ -672,6 +667,9 @@ public class Utilities
             case Token.FLOAT:
                 for (ResultValue element : list.array)
                 {
+                    if (element == null)
+                        continue;
+
                     temp = Utilities.toFloat(parser, element);
                     double i = Double.parseDouble(item.value);
                     double e = Double.parseDouble(temp);
@@ -688,6 +686,9 @@ public class Utilities
                 for (ResultValue element : list.array)
                     if ( item.value.compareTo(element.value) == 0 )
                     {
+                        if (element == null)
+                            continue;
+
                         res.value = "T";
                         break;
                     }
