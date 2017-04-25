@@ -1,5 +1,9 @@
 String first = "tacobell";
 String second = "GOODBYE";
+Int Kris[unbound] = 0,1;
+Int Berto[5] = 2+2, 1;
+Berto = 1;
+print(Berto[0], Berto[1]);
 first[ ~ 4] = "school";
 //first[~ 4] = second[0 ~];
 

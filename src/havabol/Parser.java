@@ -348,8 +348,12 @@ public class Parser
                         symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
                                 , identifier.primClassif, dclType
                                 , ResultValue.fixedArray, 1, 1));
+                        //create a random array that equals the length
+                        ArrayList<ResultValue> garbo = new ArrayList<>();
+                        for (int z = 0; z < length; z++)
+                            garbo.add(null);
                         //put entry into storagemanager
-                        storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, null, dclType, structure, 0, length, (length+1)*-1));
+                        storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, garbo, dclType, structure, 0, length, (length+1)*-1));
 
                         return declareArray(iExec, variableStr, dclType, length);
                     }
@@ -540,13 +544,24 @@ public class Parser
         ArrayList<ResultValue> expressionVals = new ArrayList<>();
         //will act as iPopulated
         int iAmt = 1;
-
+        Token equal = scan.currentToken;
         if(iExec == EXECUTING)
         {
             // loop using expression, until ';' is found
             while (!resExpr.terminatingStr.equals(";") && !scan.currentToken.tokenStr.equals(";")) {
                 // evaluate expression to receive values for arraylist
                 resExpr = expression(false);
+                //if the thing to be used to assign is an array
+                if (resExpr.structure == ResultValue.fixedArray || resExpr.structure == ResultValue.unboundedArray)
+                {
+                    //if declaring with array, can only have one argument in value list
+                    if (iAmt != 1)
+                        error("ERROR: CAN ONLY HAVE ONE VALUE AS AN ARRAY IN VALUE LIST IF USING ARRAY ASSIGNMENT");
+                    //set back to equal to meet assignArray assumption
+                    scan.setTo(equal);
+                    return assignArray(variableStr, type, declared);
+                }
+                //else, it is a primitive
                 //advance past comma
                 scan.getNext();
                 //increment
@@ -1004,6 +1019,9 @@ public class Parser
                     }
                 }
 
+                //if next token is not ';', then an error
+                if (!scan.nextToken.tokenStr.equals(";"))
+                    error("ERROR: CAN ONLY HAVE ONE ARGUMENT WHEN USING ARRAY TO SCALAR ASSIGNMENT");
                 //create ResultArray to return
                 if (declared == -1)
                     resArray = new ResultArray(variableStr, array1.array, type, ResultValue.unboundedArray, len, declared, len);
@@ -1053,6 +1071,9 @@ public class Parser
                             //unbounded
                             else
                             {
+                                //if null, declare
+                                if (array1.array == null)
+                                    array1.array = new ArrayList<>();
                                 //if the array list corresponding to unbounded array is smaller than index, add null
                                 if (array1.array.size() <= i)
                                     array1.array.add(i, null);
@@ -1071,6 +1092,9 @@ public class Parser
                                 //unbounded
                             else
                             {
+                                //if null, declare
+                                if (array1.array == null)
+                                    array1.array = new ArrayList<>();
                                 //if the array list corresponding to unbounded array is smaller than index, add null
                                 if (array1.array.size() <= i)
                                     array1.array.add(i, null);
@@ -1089,6 +1113,9 @@ public class Parser
                             //unbounded
                             else
                             {
+                                //if null, declare
+                                if (array1.array == null)
+                                    array1.array = new ArrayList<>();
                                 //if the array list corresponding to unbounded array is smaller than index, add null
                                 if (array1.array.size() <= i)
                                     array1.array.add(i, null);
@@ -1106,6 +1133,9 @@ public class Parser
                             //unbounded
                             else
                             {
+                                //if null, declare
+                                if (array1.array == null)
+                                    array1.array = new ArrayList<>();
                                 //if the array list corresponding to unbounded array is smaller than index, add null
                                 if (array1.array.size() <= i)
                                     array1.array.add(i, null);
@@ -1122,6 +1152,9 @@ public class Parser
                     //if not null, increment length
                     if(res!=null)
                         len++;
+                //if next token is not ';', then an error
+                if (!scan.nextToken.tokenStr.equals(";"))
+                    error("ERROR: CAN ONLY HAVE ONE ARGUMENT WHEN USING ARRAY TO ARRAY ASSIGNMENT");
                 /*create ResultArray to return*/
                 //unbound
                 if (declared == -1)
@@ -2427,7 +2460,14 @@ public class Parser
                 {
                     //Get value of index of the array
                     ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
-                    firstResValue = firstArrValue.array.get((Integer.parseInt(Utilities.toInteger(this, index))));
+                    int iIndex = (Integer.parseInt(Utilities.toInteger(this, index)));
+                    if (firstArrValue.iDeclaredLen != -1 && iIndex >= firstArrValue.iDeclaredLen)
+                        error("ERROR: CANNOT REFERENCE AN INDEX GREATER THAN OR EQUAL TO '%d' FOR ARRAY" +
+                                " '%s'", firstArrValue.iDeclaredLen, firstArrValue.value);
+                    else if (firstArrValue.array.get(iIndex) == null)
+                        error("ERROR: INDEX '%d' IS UNINITIALIZED FOR ARRAY" +
+                                " '%s'", iIndex, firstArrValue.value);
+                    firstResValue = firstArrValue.array.get(iIndex);
                 }
                 else
                 {
