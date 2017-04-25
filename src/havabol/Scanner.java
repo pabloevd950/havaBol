@@ -91,7 +91,7 @@ public class Scanner
     {
         String token = "";                  // string used to create the token from the source file
         String operator = "+-*/<>!=#^";     // list of operators
-        String separator = ",():;[]~";        // list of separators
+        String separator = ",():;[]~{}";        // list of separators
         String operators = "-+<>!=^*/";       // list of potential two character operations
         String operations = "<= >= != == += -= *= /= ^=";
         String escapeChars = "t\"na\\\''";

@@ -650,6 +650,14 @@ public class Utilities
             case Token.INTEGER:
                 for (ResultValue element : list.array)
                 {
+                    if(!element.equals(null))
+                    {
+                        System.out.println(element.value);
+                    }
+                    else
+                    {
+                        System.out.println("NULL HERE");
+                    }
                     temp = Utilities.toInteger(parser, element);
                     int i = Integer.parseInt(item.value);
                     int e = Integer.parseInt(temp);
@@ -689,7 +697,6 @@ public class Utilities
             default:
                 parser.error("ERROR: UNKNOWN TYPE %s", item.type);
         }
-
         return res;
     }
 

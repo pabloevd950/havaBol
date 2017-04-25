@@ -461,6 +461,64 @@ public class Parser
                 , scan.currentToken.tokenStr);
     }
 
+
+
+    public ArrayList<ResultValue> getArray() throws Exception
+    {
+        //will add this into the array list
+        ResultValue resExpr = new ResultValue(-1,-1);
+        //to be returned
+        ResultArray resArray;
+        //the list that is set if expression is called
+        ArrayList<ResultValue> expressionVals = new ArrayList<>();
+        //will act as iPopulated
+        int iAmt = 1;
+
+        while (!resExpr.terminatingStr.equals(";")
+                && !scan.currentToken.tokenStr.equals(";")
+                && !scan.nextToken.tokenStr.equals("}"))
+        {
+            scan.getNext();
+            resExpr = expression(false);
+            //scan.getNext();
+
+            //increment
+            iAmt++;
+
+            switch (scan.currentToken.subClassif) {// determine the type of value to assign to ResultValue to add to array
+                case Token.INTEGER:
+                    resExpr.value = Utilities.toInteger(this, resExpr);
+                    resExpr.type = Token.INTEGER;
+                    // add into list
+                    expressionVals.add(resExpr);
+                    break;
+                case Token.FLOAT:
+                    resExpr.value = Utilities.toFloat(this, resExpr);
+                    resExpr.type = Token.FLOAT;
+                    // add into list
+                    expressionVals.add(resExpr);
+                    break;
+                case Token.BOOLEAN:
+                    resExpr.value = Utilities.toBoolean(this, resExpr);
+                    resExpr.type = Token.BOOLEAN;
+                    // add into list
+                    expressionVals.add(resExpr);
+                    break;
+                case Token.STRING:
+                    resExpr.type = Token.STRING;
+                    // add into list
+                    expressionVals.add(resExpr);
+                    break;
+                default:
+                    error("ERROR: LIST TYPE '%s' IS NOT A RECOGNIZED TYPE", scan.currentToken.tokenStr);
+
+            }
+
+
+        }
+
+        return expressionVals;
+    }
     /**
      * This method will assign the ResultValue objects returned by expression() to the
      * variable specified in order to add it to the StorageManager. The variable string will be the key.
@@ -497,7 +555,7 @@ public class Parser
                 //increment amount populated and check to see if greater than declare when value list not given
                 if (declared != -1 && iAmt - 1 > declared && declared > 0)
                     error("ERROR: CANNOT DECLARE MORE THAN '%d' INTO ARRAY '%s'", declared, variableStr);
-                switch (type) {// determine the type of value to assign to ResultValue to add to array
+                switch (resExpr.type) {// determine the type of value to assign to ResultValue to add to array
                     case Token.INTEGER:
                         resExpr.value = Utilities.toInteger(this, resExpr);
                         resExpr.type = Token.INTEGER;
@@ -1240,6 +1298,7 @@ public class Parser
            || scan.currentToken.primClassif == Token.FUNCTION   // check for functions
            || "()".contains(scan.currentToken.tokenStr))        // check if its separator
         {
+
             switch (scan.currentToken.primClassif)
             {
                 // if token is operand
@@ -1267,6 +1326,33 @@ public class Parser
                     // determine operator, look for unary minus
                     switch (scan.currentToken.tokenStr)
                     {
+                        case "in":
+
+                            stack.push(scan.currentToken);
+
+                            if(scan.nextToken.tokenStr.equals("{"))
+                            {
+                                int type = scan.nextToken.subClassif;
+                                ArrayList<ResultValue> temp = getArray();
+                                ResultArray tempList = new ResultArray(temp,type);
+                                outPutStack.push(tempList);
+                                scan.getNext();
+                            }
+                            else
+                            {
+
+                            }
+                            break;
+                        case "notin":
+                            if(scan.nextToken.tokenStr.equals("{"))
+                            {
+                                int type = scan.nextToken.subClassif;
+                                ArrayList<ResultValue> temp = getArray();
+                                ResultArray tempList = new ResultArray(temp,type);
+                                outPutStack.push(tempList);
+                                scan.getNext();
+                            }
+                            break;
                         case "not":
                             if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.equals("("))
                                 stack.push(scan.currentToken);
@@ -1413,6 +1499,7 @@ public class Parser
                 outPutStack.push(evaluate(null, (ResultValue) outPutStack.pop() , poppedOperator.tokenStr));
             else
             {   // evaluate normally
+              //The error shows up here because of the catch. But it is in IN in utitites.
                 try
                 {
                     ResultValue resvalue = (ResultValue) outPutStack.pop();
@@ -1453,7 +1540,6 @@ public class Parser
     {
         //Result value for return value
         ResultValue res = new ResultValue();
-
 
         //Operator string
         switch (operator)
@@ -1510,7 +1596,7 @@ public class Parser
                 System.out.println("NEED TO CALL SOMETHING FOR NOTIN");
                 break;
             case"in":
-                System.out.println("NEED TO CALL SOMETHING FOR IN");
+                res = Utilities.in(this, firstResValue, (ResultArray) secondResValue);
                 break;
             default:
                 error("ERROR: '%s' IS NOT A VALID OPERATOR FOR EXPRESSION", operator);

@@ -32,4 +32,10 @@ public class ResultArray extends ResultValue
     {
         super(value, type, structure, terminatingStr);
     }
+    public ResultArray(ArrayList array, int type)
+    {
+        this.array = array;
+        this.type = type;
+
+    }
 }
