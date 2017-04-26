@@ -676,7 +676,8 @@ public class Parser
         //flag to determine if assigning to index or entire array
         Boolean bIndex = false;
         //temporary result array object
-        ResultArray resA;
+        ResultArray resA = null;
+
         //if executing, then get its saved data type
         if (bExec)
 
@@ -825,7 +826,8 @@ public class Parser
                                     while (iIndex >= ((ResultArray) res).array.size())
                                         ((ResultArray) res).array.add(null);
 
-                                resA = assignIndex(variableStr, leftType, iIndex);
+                                ResultValue indexVal = expression(false);
+                                resA = assignIndex(variableStr, leftType, iIndex, indexVal);
                             }
                             return resA;
                         default:
@@ -850,8 +852,96 @@ public class Parser
                 //execute
                 if (bExec)
                 {
-                    ResultValue resPlus = Utilities.add(this, res, expression(false));
-                    assign(variableStr, resPlus, leftType);
+                    // check to see if array or not
+                    switch (res.structure)
+                    {
+                        case ResultValue.primitive:
+                            //not an array, so do basic assign
+                            ResultValue res1;
+                            if (bIndex == false)
+                            {
+                                ResultValue resPlus = Utilities.add(this, res, expression(false));
+                                res1 = assign(variableStr, resPlus, leftType);
+
+                                // TEMP
+                                if (scan.currentToken.primClassif != Token.OPERAND)
+                                    scan.getNext();
+                            }
+                            else
+                            {
+                                ResultValue newSubString = expression(false);
+                                String value = storageManager.getEntry(variableStr).value;
+
+                                if (iIndex == -1)
+                                {
+                                    iIndex = value.length() - 1;
+                                }
+                                if (iIndex > value.length() - 1)
+                                    error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
+                                String newValue;
+                                //If assignment goes into string slice
+                                if(iIndex2 == 0)
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex + 1);
+                                    //Do regular assignment
+                                else
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex2, value.length());
+
+                                ResultValue finalString = new ResultValue(newValue, Token.STRING);
+                                ResultValue resPlus = Utilities.add(this, res, finalString);
+                                res1 = assign(variableStr, resPlus, leftType);
+
+                            }
+                            return res1;
+                        case ResultValue.unboundedArray:
+                        case ResultValue.fixedArray:
+                            // this means that more than one index is being changed, so change array
+                            if (bIndex == false)
+                                error("ERROR: CANNOT PREFORM THIS OPERATION ON ARRAY");
+                                //resA = assignArray(variableStr, leftType, ((ResultArray)res).iDeclaredLen);
+                                // this means only one index
+                            else
+                            {
+                                //check to see if index requested is in bounds
+                                if (res.structure != ResultValue.unboundedArray && iIndex >= ((ResultArray) res).iDeclaredLen)
+                                    error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
+                                //if index is negative
+                                if (iIndex < 0)
+                                {
+                                    //check to see if negative subscript is not valid
+                                    if (iIndex < ((ResultArray) res).iNegSub * -1) {
+                                        error("ERROR: CANNOT ACCESS INDEX '%d', MAX NEGATIVE SUBSCRIPT IS '%d'"
+                                                , iIndex, ((ResultArray) res).iNegSub * -1);
+                                    }
+                                    //subscript is in bounds
+                                    else
+                                    {
+                                        //fixed array
+                                        if (((ResultArray) res).iDeclaredLen != -1)
+                                            //add declared length in order to get positive subscript
+                                            iIndex += ((ResultArray) res).iDeclaredLen;
+                                            //unbounded
+                                        else
+                                            //add populated length to get positive subscript
+                                            iIndex += ((ResultArray) res).iPopulatedLen;
+                                    }
+                                }
+                                //unbounded
+                                if (((ResultArray) res).iDeclaredLen == -1)
+                                    //while the index is greater than the size, add garbage
+                                    while (iIndex >= ((ResultArray) res).array.size())
+                                        ((ResultArray) res).array.add(null);
+                                ResultValue newIndexVal = expression(false);
+                                ResultValue oldIndexVal = ((ResultArray) res).array.get(iIndex);
+                                newIndexVal = Utilities.add(this, oldIndexVal, newIndexVal);
+                                System.out.println(scan.currentToken.tokenStr + " About to go into assign index");
+                                resA = assignIndex(variableStr, leftType, iIndex, newIndexVal);
+                            }
+                            return resA;
+                        default:
+                            error("ERROR: STRUCTURE TYPE '%d' IS NOT ALLOWED ON '%s'", res.structure, res.value);
+                    }
                 }
                 //not executing
                 else
@@ -861,19 +951,194 @@ public class Parser
                 //execute
                 if (bExec)
                 {
-                    ResultValue resMin = Utilities.sub(this, res, expression(false));
-                    assign(variableStr, resMin , leftType);
+                    // check to see if array or not
+                    switch (res.structure)
+                    {
+                        case ResultValue.primitive:
+                            //not an array, so do basic assign
+                            ResultValue res1;
+                            if (bIndex == false)
+                            {
+                                ResultValue resPlus = Utilities.sub(this, res, expression(false));
+                                res1 = assign(variableStr, resPlus, leftType);
+
+                                // TEMP
+                                if (scan.currentToken.primClassif != Token.OPERAND)
+                                    scan.getNext();
+                            }
+                            else
+                            {
+                                ResultValue newSubString = expression(false);
+                                String value = storageManager.getEntry(variableStr).value;
+
+                                if (iIndex == -1)
+                                {
+                                    iIndex = value.length() - 1;
+                                }
+                                if (iIndex > value.length() - 1)
+                                    error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
+                                String newValue;
+                                //If assignment goes into string slice
+                                if(iIndex2 == 0)
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex + 1);
+                                    //Do regular assignment
+                                else
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex2, value.length());
+
+                                ResultValue finalString = new ResultValue(newValue, Token.STRING);
+                                ResultValue resPlus = Utilities.sub(this, res, finalString);
+                                res1 = assign(variableStr, resPlus, leftType);
+
+                            }
+                            return res1;
+                        case ResultValue.unboundedArray:
+                        case ResultValue.fixedArray:
+                            // this means that more than one index is being changed, so change array
+                            if (bIndex == false)
+                                error("ERROR: CANNOT PREFORM THIS OPERATION ON ARRAY");
+                                //resA = assignArray(variableStr, leftType, ((ResultArray)res).iDeclaredLen);
+                                // this means only one index
+                            else
+                            {
+                                //check to see if index requested is in bounds
+                                if (res.structure != ResultValue.unboundedArray && iIndex >= ((ResultArray) res).iDeclaredLen)
+                                    error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
+                                //if index is negative
+                                if (iIndex < 0)
+                                {
+                                    //check to see if negative subscript is not valid
+                                    if (iIndex < ((ResultArray) res).iNegSub * -1) {
+                                        error("ERROR: CANNOT ACCESS INDEX '%d', MAX NEGATIVE SUBSCRIPT IS '%d'"
+                                                , iIndex, ((ResultArray) res).iNegSub * -1);
+                                    }
+                                    //subscript is in bounds
+                                    else
+                                    {
+                                        //fixed array
+                                        if (((ResultArray) res).iDeclaredLen != -1)
+                                            //add declared length in order to get positive subscript
+                                            iIndex += ((ResultArray) res).iDeclaredLen;
+                                            //unbounded
+                                        else
+                                            //add populated length to get positive subscript
+                                            iIndex += ((ResultArray) res).iPopulatedLen;
+                                    }
+                                }
+                                //unbounded
+                                if (((ResultArray) res).iDeclaredLen == -1)
+                                    //while the index is greater than the size, add garbage
+                                    while (iIndex >= ((ResultArray) res).array.size())
+                                        ((ResultArray) res).array.add(null);
+                                ResultValue newIndexVal = expression(false);
+                                ResultValue oldIndexVal = ((ResultArray) res).array.get(iIndex);
+                                newIndexVal = Utilities.sub(this, oldIndexVal, newIndexVal);
+                                System.out.println(scan.currentToken.tokenStr + " About to go into assign index");
+                                resA = assignIndex(variableStr, leftType, iIndex, newIndexVal);
+                            }
+                            return resA;
+                        default:
+                            error("ERROR: STRUCTURE TYPE '%d' IS NOT ALLOWED ON '%s'", res.structure, res.value);
+                    }
                 }
                 //not executing
                 else
                     skipTo(scan.currentToken.tokenStr, ";");
                 break;
             case "*=":
-                //execute
                 if (bExec)
                 {
-                    ResultValue resMul = Utilities.mul(this, res, expression(false));
-                    assign(variableStr, resMul, leftType);
+                    // check to see if array or not
+                    switch (res.structure)
+                    {
+                        case ResultValue.primitive:
+                            //not an array, so do basic assign
+                            ResultValue res1;
+                            if (bIndex == false)
+                            {
+                                ResultValue resPlus = Utilities.mul(this, res, expression(false));
+                                res1 = assign(variableStr, resPlus, leftType);
+
+                                // TEMP
+                                if (scan.currentToken.primClassif != Token.OPERAND)
+                                    scan.getNext();
+                            }
+                            else
+                            {
+                                ResultValue newSubString = expression(false);
+                                String value = storageManager.getEntry(variableStr).value;
+
+                                if (iIndex == -1)
+                                {
+                                    iIndex = value.length() - 1;
+                                }
+                                if (iIndex > value.length() - 1)
+                                    error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
+                                String newValue;
+                                //If assignment goes into string slice
+                                if(iIndex2 == 0)
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex + 1);
+                                    //Do regular assignment
+                                else
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex2, value.length());
+
+                                ResultValue finalString = new ResultValue(newValue, Token.STRING);
+                                ResultValue resPlus = Utilities.mul(this, res, finalString);
+                                res1 = assign(variableStr, resPlus, leftType);
+
+                            }
+                            return res1;
+                        case ResultValue.unboundedArray:
+                        case ResultValue.fixedArray:
+                            // this means that more than one index is being changed, so change array
+                            if (bIndex == false)
+                                error("ERROR: CANNOT PREFORM THIS OPERATION ON ARRAY");
+                                //resA = assignArray(variableStr, leftType, ((ResultArray)res).iDeclaredLen);
+                                // this means only one index
+                            else
+                            {
+                                //check to see if index requested is in bounds
+                                if (res.structure != ResultValue.unboundedArray && iIndex >= ((ResultArray) res).iDeclaredLen)
+                                    error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
+                                //if index is negative
+                                if (iIndex < 0)
+                                {
+                                    //check to see if negative subscript is not valid
+                                    if (iIndex < ((ResultArray) res).iNegSub * -1) {
+                                        error("ERROR: CANNOT ACCESS INDEX '%d', MAX NEGATIVE SUBSCRIPT IS '%d'"
+                                                , iIndex, ((ResultArray) res).iNegSub * -1);
+                                    }
+                                    //subscript is in bounds
+                                    else
+                                    {
+                                        //fixed array
+                                        if (((ResultArray) res).iDeclaredLen != -1)
+                                            //add declared length in order to get positive subscript
+                                            iIndex += ((ResultArray) res).iDeclaredLen;
+                                            //unbounded
+                                        else
+                                            //add populated length to get positive subscript
+                                            iIndex += ((ResultArray) res).iPopulatedLen;
+                                    }
+                                }
+                                //unbounded
+                                if (((ResultArray) res).iDeclaredLen == -1)
+                                    //while the index is greater than the size, add garbage
+                                    while (iIndex >= ((ResultArray) res).array.size())
+                                        ((ResultArray) res).array.add(null);
+                                ResultValue newIndexVal = expression(false);
+                                ResultValue oldIndexVal = ((ResultArray) res).array.get(iIndex);
+                                newIndexVal = Utilities.mul(this, oldIndexVal, newIndexVal);
+                                System.out.println(scan.currentToken.tokenStr + " About to go into assign index");
+                                resA = assignIndex(variableStr, leftType, iIndex, newIndexVal);
+                            }
+                            return resA;
+                        default:
+                            error("ERROR: STRUCTURE TYPE '%d' IS NOT ALLOWED ON '%s'", res.structure, res.value);
+                    }
                 }
                 //not executing
                 else
@@ -883,8 +1148,96 @@ public class Parser
                 //execute
                 if (bExec)
                 {
-                    ResultValue resDiv = Utilities.div(this, res, expression(false));
-                    assign(variableStr, resDiv, leftType);
+                    // check to see if array or not
+                    switch (res.structure)
+                    {
+                        case ResultValue.primitive:
+                            //not an array, so do basic assign
+                            ResultValue res1;
+                            if (bIndex == false)
+                            {
+                                ResultValue resPlus = Utilities.div(this, res, expression(false));
+                                res1 = assign(variableStr, resPlus, leftType);
+
+                                // TEMP
+                                if (scan.currentToken.primClassif != Token.OPERAND)
+                                    scan.getNext();
+                            }
+                            else
+                            {
+                                ResultValue newSubString = expression(false);
+                                String value = storageManager.getEntry(variableStr).value;
+
+                                if (iIndex == -1)
+                                {
+                                    iIndex = value.length() - 1;
+                                }
+                                if (iIndex > value.length() - 1)
+                                    error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
+                                String newValue;
+                                //If assignment goes into string slice
+                                if(iIndex2 == 0)
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex + 1);
+                                    //Do regular assignment
+                                else
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex2, value.length());
+
+                                ResultValue finalString = new ResultValue(newValue, Token.STRING);
+                                ResultValue resPlus = Utilities.div(this, res, finalString);
+                                res1 = assign(variableStr, resPlus, leftType);
+
+                            }
+                            return res1;
+                        case ResultValue.unboundedArray:
+                        case ResultValue.fixedArray:
+                            // this means that more than one index is being changed, so change array
+                            if (bIndex == false)
+                                error("ERROR: CANNOT PREFORM THIS OPERATION ON ARRAY");
+                                //resA = assignArray(variableStr, leftType, ((ResultArray)res).iDeclaredLen);
+                                // this means only one index
+                            else
+                            {
+                                //check to see if index requested is in bounds
+                                if (res.structure != ResultValue.unboundedArray && iIndex >= ((ResultArray) res).iDeclaredLen)
+                                    error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
+                                //if index is negative
+                                if (iIndex < 0)
+                                {
+                                    //check to see if negative subscript is not valid
+                                    if (iIndex < ((ResultArray) res).iNegSub * -1) {
+                                        error("ERROR: CANNOT ACCESS INDEX '%d', MAX NEGATIVE SUBSCRIPT IS '%d'"
+                                                , iIndex, ((ResultArray) res).iNegSub * -1);
+                                    }
+                                    //subscript is in bounds
+                                    else
+                                    {
+                                        //fixed array
+                                        if (((ResultArray) res).iDeclaredLen != -1)
+                                            //add declared length in order to get positive subscript
+                                            iIndex += ((ResultArray) res).iDeclaredLen;
+                                            //unbounded
+                                        else
+                                            //add populated length to get positive subscript
+                                            iIndex += ((ResultArray) res).iPopulatedLen;
+                                    }
+                                }
+                                //unbounded
+                                if (((ResultArray) res).iDeclaredLen == -1)
+                                    //while the index is greater than the size, add garbage
+                                    while (iIndex >= ((ResultArray) res).array.size())
+                                        ((ResultArray) res).array.add(null);
+                                ResultValue newIndexVal = expression(false);
+                                ResultValue oldIndexVal = ((ResultArray) res).array.get(iIndex);
+                                newIndexVal = Utilities.div(this, oldIndexVal, newIndexVal);
+                                System.out.println(scan.currentToken.tokenStr + " About to go into assign index");
+                                resA = assignIndex(variableStr, leftType, iIndex, newIndexVal);
+                            }
+                            return resA;
+                        default:
+                            error("ERROR: STRUCTURE TYPE '%d' IS NOT ALLOWED ON '%s'", res.structure, res.value);
+                    }
                 }
                 //not executing
                 else
@@ -894,8 +1247,96 @@ public class Parser
                 //execute
                 if (bExec)
                 {
-                    ResultValue resPow = Utilities.exp(this, res, expression(false));
-                    assign(variableStr, resPow , leftType);
+                    // check to see if array or not
+                    switch (res.structure)
+                    {
+                        case ResultValue.primitive:
+                            //not an array, so do basic assign
+                            ResultValue res1;
+                            if (bIndex == false)
+                            {
+                                ResultValue resPlus = Utilities.exp(this, res, expression(false));
+                                res1 = assign(variableStr, resPlus, leftType);
+
+                                // TEMP
+                                if (scan.currentToken.primClassif != Token.OPERAND)
+                                    scan.getNext();
+                            }
+                            else
+                            {
+                                ResultValue newSubString = expression(false);
+                                String value = storageManager.getEntry(variableStr).value;
+
+                                if (iIndex == -1)
+                                {
+                                    iIndex = value.length() - 1;
+                                }
+                                if (iIndex > value.length() - 1)
+                                    error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
+                                String newValue;
+                                //If assignment goes into string slice
+                                if(iIndex2 == 0)
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex + 1);
+                                    //Do regular assignment
+                                else
+                                    newValue = value.substring(0, iIndex) + newSubString.value + value.substring(iIndex2, value.length());
+
+                                ResultValue finalString = new ResultValue(newValue, Token.STRING);
+                                ResultValue resPlus = Utilities.exp(this, res, finalString);
+                                res1 = assign(variableStr, resPlus, leftType);
+
+                            }
+                            return res1;
+                        case ResultValue.unboundedArray:
+                        case ResultValue.fixedArray:
+                            // this means that more than one index is being changed, so change array
+                            if (bIndex == false)
+                                error("ERROR: CANNOT PREFORM THIS OPERATION ON ARRAY");
+                                //resA = assignArray(variableStr, leftType, ((ResultArray)res).iDeclaredLen);
+                                // this means only one index
+                            else
+                            {
+                                //check to see if index requested is in bounds
+                                if (res.structure != ResultValue.unboundedArray && iIndex >= ((ResultArray) res).iDeclaredLen)
+                                    error("ERROR: '%d' IS OUT OF BOUNDS", iIndex);
+
+                                //if index is negative
+                                if (iIndex < 0)
+                                {
+                                    //check to see if negative subscript is not valid
+                                    if (iIndex < ((ResultArray) res).iNegSub * -1) {
+                                        error("ERROR: CANNOT ACCESS INDEX '%d', MAX NEGATIVE SUBSCRIPT IS '%d'"
+                                                , iIndex, ((ResultArray) res).iNegSub * -1);
+                                    }
+                                    //subscript is in bounds
+                                    else
+                                    {
+                                        //fixed array
+                                        if (((ResultArray) res).iDeclaredLen != -1)
+                                            //add declared length in order to get positive subscript
+                                            iIndex += ((ResultArray) res).iDeclaredLen;
+                                            //unbounded
+                                        else
+                                            //add populated length to get positive subscript
+                                            iIndex += ((ResultArray) res).iPopulatedLen;
+                                    }
+                                }
+                                //unbounded
+                                if (((ResultArray) res).iDeclaredLen == -1)
+                                    //while the index is greater than the size, add garbage
+                                    while (iIndex >= ((ResultArray) res).array.size())
+                                        ((ResultArray) res).array.add(null);
+                                ResultValue newIndexVal = expression(false);
+                                ResultValue oldIndexVal = ((ResultArray) res).array.get(iIndex);
+                                newIndexVal = Utilities.exp(this, oldIndexVal, newIndexVal);
+                                System.out.println(scan.currentToken.tokenStr + " About to go into assign index");
+                                resA = assignIndex(variableStr, leftType, iIndex, newIndexVal);
+                            }
+                            return resA;
+                        default:
+                            error("ERROR: STRUCTURE TYPE '%d' IS NOT ALLOWED ON '%s'", res.structure, res.value);
+                    }
                 }
                 //not executing
                 else
@@ -904,8 +1345,7 @@ public class Parser
             default:
                 error("ERROR: EXPECTED ASSIGNMENT OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
         }
-
-        // if we ever hit this line, bExec is ignoring
+        // if we ever hit this line, iExec is ignoring
         return new ResultValue("", Token.VOID, ResultValue.primitive
                 , scan.currentToken.tokenStr);
     }
@@ -1242,10 +1682,11 @@ public class Parser
      * @param variableStr the name of the variable
      * @param type the data type of variable
      * @param index the index that is getting assigned
+     * @param indexVal
      * @return resArray this contains the last changed ResultArray object
      * @throws Exception generic exception that catches errors
      */
-    public ResultArray assignIndex(String variableStr, int type, int index) throws Exception
+    public ResultArray assignIndex(String variableStr, int type, int index, ResultValue indexVal) throws Exception
     {
         //will add this into the arraylist
         ResultValue resExpr = new ResultValue(-1,-1);
@@ -1255,14 +1696,14 @@ public class Parser
         int iLen = 1;
 
         //this is for operands aka variables and constants
-        if (scan.nextToken.primClassif == Token.OPERAND)
+        if (scan.nextToken.primClassif == Token.SEPARATOR)
         {
             //this is the array that we need to act on
             ResultArray array1 = (ResultArray)storageManager.getEntry(variableStr);
             //this is the value that we need to use to assign to index
             //if it is a variable, it should return its value, else will return value of expression
-            ResultValue value2 = expression(false);
-
+            ResultValue value2 = indexVal; //expression(false);
+            //System.out.println(value2.value);
             if (!scan.nextToken.tokenStr.equals(";"))
                 error("ERROR: MISSING ';' TERMINATOR");
 
@@ -1577,6 +2018,8 @@ public class Parser
         Boolean bFound;                                       // Boolean to determine if we found left paren
         Boolean bCategory = false;                            // Boolean to check proper infix notation
 
+        if(scan.nextToken.tokenStr.equals(";"))
+            error("ERROR: EXPRECTED OPERAND FOR ASSIGNMENT");
         //If we are calling from a function like print, or built in skip name.
         if(scan.currentToken.primClassif == Token.FUNCTION && scan.currentToken.tokenStr.equals("print"))
             scan.getNext();

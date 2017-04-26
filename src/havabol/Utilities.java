@@ -1,6 +1,8 @@
 package havabol;
 
 
+import java.lang.reflect.Array;
+
 /* Utilities class that will handle all basic operations for the havabol programming language.
  * This class will deal with ResultValue objects and return every value as a string representation.
  */
