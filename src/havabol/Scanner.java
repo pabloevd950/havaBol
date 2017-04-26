@@ -189,7 +189,13 @@ public class Scanner
             // save Token attribute type as a string and advance cursor position away from quotation mark
             iColPos++;
             token = "\"" + token + "\"";
-            nextToken.subClassif = Token.STRING;
+
+            // if matches Date format
+            if (token.matches("\"[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]\""))
+                nextToken.subClassif = Token.DATE;
+            //regular string, even if tried to input Date
+            else
+                nextToken.subClassif = Token.STRING;
         }
         else if (delimiters.indexOf((textCharM[iColPos])) >= 0)
         {// token contains a delimiter
@@ -225,7 +231,7 @@ public class Scanner
             nextToken.primClassif = Token.OPERAND;
 
             // determine sub classification of operand token
-            if (nextToken.subClassif == Token.STRING);
+            if (nextToken.subClassif == Token.STRING || nextToken.subClassif == Token.DATE);
                 // token is a string literal which is already set
             else if (Character.isDigit(token.charAt(0)))
             {   // token starts with a digit, determine if integer or float
@@ -280,7 +286,7 @@ public class Scanner
         // pablo wtf is this? you added a step to add quotation marks to
         // strings on line 189 and now you're taking them back off? -_-
         // I know it was you because of this ---|
-        if(nextToken.subClassif == Token.STRING){// <- right here this disgusting ass thing
+        if(nextToken.subClassif == Token.STRING || nextToken.subClassif == Token.DATE){// <- right here this disgusting ass thing
             token = token.substring(1, token.length() - 1);
         }
 

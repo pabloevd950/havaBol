@@ -206,6 +206,9 @@ public class Parser
             case "String":
                 dclType = Token.STRING;
                 break;
+            case "Date":
+                dclType = Token.DATE;
+                break;
             default:
                 error("ERROR: INVALID DECLARE DATA TYPE %s", scan.currentToken.tokenStr);
         }
@@ -514,6 +517,12 @@ public class Parser
                     // add into list
                     expressionVals.add(resExpr);
                     break;
+                case Token.DATE:
+                    resExpr.value = Utilities.toDate(this, resExpr);
+                    resExpr.type = Token.DATE;
+                    // add into list
+                    expressionVals.add(resExpr);
+                    break;
                 default:
                     error("ERROR: LIST TYPE '%s' IS NOT A RECOGNIZED TYPE", scan.currentToken.tokenStr);
 
@@ -596,6 +605,12 @@ public class Parser
                         // add into list
                         expressionVals.add(resExpr);
                         break;
+                    case Token.DATE:
+                        resExpr.value = Utilities.toDate(this, resExpr);
+                        resExpr.type = Token.DATE;
+                        // add into list
+                        expressionVals.add(resExpr);
+                        break;
                     default:
                         error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
 
@@ -662,7 +677,6 @@ public class Parser
         Boolean bIndex = false;
         //temporary result array object
         ResultArray resA;
-
         //if executing, then get its saved data type
         if (bExec)
 
@@ -692,7 +706,6 @@ public class Parser
 
         //advance token to either '[' or operator i.e '=', '+=', etc.
         scan.getNext();
-
         //check to see if array index is given
         if (scan.currentToken.tokenStr.equals("["))
         {
@@ -928,6 +941,10 @@ public class Parser
             case Token.STRING:
                 resExpr.type = Token.STRING;
                 break;
+            case Token.DATE:
+                resExpr.value = Utilities.toDate(this, resExpr);
+                resExpr.type = Token.DATE;
+                break;
             default:
                 error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
         }
@@ -955,11 +972,11 @@ public class Parser
     private ResultArray assignArray(String variableStr, int type, int declared) throws Exception
     {
         //will add this into the array list
-        ResultValue resExpr = new ResultValue(-1,-1);
+        ResultValue resExpr;
         //to be returned
         ResultArray resArray = new ResultArray(variableStr, -1, -1);
         //the populated length
-        int len = 0;
+        int len = 1;
         //this is for operands (aka scalar assignment with variables and constants) and array to array assignment
         if (scan.nextToken.primClassif == Token.OPERAND)
         {
@@ -1013,6 +1030,13 @@ public class Parser
                         case Token.STRING:
                             resExpr = value2;
                             resExpr.type = Token.STRING;
+                            //set into array of first
+                            array1.array.set(i, resExpr);
+                            break;
+                        case Token.DATE:
+                            resExpr = value2;
+                            resExpr.value = Utilities.toDate(this, resExpr);
+                            resExpr.type = Token.DATE;
                             //set into array of first
                             array1.array.set(i, resExpr);
                             break;
@@ -1145,6 +1169,27 @@ public class Parser
                                 array1.array.set(i, resExpr);
                             }
                             break;
+                        case Token.DATE:
+                            resExpr = array2.array.get(i);
+                            resExpr.value = Utilities.toDate(this, resExpr);
+                            resExpr.type = Token.DATE;
+                            /*set into array of first*/
+                            //if first array is fixed, simply set
+                            if (declared != -1)
+                                array1.array.set(i, resExpr);
+                                //unbounded
+                            else
+                            {
+                                //if null, declare
+                                if (array1.array == null)
+                                    array1.array = new ArrayList<>();
+                                //if the array list corresponding to unbounded array is smaller than index, add null
+                                if (array1.array.size() <= i)
+                                    array1.array.add(i, null);
+                                //set into array
+                                array1.array.set(i, resExpr);
+                            }
+                            break;
                         default:
                             error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
                     }
@@ -1206,7 +1251,7 @@ public class Parser
         //to be returned
         ResultArray resArray;
         //populated length
-        int iLen = 0;
+        int iLen = 1;
 
         //this is for operands aka variables and constants
         if (scan.nextToken.primClassif == Token.OPERAND)
@@ -1257,6 +1302,13 @@ public class Parser
                     case Token.STRING:
                         resExpr = value2;
                         resExpr.type = Token.STRING;
+                        //set into array of first
+                        array1.array.set(index, resExpr);
+                        break;
+                    case Token.DATE:
+                        resExpr = value2;
+                        resExpr.value = Utilities.toDate(this, resExpr);
+                        resExpr.type = Token.DATE;
                         //set into array of first
                         array1.array.set(index, resExpr);
                         break;
@@ -1406,6 +1458,37 @@ public class Parser
                                 if (i == 0)
                                     array1.array.set(index++, resExpr);
                                 //else, add
+                                else
+                                    array1.array.add(index++, resExpr);
+                            }
+                            break;
+                        case Token.DATE:
+                            resExpr = array2.array.get(i);
+                            resExpr.value = Utilities.toDate(this, resExpr);
+                            resExpr.type = Token.DATE;
+                            /*set into array of first*/
+                            //if first array is fixed, simply set
+                            if (array1.iDeclaredLen != -1)
+                                //if first time, set
+                                if (i == 0)
+                                    array1.array.set(index++, resExpr);
+                                    //else, add
+                                else
+                                    array1.array.add(index++, resExpr);
+                                //unbounded
+                            else
+                            {
+                                //if null, declare
+                                if (array1.array == null)
+                                    array1.array = new ArrayList<>();
+                                //if the array list corresponding to unbounded array is smaller than index, add null
+                                if (array1.array.size() <= i)
+                                    array1.array.add(i, null);
+                                //set into array
+                                //if first time, set
+                                if (i == 0)
+                                    array1.array.set(index++, resExpr);
+                                    //else, add
                                 else
                                     array1.array.add(index++, resExpr);
                             }
@@ -2838,7 +2921,6 @@ public class Parser
                     for(int i = indexInt; i < index2Int; i++)
                     {
                         newArray.add(firstArrValue.array.get(i));
-                        System.out.println(firstArrValue.array.get(i).value);
                     }
                     ResultArray newArrValue = new ResultArray("Splice", newArray,firstArrValue.type,ResultValue.fixedArray
                             , index2Int- indexInt, index2Int - indexInt, -1);

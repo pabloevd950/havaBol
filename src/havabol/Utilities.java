@@ -947,6 +947,70 @@ public class Utilities
     }
 
     /**
+     * This method coerces a value into a Date type.
+     * <p>
+     * Throws an exception if it can not be coerced.
+     *
+     * @param parser Used for error generation
+     * @param value ResultValue to be coerced
+     * @return Date string value
+     * @throws Exception - Value can not be parsed as a Date
+     */
+    public static String toDate(Parser parser, ResultValue value) throws Exception
+    {
+        if (value.value.matches("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]") && validDate(parser, value))
+            return value.value;
+        else
+            parser.error("ERROR: CANNOT COERCE %s AS DATE", value.value);
+        return null;
+    }
+
+    /**
+     * Validates the date
+     * <p>
+     * The month must be from 1-12. The day must be between 1 and the max for each month. If Feb 29 is specified,
+     * validate that the year is a leap year.
+     * </p>
+     * @param parse Parser class used for error
+     * @param check Date to be checked
+     * @return True if the date is valid, false otherwise
+     */
+    public static boolean validDate(Parser parse, ResultValue check) throws Exception
+    {
+        int daysPerMonth[] =
+                { 31, 29, 31
+                  , 30, 31, 30
+                  , 31, 31, 30
+                  , 31, 30, 31 };
+
+        int iYear = Integer.parseInt(check.value.substring(0, 4));
+        int iMonth = Integer.parseInt(check.value.substring(5, 7));
+        int iDay = Integer.parseInt(check.value.substring(8));
+
+        // validate month
+        if(iMonth < 1 || iMonth > 12)
+            parse.error("ERROR: '%d' IS AN INVALID MONTH, MUST BE 1-12", iMonth);
+
+        // validate day
+        if(iDay < 1 || iDay > daysPerMonth[iMonth-1])
+            parse.error("ERROR: '%d' IS AN INVALID DAY IN '%d', MUST BE 1-%d"
+                    ,iDay, iMonth, daysPerMonth[iMonth-1]);
+
+        // check for leap year
+        if(iDay == 29 && iMonth == 2)
+        {
+            //divisible by 4, not divisbly by 400 or 100
+            if(iYear % 4 == 0 && (iYear %100 != 0 || iYear % 400 == 0))
+                return true;
+            //not valid
+            else
+                parse.error("ERROR: '%d' IS/WAS/WILL NOT (BE) A LEAP YEAR", iYear);
+        }
+
+        return true;
+    }
+
+    /**
      * This method coerces a value into a negative version
      * <p>
      *
