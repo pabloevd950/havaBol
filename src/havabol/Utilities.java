@@ -1045,4 +1045,156 @@ public class Utilities
         res.value = left.value + right.value;
         return res;
     }
+
+    /**
+     * Validates the dates and returns the difference in days of the
+     * first date minus the second date.
+     * <p>
+     * 1. We validate/convert the days to Date format.  If the date is invalid, we exit and show a message.
+     * 2. For each of the dates, we determine the number of days since "0000-03-01" by starting the count at 1
+     * for 0000-03-01. Using March 1st eliminates some leap day issues.
+     * 3. Return the difference in days
+     * @param parser the parser object useful for errors
+     * @param date1 The first date/operand
+     * @param date2 The second date/operand
+     * @return an int that represents the days between them
+     * @throws Exception general exception
+     */
+    public static int dateDiff(Parser parser, ResultValue date1, ResultValue date2) throws Exception
+    {
+        int iJulian1;
+        int iJulian2;
+
+        //validate date
+        if (validDate(parser, date1) != true)
+            parser.error("ERROR: '%s' IS AN INVALID DATE FORMAT ", date1.value);
+
+        //validate date
+        if (validDate(parser, date2) != true)
+            parser.error("ERROR: '%s' IS AN INVALID DATE FORMAT ", date2.value);
+
+        iJulian1 = DateToJulian(date1);
+        iJulian2 = DateToJulian(date2);
+
+        return iJulian1 - iJulian2;
+    }
+
+    /**
+     * Validates the dates and returns the difference in years of the
+     * first date minus the second date.
+     * <p>
+     * 1. We validate/convert the days to Date format.  If the date is invalid, we exit and show a message.
+     * 2. For each of the dates, we determine the number of years since "0000-03-01" by starting the count at 1
+     * for 0000-03-01. Using March 1st eliminates some leap day issues.
+     * 3. Return the difference in years using integer division aka truncating
+     * @param parser the parser object useful for errors
+     * @param date1 The first date/operand
+     * @param date2 The second date/operand
+     * @return an int that represents the years between them
+     * @throws Exception general exception
+     */
+    public static int dateAge(Parser parser, ResultValue date1, ResultValue date2) throws Exception
+    {
+        int iJulian1;
+        int iJulian2;
+
+        //validate date
+        if (validDate(parser, date1) != true)
+            parser.error("ERROR: '%s' IS AN INVALID DATE FORMAT ", date1.value);
+
+        //validate date
+        if (validDate(parser, date2) != true)
+            parser.error("ERROR: '%s' IS AN INVALID DATE FORMAT ", date2.value);
+
+        iJulian1 = DateToJulian(date1);
+        iJulian2 = DateToJulian(date2);
+
+        return iJulian1 - iJulian2/365;
+    }
+
+    /**
+     * Validates the dates and returns the difference in date format of the
+     * first date minus specified days.
+     * <p>
+     * 1. We validate/convert the day to Date format.  If the date is invalid, we exit and show a message.
+     * 2. For the date, we determine the number of days since "0000-03-01" by starting the count at 1
+     * for 0000-03-01. Using March 1st eliminates some leap day issues.
+     * 3. Return the difference in Date format
+     * @param parser the parser object useful for errors
+     * @param date1 The first date/operand
+     * @param days The amount of dates to adjust
+     * @return an int that represents the days between them
+     * @throws Exception general exception
+     */
+    public static int dateAdj(Parser parser, ResultValue date1, int days) throws Exception
+    {
+        int iJulian1;
+
+        //validate date
+        if (validDate(parser, date1) != true)
+            parser.error("ERROR: '%s' IS AN INVALID DATE FORMAT ", date1.value);
+
+
+        iJulian1 = DateToJulian(date1);
+
+        return iJulian1 - days;
+    }
+
+    /**
+     * Converts a date to a UTSA Julian Days value.  This will start numbering at 1 for 0000-03-01.
+     * Making dates relaive to March 1st helps eliminate some leap day issues.
+     * <p>
+     * 1 We replace the month with the number of months since March.
+     * March is 0, Apr is 1, May is 2, ..., Jan is 10, Feb is 11.
+     * 2 Since Jan and Feb are before Mar, we subtract 1 from the year for those months.
+     * 3 Jan 1 is 306 days from Mar 1.
+     * 4 The days per month is in a pattern that begins with March and repeats every 5 months:
+     * Mar 31 Aug 31 Jan 31
+     * Apr 30 Sep 30
+     * May 31 Oct 31
+     * Jun 30 Nov 30
+     * Jul 31 Dec 31
+     * Therefore:
+     * Mon  AdjMon  NumberDaysFromMarch (AdjMon*306 + 5)/10
+     * Jan    10      306
+     * Feb    11      337
+     * Mar     0        0
+     * Apr     1       31
+     * May     2       61
+     * Jun     3       92
+     * Jul     4      122
+     * Aug     5      153
+     * Sep     6      184
+     * Oct     7      214
+     * Nov     8      245
+     * Dec     9      275
+     * 5 Leap years are
+     * years that are divisible by 4 and
+     * either years that are not divisible by 100 or
+     * years that are divisible by 400
+     * @param date The date being changed
+     * @return the number of days since 0000-03-01 beginning with 1 for 0000-03-01.
+     */
+    public static int DateToJulian(ResultValue date)
+    {
+        int iCountDays;
+        int iYear = Integer.parseInt(date.value.substring(0, 4));
+        int iMonth = Integer.parseInt(date.value.substring(5, 7));
+        int iDay = Integer.parseInt(date.value.substring(8));
+        // Calculate number of days since 0000-03-01
+
+        // If month is March or greater, decrease it by 3.
+        if (iMonth > 2)
+            iMonth -= 3;
+        else
+        {
+            iMonth += 9;  // adjust the month since we begin with March
+            iYear--;      // subtract 1 from year if the month was Jan or Feb
+        }
+        iCountDays = 365 * iYear                                // 365 days in a year
+                + iYear / 4 - iYear / 100 + iYear / 400   // add a day for each leap year
+                + (iMonth * 306 + 5) / 10                           // see note 4
+                + (iDay );                                          // add the days
+        return iCountDays;
+    }
 }

@@ -944,6 +944,7 @@ public class Parser
             case Token.DATE:
                 resExpr.value = Utilities.toDate(this, resExpr);
                 resExpr.type = Token.DATE;
+                System.out.println(Utilities.DateToJulian(resExpr));
                 break;
             default:
                 error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
@@ -1177,7 +1178,7 @@ public class Parser
                             //if first array is fixed, simply set
                             if (declared != -1)
                                 array1.array.set(i, resExpr);
-                                //unbounded
+                            //unbounded
                             else
                             {
                                 //if null, declare
