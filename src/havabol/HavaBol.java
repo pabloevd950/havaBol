@@ -39,6 +39,8 @@ public class HavaBol
             while (scan.currentToken.primClassif != Token.EOF)
             {
                 res = parser.statement(true);
+                //scan.currentToken.printToken();
+                //System.out.println("*"+res.terminatingStr);
 
                 if (res.type == Token.END)
                     parser.error("ERROR: OUT OF PLACE TOKEN '%s'\n\t" +

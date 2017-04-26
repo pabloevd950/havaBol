@@ -1877,6 +1877,8 @@ public class Parser
         // loop until we find our terminating string
         while (! terminatingStr.contains(result.terminatingStr))
         {
+            //scan.currentToken.printToken();
+
             // check if we encountered break or continue while executing
             if ( (result.terminatingStr.equals("break") || result.terminatingStr.equals("continue"))
                && bExec)
@@ -1886,6 +1888,7 @@ public class Parser
             result = statement(bExec);
         }
 
+        //System.out.println("return " + result.terminatingStr);
         return result;
     }
 
@@ -1924,26 +1927,29 @@ public class Parser
             {// condition returned true, execute statements on the true part
                 resCond = statements(true, "endif else");
 
-                // what ended the statements after the true part? else, endif, break, continue
+                if (resCond.terminatingStr.equals("break") || resCond.terminatingStr.equals("continue"))
+                {// encountered break or continue
+
+                    if (control == null)
+                        control = scan.currentToken;
+
+                    szTerminatingString = control.tokenStr;
+
+                    // make sure control token is ended with a ';'
+                    if (! scan.getNext().equals(";"))
+                        error("ERROR: EXPECTED ';' AFTER '%s'"
+                                , control.tokenStr, control.iSourceLineNr+1);
+
+                    resCond = statements(false, "else endif");
+                }
+
+                // what ended the statements after the true part? else or endif
                 if (resCond.terminatingStr.equals("else"))
                 {// has an else
                     if (! scan.getNext().equals(":"))
                         error("ERROR: EXPECTED ':' AFTER ELSE");
 
                     resCond = statements(false, "endif");
-                }
-                else if (resCond.terminatingStr.equals("break") || resCond.terminatingStr.equals("continue"))
-                {// encountered break or continue
-                    control = scan.currentToken;
-
-                    // make sure control token is ended with a ';'
-                    if (! scan.getNext().equals(";"))
-                        error("ERROR: EXPECTED ';' AFTER '%s' ON LINE %d"
-                                , control.tokenStr, control.iSourceLineNr+1);
-
-                    szTerminatingString = control.tokenStr;
-
-                    resCond = statements(true, "endif");
                 }
             }
             else if (resCond.value.equals("F"))
@@ -1957,6 +1963,19 @@ public class Parser
                         error("ERROR: EXPECTED ':' AFTER ELSE");
 
                     resCond = statements(true, "endif");
+
+                    if (resCond.terminatingStr.equals("break") || resCond.terminatingStr.equals("continue"))
+                    {// encountered break or continue
+                        control = scan.currentToken;
+                        szTerminatingString = control.tokenStr;
+
+                        // make sure control token is ended with a ';'
+                        if (! scan.getNext().equals(";"))
+                            error("ERROR: EXPECTED ';' AFTER '%s' ON LINE %d"
+                                    , control.tokenStr, control.iSourceLineNr+1);
+
+                        resCond = statements(false, "endif");
+                    }
                 }
             }
             else
@@ -2145,9 +2164,10 @@ public class Parser
                     {
                         resCond = statements(true, "endfor");
 
+
                         // did statements() end on a break or continue?
                         if (resCond.terminatingStr.equals("break")
-                                || resCond.terminatingStr.equals("continue"))
+                         || resCond.terminatingStr.equals("continue"))
                         {
                             if (! scan.getNext().equals(";"))
                                 error("ERROR: EXPECTED ';' AFTER %s", resCond.terminatingStr);
@@ -2196,7 +2216,7 @@ public class Parser
 
                     // make sure we have an appropriate iterable object (array or string)
                     if ( resCond.structure == ResultValue.fixedArray
-                            ||resCond.structure == ResultValue.unboundedArray )
+                      || resCond.structure == ResultValue.unboundedArray )
                     {// we are iterating through an array
                         // value should contain the array name in the case of an array
                         ResultArray array = (ResultArray)storageManager.getEntry(resCond.value);
@@ -2219,7 +2239,7 @@ public class Parser
                             resCond = storageManager.getEntry(item);
                             resCond.value = "" + elem.value;
                             storageManager.putEntry(item, resCond);
-                            resCond = statements(false, "endfor");
+                            resCond = statements(true, "endfor");
 
                             // did statements() end on a break or continue?
                             if (resCond.terminatingStr.equals("break")
@@ -2433,7 +2453,8 @@ public class Parser
                             if (resCond.terminatingStr.equals("break")
                              || resCond.terminatingStr.equals("continue"))
                             {// encountered break or continue
-                                control = scan.currentToken;
+                                if (control == null)
+                                    control = scan.currentToken;
                                 szTerminatingString = control.tokenStr;
 
                                 // make sure control token is ended with a ';'
