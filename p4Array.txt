@@ -70,7 +70,7 @@ for i=0 to ELEM(iDM)-1:
     endfor;
     if not bChange:
         print("\tready to leave, i=", i);
-        // break;
+        break;
     endif;
 endfor;
 print("sorted array");

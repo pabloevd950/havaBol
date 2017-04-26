@@ -26,7 +26,7 @@ public class ParserException extends Exception
         sb.append(Integer.toString(iLineNr));
         sb.append(" ");
         sb.append(diagnostic);
-        sb.append(", File: ");
+        sb.append(",\n\tFile: ");
         sb.append(sourceFileName);
         return sb.toString();
     }

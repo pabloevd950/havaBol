@@ -33,10 +33,17 @@ public class HavaBol
             // create scanner and parser objects
             Scanner scan = new Scanner(args[0], symbolTable);
             Parser parser = new Parser(symbolTable, storageManager, scan);
+            ResultValue res;
 
             // begin parsing file
             while (scan.currentToken.primClassif != Token.EOF)
-                parser.statement(parser.EXECUTING);
+            {
+                res = parser.statement(true);
+
+                if (res.type == Token.END)
+                    parser.error("ERROR: OUT OF PLACE TOKEN '%s'\n\t" +
+                                      "TOKEN NOT VALID HERE", res.terminatingStr);
+            }
 
         }
         catch (Exception e)

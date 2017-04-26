@@ -12,16 +12,11 @@ import java.util.regex.Pattern;
  */
 public class Parser
 {
-    // constants for execution status
-    public static final int EXECUTING = 1;
-    public static final int IGNORING = 2;
-    public static final int CONTINUE = 3;
-    public static final int BREAK = 4;
-
     // public values to help keep track of our havabol objects and execution status
     public SymbolTable symbolTable;
     public StorageManager storageManager;
     public Scanner scan;
+    public Token control;
 
     /**
      * Parser constructor that takes in the symbolTable, storageManager, and Scanner
@@ -39,6 +34,7 @@ public class Parser
         this.symbolTable = symbolTable;
         this.storageManager = storageManager;
         this.scan = scan;
+        control = null;
     }
 
     /**
@@ -47,13 +43,13 @@ public class Parser
      * <p>
      * Returns resultValues returned to the method by the helper functions provided to it.
      *
-     * @param iExec Tells the statement function whether we need to execute the code we find or
+     * @param bExec Tells the statement function whether we need to execute the code we find or
      *              just look at it
      * @return A generic ResultValue with all fields VOID if the bottom is hit, otherwise returns
      *         the calculated ResultValue
      * @throws Exception generic Exception type to handle any processing errors
      */
-    public ResultValue statement(int iExec) throws Exception
+    public ResultValue statement(Boolean bExec) throws Exception
     {
         // advance token
         scan.getNext();
@@ -62,22 +58,27 @@ public class Parser
         switch (scan.currentToken.primClassif)
         {// EOF, CONTROL, OPERAND, FUNCTION, OPERATOR, SEPARATOR, DEBUG, or defaults to error
             case Token.EOF:
+                // make sure that we don't have a break or continue left out of a loop ('while' or 'for')
+                if (control != null)
+                    error("ERROR: '%s' OUTSIDE OF A LOOP ON LINE %d"
+                            , control.tokenStr, control.iSourceLineNr+1);
+
                 return new ResultValue("", Token.EOF, Token.VOID, "");
             case Token.CONTROL:
                 switch (scan.currentToken.subClassif)
                 { // control token found, so determine the sub type for proper execution
                     // DECLARE, FLOW, END, defaults to error
                     case Token.DECLARE:
-                        return declareStmt(iExec);
+                        return declareStmt(bExec);
                     case Token.FLOW:
                         if (scan.currentToken.tokenStr.equals("if"))
-                            return ifStmt(iExec);
+                            return ifStmt(bExec);
                         else if (scan.currentToken.tokenStr.equals("while"))
-                            return whileStmt(iExec);
+                            return whileStmt(bExec);
                         else if (scan.currentToken.tokenStr.equals("for"))
-                            return forStmt(iExec);
+                            return forStmt(bExec);
                         else if (scan.currentToken.tokenStr.equals("select"))
-                            return selectStmt(iExec);
+                            return selectStmt(bExec);
                         break;
                     case Token.END:
                         // end token so return
@@ -90,9 +91,9 @@ public class Parser
                 }
                 break;
             case Token.OPERAND:
-                return assignStmt(iExec);
+                return assignStmt(bExec);
             case Token.FUNCTION:
-                return function(iExec);
+                return function(bExec);
             case Token.OPERATOR:
             case Token.SEPARATOR:
                 break;
@@ -181,12 +182,12 @@ public class Parser
      * This function will also allow havabol to support declaring and initializing on
      * the same line.
      *
-     * @param iExec Tells the statement function whether we need to execute the code we find or
+     * @param bExec Tells the statement function whether we need to execute the code we find or
      *              just look at it
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
-    public ResultValue declareStmt(int iExec) throws Exception
+    public ResultValue declareStmt(Boolean bExec) throws Exception
     {
         int structure = ResultValue.primitive;
         int dclType = -1;
@@ -219,7 +220,7 @@ public class Parser
         // put declaration into symbol table and storage manager
         String variableStr = scan.currentToken.tokenStr;
 
-        if (iExec == EXECUTING)
+        if (bExec)
         {// we are executing, not ignoring
             // save token to skip to in arrays for assignment
             Token identifier = scan.currentToken;
@@ -255,7 +256,7 @@ public class Parser
                         //store into storagemanager
                         storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, dclType, structure));
 
-                        return declareArray(iExec, variableStr, dclType, 0);
+                        return declareArray(bExec, variableStr, dclType, 0);
                     }
                     //anything else is an error
                     else
@@ -306,7 +307,7 @@ public class Parser
                             //store into storagemanager
                             storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, dclType, structure));
 
-                            return declareArray(iExec, variableStr, dclType, -1);
+                            return declareArray(bExec, variableStr, dclType, -1);
                         }
                         //anything else is an error
                         else
@@ -355,7 +356,7 @@ public class Parser
                         //put entry into storagemanager
                         storageManager.putEntry(variableStr, new ResultArray(identifier.tokenStr, garbo, dclType, structure, 0, length, (length+1)*-1));
 
-                        return declareArray(iExec, variableStr, dclType, length);
+                        return declareArray(bExec, variableStr, dclType, length);
                     }
                     //anything else is an error
                     else
@@ -375,7 +376,7 @@ public class Parser
         }
         // if the next token is '=' call assignStmt to assign value to operand
         if(scan.nextToken.tokenStr.equals("="))
-            return assignStmt(iExec);
+            return assignStmt(bExec);
         //it is an array
         else if (scan.nextToken.tokenStr.equals("["))
         {
@@ -391,7 +392,7 @@ public class Parser
                 skipTo(scan.currentToken.tokenStr, "]");
                 //if '=', then declareArray is called
                 if (scan.nextToken.tokenStr.equals("="))
-                    return declareArray(iExec, variableStr, dclType, structure);
+                    return declareArray(bExec, variableStr, dclType, structure);
                     //declared, but no valuelist
                 else if (scan.nextToken.tokenStr.equals(";"))
                 {
@@ -423,7 +424,7 @@ public class Parser
                 {
                     // advance token to equal, so declareArray is on right token
                     scan.getNext();
-                    return declareArray(iExec, variableStr, dclType, 0);
+                    return declareArray(bExec, variableStr, dclType, 0);
                 }
                 //anything else is an error
                 else
@@ -446,7 +447,7 @@ public class Parser
                         , scan.currentToken.tokenStr);
             // value list is given, so send to declareArray
             else if (scan.currentToken.tokenStr.equals("="))
-                return declareArray(iExec, variableStr, dclType, length);
+                return declareArray(bExec, variableStr, dclType, length);
             //anything else is an error
             else
                 error("ERROR: EXPECTED EITHER ';' OR '=', UNEXPECTED TOKEN '%s'", scan.currentToken.tokenStr);
@@ -534,7 +535,7 @@ public class Parser
      * @return resArray the ResultArray object that was last changed
      * @throws Exception a generic exception to catch errors
      */
-    public ResultArray declareArray(int iExec, String variableStr, int type, int declared) throws Exception
+    public ResultArray declareArray(Boolean bExec, String variableStr, int type, int declared) throws Exception
     {
         //will add this into the array list
         ResultValue resExpr = new ResultValue(-1,-1);
@@ -545,11 +546,12 @@ public class Parser
         //will act as iPopulated
         int iAmt = 1;
         Token equal = scan.currentToken;
-        if(iExec == EXECUTING)
+
+        if(bExec)
         {
             // loop using expression, until ';' is found
             while (!resExpr.terminatingStr.equals(";") && !scan.currentToken.tokenStr.equals(";")) {
-                // evaluate expression to receive values for arraylist
+                // evaluate expression to receive values for array list
                 resExpr = expression(false);
                 //if the thing to be used to assign is an array
                 if (resExpr.structure == ResultValue.fixedArray || resExpr.structure == ResultValue.unboundedArray)
@@ -643,12 +645,12 @@ public class Parser
      * <p>
      * Also handles +=, -=, *=, /=
      *
-     * @param iExec Tells the statement function whether we need to execute the code we find or
+     * @param bExec Tells the statement function whether we need to execute the code we find or
      *              just look at it
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
-    public ResultValue assignStmt(int iExec) throws Exception
+    public ResultValue assignStmt(Boolean bExec) throws Exception
     {
         // returned value
         ResultValue res;
@@ -662,7 +664,7 @@ public class Parser
         ResultArray resA;
 
         //if executing, then get its saved data type
-        if (iExec == EXECUTING)
+        if (bExec)
 
             try
             {
@@ -684,8 +686,8 @@ public class Parser
         res = storageManager.getEntry(variableStr);
 
         //if the reference is not in symbol table while executing
-        if(res == null && iExec == EXECUTING)
-            // undeclared variable while iExec true
+        if(res == null && bExec)
+            // undeclared variable while bExec true
             error("ERROR: ASSIGN REQUIRES THAT '%s' BE DECLARED", variableStr);
 
         //advance token to either '[' or operator i.e '=', '+=', etc.
@@ -730,7 +732,7 @@ public class Parser
         {
             case "=":
                 //if executing
-                if (iExec == EXECUTING)
+                if (bExec)
                 {
                     // check to see if array or not
                     switch (res.structure)
@@ -833,7 +835,7 @@ public class Parser
              */
             case "+=":
                 //execute
-                if (iExec == EXECUTING)
+                if (bExec)
                 {
                     ResultValue resPlus = Utilities.add(this, res, expression(false));
                     assign(variableStr, resPlus, leftType);
@@ -844,7 +846,7 @@ public class Parser
                 break;
             case "-=":
                 //execute
-                if (iExec == EXECUTING)
+                if (bExec)
                 {
                     ResultValue resMin = Utilities.sub(this, res, expression(false));
                     assign(variableStr, resMin , leftType);
@@ -855,7 +857,7 @@ public class Parser
                 break;
             case "*=":
                 //execute
-                if (iExec == EXECUTING)
+                if (bExec)
                 {
                     ResultValue resMul = Utilities.mul(this, res, expression(false));
                     assign(variableStr, resMul, leftType);
@@ -866,7 +868,7 @@ public class Parser
                 break;
             case "/=":
                 //execute
-                if (iExec == EXECUTING)
+                if (bExec)
                 {
                     ResultValue resDiv = Utilities.div(this, res, expression(false));
                     assign(variableStr, resDiv, leftType);
@@ -877,7 +879,7 @@ public class Parser
                 break;
             case "^=":
                 //execute
-                if (iExec == EXECUTING)
+                if (bExec)
                 {
                     ResultValue resPow = Utilities.exp(this, res, expression(false));
                     assign(variableStr, resPow , leftType);
@@ -890,7 +892,7 @@ public class Parser
                 error("ERROR: EXPECTED ASSIGNMENT OPERATOR BUT FOUND %s", scan.currentToken.tokenStr);
         }
 
-        // if we ever hit this line, iExec is ignoring
+        // if we ever hit this line, bExec is ignoring
         return new ResultValue("", Token.VOID, ResultValue.primitive
                 , scan.currentToken.tokenStr);
     }
@@ -1515,7 +1517,8 @@ public class Parser
                 case Token.OPERAND:
                     if(bCategory == true)
                         // we encountered an unexpected operand, looking for an operator
-                        error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR.", scan.currentToken.tokenStr);
+                        error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR."
+                                                            , scan.currentToken.tokenStr);
 
                     // get result value of operand and push to stack
                     firstResValue = getOperand();
@@ -1531,7 +1534,8 @@ public class Parser
                             && !scan.currentToken.tokenStr.equals("-")
                             && !scan.currentToken.tokenStr.equals("not"))
                         // we encountered an unexpected operator, looking for an operand
-                        error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND", scan.currentToken.tokenStr);
+                        error("ERROR: UNEXPECTED OPERATOR '%s', EXPECTED OPERAND"
+                                                            , scan.currentToken.tokenStr);
 
                     // determine operator, look for unary minus
                     switch (scan.currentToken.tokenStr)
@@ -1577,7 +1581,8 @@ public class Parser
                                     || prevToken.tokenStr.equals("("))
                             {
                                 //Check if next token is an operand or valid separator.
-                                if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.tokenStr.equals("("))
+                                if (scan.nextToken.primClassif == Token.OPERAND
+                                 || scan.nextToken.tokenStr.equals("("))
                                     // unary minus is true. Change the "-" to "u-" and push
                                     stack.push(new Token("u-"));
                                 //If it isn't, then we encountered an error
@@ -1592,7 +1597,8 @@ public class Parser
                             while(!stack.empty())
                             {
                                 // check precedence
-                                if(getPrecedence(scan.currentToken, false) < getPrecedence((Token)stack.peek(), true))
+                                if(getPrecedence(scan.currentToken, false)
+                                 < getPrecedence((Token)stack.peek(), true))
                                     // precedence of current operator is higher, break
                                     break;
                                 else if(!stack.empty())
@@ -1655,8 +1661,9 @@ public class Parser
                             while (!stack.empty())
                             {// stack is not empty and left paren not found, pop top of stack
                                 poppedOperator = (Token)stack.pop();
-                                if (poppedOperator.tokenStr.equals("(") || poppedOperator.primClassif == Token.FUNCTION)
-                                {// left paren found, set flag to true and check for func delimiter, and break
+                                if (poppedOperator.tokenStr.equals("(")
+                                 || poppedOperator.primClassif == Token.FUNCTION)
+                                {// left paren found, set flag to true, check for func delimiter, and break
                                     bFound = true;
                                     //Check for function, and get result value
                                     if(poppedOperator.primClassif == Token.FUNCTION)
@@ -1706,9 +1713,11 @@ public class Parser
             }
             else if (poppedOperator.tokenStr.equals("u-"))
                 // we have unary minus
-                outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER), (ResultValue) outPutStack.pop(), "*"));
+                outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER)
+                                            , (ResultValue) outPutStack.pop(), "*"));
             else if (poppedOperator.tokenStr.equals("not"))
-                outPutStack.push(evaluate(null, (ResultValue) outPutStack.pop() , poppedOperator.tokenStr));
+                outPutStack.push(evaluate(null, (ResultValue) outPutStack.pop()
+                                                                    , poppedOperator.tokenStr));
             else
             {   // evaluate normally
               //The error shows up here because of the catch. But it is in IN in utitites.
@@ -1748,7 +1757,8 @@ public class Parser
      * @return Result value of operation
      * @throws Exception
      */
-    public ResultValue evaluate(ResultValue firstResValue, ResultValue secondResValue, String operator) throws Exception
+    public ResultValue evaluate(ResultValue firstResValue, ResultValue secondResValue, String operator)
+                                                                                        throws Exception
     {
         //Result value for return value
         ResultValue res = new ResultValue();
@@ -1854,63 +1864,91 @@ public class Parser
      * all lines between the start of the statement and the end of the statement specified
      * by the terminatingStr parameter.
      *
-     * @param iExec Tells the statement function whether we need to execute the code we find or
+     * @param bExec Tells the statement function whether we need to execute the code we find or
      *              just look at it
      * @param terminatingStr Tells us when we are done executing lines for the statement
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
-    public ResultValue statements(int iExec, String terminatingStr) throws Exception
+    public ResultValue statements(Boolean bExec, String terminatingStr) throws Exception
     {
-        ResultValue result = statement(iExec);
+        ResultValue result = statement(bExec);
 
         // loop until we find our terminating string
         while (! terminatingStr.contains(result.terminatingStr))
-            result = statement(iExec);
+        {
+            // check if we encountered break or continue while executing
+            if ( (result.terminatingStr.equals("break") || result.terminatingStr.equals("continue"))
+               && bExec)
+                break;
 
-        result.terminatingStr = scan.currentToken.tokenStr;
+            // execute next statement
+            result = statement(bExec);
+        }
+
         return result;
     }
 
     /**
-     * This method executes 'if' statements for HavaBol. It uses iExec and the
+     * This method executes 'if' statements for HavaBol. It uses bExec and the
      * ResultValue object returned from calling expression in order to determine
      * if we are executing.
      * <p>
      * If we are not executing, we will still look over the lines to catch errors
      *
-     * @param iExec Tells the statement function whether we need to execute the code we find or
+     * @param bExec Tells the statement function whether we need to execute the code we find or
      *              just look at it
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
-    public ResultValue ifStmt(int iExec) throws Exception
+    public ResultValue ifStmt(Boolean bExec) throws Exception
     {
         ResultValue resCond;
 
+        // terminating string to return, defaults to ';', changes to 'break' or 'continue'
+        String szTerminatingString = ";";
+
         // do we need to evaluate the condition
-        if (iExec == EXECUTING)
+        if (bExec)
         {// we are executing, not ignoring
+            // make sure that we don't have a break or continue outside of a loop
+            if ( control != null )
+                error("ERROR: ENCOUNTERED '%s' OUTSIDE OF LOOP\n\tLINE %d"
+                        , control.tokenStr, control.iSourceLineNr+1);
+
             // evaluate expression
             resCond = expression(false);
 
             // did the condition return true?
             if (resCond.value.equals("T"))
             {// condition returned true, execute statements on the true part
-                resCond = statements(EXECUTING, "endif else");
+                resCond = statements(true, "endif else");
 
-                // what ended the statements after the true part? else of endif
+                // what ended the statements after the true part? else, endif, break, continue
                 if (resCond.terminatingStr.equals("else"))
                 {// has an else
                     if (! scan.getNext().equals(":"))
                         error("ERROR: EXPECTED ':' AFTER ELSE");
 
-                    resCond = statements(IGNORING, "endif");
+                    resCond = statements(false, "endif");
+                }
+                else if (resCond.terminatingStr.equals("break") || resCond.terminatingStr.equals("continue"))
+                {// encountered break or continue
+                    control = scan.currentToken;
+
+                    // make sure control token is ended with a ';'
+                    if (! scan.getNext().equals(";"))
+                        error("ERROR: EXPECTED ';' AFTER '%s' ON LINE %d"
+                                , control.tokenStr, control.iSourceLineNr+1);
+
+                    szTerminatingString = control.tokenStr;
+
+                    resCond = statements(true, "endif");
                 }
             }
             else if (resCond.value.equals("F"))
             {// condition returned false, ignore all statements after the if
-                resCond = statements(IGNORING, "endif else");
+                resCond = statements(false, "endif else");
 
                 // check for else
                 if (resCond.terminatingStr.equals("else"))
@@ -1918,7 +1956,7 @@ public class Parser
                     if (! scan.getNext().equals(":"))
                         error("ERROR: EXPECTED ':' AFTER ELSE");
 
-                    resCond = statements(EXECUTING, "endif");
+                    resCond = statements(true, "endif");
                 }
             }
             else
@@ -1932,7 +1970,7 @@ public class Parser
             skipTo("if", ":");
 
             // ignore true part
-            resCond = statements(IGNORING, "endif else");
+            resCond = statements(false, "endif else");
 
             // if the statements terminated with an 'else', we need to parse statements
             if (resCond.terminatingStr.equals("else"))
@@ -1941,7 +1979,7 @@ public class Parser
                     error("ERROR: EXPECTED ':' AFTER ELSE");
 
                 // ignore false part
-                resCond = statements(IGNORING, "endif");
+                resCond = statements(false, "endif");
             }
         }
 
@@ -1949,38 +1987,57 @@ public class Parser
         if (!resCond.terminatingStr.equals("endif") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endif;' FOR 'if' EXPRESSION");
 
-        return new ResultValue("", Token.END, ResultValue.primitive, ";");
+        return new ResultValue("", Token.SEPARATOR, ResultValue.primitive, szTerminatingString);
     }
 
     /**
-     * This method executes 'while' statements for HavaBol. It uses iExec and the
+     * This method executes 'while' statements for HavaBol. It uses bExec and the
      * ResultValue object returned from calling expression in order to determine
      * if we keep executing.
      * <p>
      * If we are not executing, we will still look over the lines to catch errors
      *
-     * @param iExec Tells the statement function whether we need to execute the code we find or
+     * @param bExec Tells the statement function whether we need to execute the code we find or
      *              just look at it
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
-    public ResultValue whileStmt(int iExec) throws Exception
+    public ResultValue whileStmt(Boolean bExec) throws Exception
     {
         ResultValue resCond;
 
         // do we need to evaluate the condition
-        if (iExec == EXECUTING)
+        if (bExec)
         {// we are executing, not ignoring
             Token whileToken = scan.currentToken;
+
+            // make sure that we don't have a break or continue outside of a loop
+            if ( control != null )
+                error("ERROR: ENCOUNTERED '%s' OUTSIDE OF LOOP\n\tLINE %d"
+                        , control.tokenStr, control.iSourceLineNr+1);
 
             // evaluate expression
             resCond = expression(false);
 
             while (resCond.value.equals("T"))
             {// did the condition return true?
-                resCond = statements(EXECUTING, "endwhile");
+                resCond = statements(true, "endwhile");
 
-                // did statements() end on an endwhile;?
+                // did statements() end on a break or continue?
+                if (resCond.terminatingStr.equals("break") || resCond.terminatingStr.equals("continue"))
+                {
+                    if (! scan.getNext().equals(";"))
+                        error("ERROR: EXPECTED ';' AFTER %s", resCond.terminatingStr);
+
+                    control = null;
+
+                    if (resCond.terminatingStr.equals("break"))
+                        break;
+                    else
+                        resCond = statements(false, "endwhile");
+                }
+
+                // make sure we ended on a 'endwhile' token
                 if (! resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";"))
                     error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
 
@@ -1992,7 +2049,7 @@ public class Parser
             }
 
             // expr() returned false, so skip ahead to the end of the while
-            resCond = statements(IGNORING, "endwhile");
+            resCond = statements(false, "endwhile");
         }
         else
         {// we are ignoring execution, so ignore conditional, true and false part
@@ -2000,36 +2057,41 @@ public class Parser
             skipTo("while", ":");
 
             // ignore statements
-            resCond = statements(IGNORING, "endwhile");
+            resCond = statements(false, "endwhile");
         }
 
         // did we have an endwhile;
         if (! resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
 
-        return new ResultValue("", Token.END, ResultValue.primitive, ";");
+        return new ResultValue("", Token.SEPARATOR, ResultValue.primitive, ";");
     }
 
     /**
-     * This method executes 'for' statements for HavaBol. It uses iExec and the
+     * This method executes 'for' statements for HavaBol. It uses bExec and the
      * ResultValue object returned from calling expression to determine how many iterartions
      * are left to complete the for loop.
      * <p>
      * If we are not executing, we will still look over the lines to help error trap
      *
-     * @param iExec Tells the statement function whether we need to execute the code we find or
+     * @param bExec Tells the statement function whether we need to execute the code we find or
      *              just look at it
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
-    public ResultValue forStmt(int iExec) throws Exception
+    public ResultValue forStmt(Boolean bExec) throws Exception
     {
         ResultValue resCond;
 
         // do we need to evaluate the condition?
-        if (iExec == EXECUTING)
+        if (bExec)
         {// we are executing, not ignoring
             Token forToken = scan.currentToken;
+
+            // make sure that we don't have a break or continue outside of a loop
+            if ( control != null )
+                error("ERROR: ENCOUNTERED '%s' OUTSIDE OF LOOP\n\tLINE %d"
+                        , control.tokenStr, control.iSourceLineNr+1);
 
             // advance to the start of the control variable
             scan.getNext();
@@ -2054,7 +2116,7 @@ public class Parser
                                 , ResultValue.primitive, "to"));
 
                     // create int control variable
-                    cv = Integer.parseInt(assignStmt(EXECUTING).value);
+                    cv = Integer.parseInt(assignStmt(true).value);
 
                     // make sure we have the required end variable for our counting for loop
                     if ( !scan.getNext().equals("to") )
@@ -2081,10 +2143,25 @@ public class Parser
                     // execute counting for
                     for (int i = cv; i < ev; i += iv)
                     {
-                        resCond = statements(EXECUTING, "endfor");
+                        resCond = statements(true, "endfor");
 
-                        // did statements() end on an endfor;?
-                        if (!resCond.terminatingStr.equals("endfor") || !scan.nextToken.tokenStr.equals(";"))
+                        // did statements() end on a break or continue?
+                        if (resCond.terminatingStr.equals("break")
+                                || resCond.terminatingStr.equals("continue"))
+                        {
+                            if (! scan.getNext().equals(";"))
+                                error("ERROR: EXPECTED ';' AFTER %s", resCond.terminatingStr);
+
+                            control = null;
+
+                            if (resCond.terminatingStr.equals("break"))
+                                break;
+                            else
+                                resCond = statements(false, "endfor");
+                        }
+                        // did statements() end on an endfor?
+                        if( !resCond.terminatingStr.equals("endfor") ||
+                                !scan.nextToken.tokenStr.equals(";"))
                             error("ERROR: EXPECTED 'endfor;' FOR 'for' EXPRESSION");
 
                         // update cv in storage manager
@@ -2142,9 +2219,23 @@ public class Parser
                             resCond = storageManager.getEntry(item);
                             resCond.value = "" + elem.value;
                             storageManager.putEntry(item, resCond);
-                            resCond = statements(EXECUTING, "endfor");
+                            resCond = statements(false, "endfor");
 
-                            // did statements() end on an endfor;?
+                            // did statements() end on a break or continue?
+                            if (resCond.terminatingStr.equals("break")
+                             || resCond.terminatingStr.equals("continue"))
+                            {
+                                if (! scan.getNext().equals(";"))
+                                    error("ERROR: EXPECTED ';' AFTER %s", resCond.terminatingStr);
+
+                                control = null;
+
+                                if (resCond.terminatingStr.equals("break"))
+                                    break;
+                                else
+                                    resCond = statements(false, "endfor");
+                            }
+                            // did statements() end on an endfor?
                             if( !resCond.terminatingStr.equals("endfor") ||
                                     !scan.nextToken.tokenStr.equals(";"))
                                 error("ERROR: EXPECTED 'endfor;' FOR 'for' EXPRESSION");
@@ -2168,11 +2259,13 @@ public class Parser
                             resCond = storageManager.getEntry(item);
                             resCond.value = "" + c;
                             storageManager.putEntry(item, resCond);
-                            resCond = statements(EXECUTING, "endfor");
+                            resCond = statements(true, "endfor");
 
-                            // did statements() end on an endfor;?
-                            if( !resCond.terminatingStr.equals("endfor") ||
-                                    !scan.nextToken.tokenStr.equals(";"))
+                            // did statements() end on a break, continue, or endfor?
+                            if (resCond.terminatingStr.equals("break"))
+                                break;
+                            else if( !resCond.terminatingStr.equals("endfor")
+                                  || !scan.nextToken.tokenStr.equals(";"))
                                 error("ERROR: EXPECTED 'endfor;' FOR 'for' EXPRESSION");
 
                             // set position back to the beginning of the for loop
@@ -2227,9 +2320,23 @@ public class Parser
                         resCond = storageManager.getEntry(stringCV);
                         resCond.value = "" + s;
                         storageManager.putEntry(stringCV, resCond);
-                        resCond = statements(EXECUTING, "endfor");
+                        resCond = statements(true, "endfor");
 
-                        // did statements() end on an endfor;?
+                        // did statements() end on a break or continue?
+                        if (resCond.terminatingStr.equals("break")
+                                || resCond.terminatingStr.equals("continue"))
+                        {
+                            if (! scan.getNext().equals(";"))
+                                error("ERROR: EXPECTED ';' AFTER %s", resCond.terminatingStr);
+
+                            control = null;
+
+                            if (resCond.terminatingStr.equals("break"))
+                                break;
+                            else
+                                resCond = statements(false, "endfor");
+                        }
+                        // did statements() end on an endfor?
                         if( !resCond.terminatingStr.equals("endfor") ||
                                 !scan.nextToken.tokenStr.equals(";"))
                             error("ERROR: EXPECTED 'endfor;' FOR 'for' EXPRESSION");
@@ -2238,11 +2345,11 @@ public class Parser
                         scan.setTo(forToken);
                         skipTo("for", ":");
                     }
-
                     break;
                 // unrecognized for separator
                 default:
-                    error("ERROR: UNRECOGNIZED CONTROL SEPARATOR '%s'", scan.nextToken.tokenStr);
+                    error("ERROR: UNRECOGNIZED CONTROL SEPARATOR '%s'\n\t" +
+                               "EXPECTED '=', 'in', OR 'from'", scan.nextToken.tokenStr);
             }
         }
         else
@@ -2251,36 +2358,44 @@ public class Parser
             skipTo("for", ":");
 
         // ignore statements
-        resCond = statements(IGNORING, "endfor");
+        resCond = statements(false, "endfor");
 
         // did we have an endfor;
         if (! resCond.terminatingStr.equals("endfor") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endfor;' FOR 'while' EXPRESSION");
 
-        return new ResultValue("", Token.END, ResultValue.primitive, ";");
+        return new ResultValue("", Token.SEPARATOR, ResultValue.primitive, ";");
     }
 
     /**
-     * This method executes 'select' statements for HavaBol. It uses iExec and the
+     * This method executes 'select' statements for HavaBol. It uses bExec and the
      * ResultValue object returned from calling expression in order to determine
      * if we keep executing.
      * <p>
      * If we are not executing, we will still look over the lines to catch errors
      *
-     * @param iExec Tells the statement function whether we need to execute the code we find or
+     * @param bExec Tells the statement function whether we need to execute the code we find or
      *              just look at it
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
-    public ResultValue selectStmt(int iExec) throws Exception
+    public ResultValue selectStmt(Boolean bExec) throws Exception
     {
         ResultValue selectVar;
         ResultValue resCond = null;
-        Boolean bExec = false;
+        Boolean exec = false;
+
+        // terminating string to return, defaults to ';', changes to 'break' or 'continue'
+        String szTerminatingString = ";";
 
         // do we need to evaluate the condition
-        if (iExec == EXECUTING)
+        if (bExec)
         {// we are executing, not ignoring
+            // make sure that we don't have a break or continue outside of a loop
+            if ( control != null )
+                error("ERROR: ENCOUNTERED '%s' OUTSIDE OF LOOP\n\tLINE %d"
+                        , control.tokenStr, control.iSourceLineNr+1);
+
             // save select variable
             selectVar = expression(false);
 
@@ -2295,7 +2410,7 @@ public class Parser
             while (scan.currentToken.tokenStr.equals("when"))
             {
                 // only parse case conditional if we have not found a match
-                if (bExec == false)
+                if (exec == false)
                 {// have not yet found a match
                     do
                     {
@@ -2305,43 +2420,77 @@ public class Parser
                         // check if we found a match with the select variable
                         resCond = Utilities.isEqual(this, selectVar, resCond);
 
+                        // match found
                         if (resCond.value.equals("T"))
-                        {// we had a match, set boolean to ignore execution and break
-                            bExec = true;
+                        {// set boolean to ignore execution and break
+                            exec = true;
 
                             // skip to end of conditional before executing
                             skipTo(scan.currentToken.tokenStr, ":");
-                            resCond = statements(EXECUTING, "when default endselect");
+                            resCond = statements(true, "when default endselect");
+
+                            // did we end on a break or continue?
+                            if (resCond.terminatingStr.equals("break")
+                             || resCond.terminatingStr.equals("continue"))
+                            {// encountered break or continue
+                                control = scan.currentToken;
+                                szTerminatingString = control.tokenStr;
+
+                                // make sure control token is ended with a ';'
+                                if (! scan.getNext().equals(";"))
+                                    error("ERROR: EXPECTED ';' AFTER '%s' ON LINE %d"
+                                            , control.tokenStr, control.iSourceLineNr+1);
+
+                                resCond = statements(false, "when default endselect");
+                            }
                             break;
                         }
 
-                        // advance to the separator, check for another case
+                        // match not found, advance to the separator, check for another case
                         scan.getNext();
                     }
                     while (!scan.currentToken.tokenStr.equals(":"));
 
-                    if (bExec == false)
+                    if (exec == false)
                         // match was not found, ignore execution
-                        resCond = statements(IGNORING, "when default endselect");
-                } else
+                        resCond = statements(false, "when default endselect");
+                }
+                else
                 {// we already found a match, so ignore
                     // ignore case conditional
                     skipTo(scan.currentToken.tokenStr, ":");
 
                     // ignore statements
-                    resCond = statements(IGNORING, "when default endselect");
+                    resCond = statements(false, "when default endselect");
                 }
             }
 
             // did we end on default
-            if (resCond.terminatingStr.equals("default"))
+            if (scan.currentToken.tokenStr.equals("default"))
             {// ended on default, if we haven't already executed, execute otherwise ignore
                 if (bExec)
                  // already executed, ignore
-                    resCond = statements(IGNORING, "endselect");
+                    resCond = statements(false, "endselect");
                 else
-                 // no match found, execute
-                    resCond = statements(EXECUTING, "endselect");
+                {// no match found, execute
+                    resCond = statements(true, "endselect");
+
+                    // did we end on a break or continue?
+                    if (resCond.terminatingStr.equals("break")
+                            || resCond.terminatingStr.equals("continue"))
+                    {// encountered break or continue
+                        control = scan.currentToken;
+
+                        // make sure control token is ended with a ';'
+                        if (! scan.getNext().equals(";"))
+                            error("ERROR: EXPECTED ';' AFTER '%s' ON LINE %d"
+                                    , control.tokenStr, control.iSourceLineNr+1);
+
+                        szTerminatingString = control.tokenStr;
+
+                        resCond = statements(false, "endselect");
+                    }
+                }
             }
         }
         else
@@ -2357,26 +2506,26 @@ public class Parser
                 skipTo(scan.currentToken.tokenStr, ":");
 
                 // ignore statements
-                resCond = statements(IGNORING, "when default endselect");
+                resCond = statements(false, "when default endselect");
             }
 
             // did we end on default
-            if (resCond.terminatingStr.equals("default"))
+            if (scan.currentToken.tokenStr.equals("default"))
             {// default encountered
                 // make sure we have a ':'
                 if (!scan.getNext().equals(":"))
                     error("ERROR: SELECT 'DEFAULT' CASE MISSING ':'");
 
                 // ignore execution
-                resCond = statements(IGNORING, "endselect");
+                resCond = statements(false, "endselect");
             }
         }
 
         // did we have an 'endselect;'?
-        if (!resCond.terminatingStr.equals("endselect") || !scan.nextToken.tokenStr.equals(";"))
+        if (!scan.currentToken.tokenStr.equals("endselect") || !scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED 'endselect;' FOR 'select' EXPRESSION");
 
-        return new ResultValue("", Token.END, ResultValue.primitive, ";");
+        return new ResultValue("", Token.SEPARATOR, ResultValue.primitive, szTerminatingString);
     }
 
     /**
@@ -2465,14 +2614,14 @@ public class Parser
      * This method is provided to Parser to execute HavaBol builtin and user
      * defined functions.
      * <p>
-     * function uses iExec in order to determine if we are executing or skipping.
+     * function uses bExec in order to determine if we are executing or skipping.
      *
-     * @param iExec Tells the statement function whether we need to execute the code we find or
+     * @param bExec Tells the statement function whether we need to execute the code we find or
      *              just look at it
      * @return ResultValue object that contains the final result of execution
      * @throws Exception generic Exception type to handle any processing errors
      */
-    private ResultValue function(int iExec) throws Exception
+    private ResultValue function(Boolean bExec) throws Exception
     {
         /**TODO
          * There is some redundancy involving built in functions right now
@@ -2491,7 +2640,7 @@ public class Parser
                     error("ERROR: '%s' FUNCTION IS MISSING SEPARATOR '('", scan.currentToken.tokenStr);
 
                 // check if we are executing
-                if (iExec == IGNORING)
+                if (!bExec)
                     skipTo(scan.currentToken.tokenStr, ")");
                 // we are executing, determine function
                 else if (scan.currentToken.tokenStr.equals("print"))
@@ -2585,8 +2734,9 @@ public class Parser
      * This method returns a Result value object based on the current token.
      * <p>
      * This method assumes that current token is the operand. If token is an identifier, getOperand
-     * extracts the corresponding Result Value from the storage manager. Else it just returns a new Result Value
-     * for the constant.
+     * extracts the corresponding Result Value from the storage manager.
+     * Otherwise, it just returns a new Result Value for the constant.
+     *
      * @return Result Value of the operand starting at the current token.
      * @throws Exception
      */
