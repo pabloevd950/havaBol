@@ -2365,11 +2365,23 @@ public class Parser
                             storageManager.putEntry(item, resCond);
                             resCond = statements(true, "endfor");
 
-                            // did statements() end on a break, continue, or endfor?
-                            if (resCond.terminatingStr.equals("break"))
-                                break;
-                            else if( !resCond.terminatingStr.equals("endfor")
-                                  || !scan.nextToken.tokenStr.equals(";"))
+                            // did statements() end on a break or continue?
+                            if (resCond.terminatingStr.equals("break")
+                                    || resCond.terminatingStr.equals("continue"))
+                            {
+                                if (! scan.getNext().equals(";"))
+                                    error("ERROR: EXPECTED ';' AFTER %s", resCond.terminatingStr);
+
+                                control = null;
+
+                                if (resCond.terminatingStr.equals("break"))
+                                    break;
+                                else
+                                    resCond = statements(false, "endfor");
+                            }
+                            // did statements() end on an endfor?
+                            if( !resCond.terminatingStr.equals("endfor") ||
+                                    !scan.nextToken.tokenStr.equals(";"))
                                 error("ERROR: EXPECTED 'endfor;' FOR 'for' EXPRESSION");
 
                             // set position back to the beginning of the for loop
