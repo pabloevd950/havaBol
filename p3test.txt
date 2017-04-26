@@ -1,12 +1,15 @@
+Date Jade = "2016-01-09";
+print(Jade);
 String first = "tacobell";
 String second = "GOODBYE";
 Int Kris[2] = 0,1;
 Int Berto[unbound] = 2+2, 1, 2;
+Berto = Kris;
 Berto[1] = Kris[0 ~ 2];
+//Berto[0] += 50;
 print(Berto[0], Berto[1], Berto[2], Berto[3]);
 first[ ~ 4] = "school";
 //first[~ 4] = second[0 ~];
-debug Token off;
 
 print(first);
 
