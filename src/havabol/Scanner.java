@@ -16,7 +16,7 @@ import java.util.ArrayList;
 public class Scanner
 {
     // public variables
-    public static final String delimiters = " \t,;:()\'\"=!<>+-*/[]#^\n"; // terminate a token
+    public static final String delimiters = " \t,;:()\'\"=!<>+-*/[]#^\n~{}"; // terminate a token
     public static Token currentToken;       // the token established with the most recent call to getNext()
     public int iSourceLineNr;              // line number in sourceLineM for current text line
     public int iColPos;                    // column position within the current text line

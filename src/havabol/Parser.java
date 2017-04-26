@@ -1042,7 +1042,7 @@ public class Parser
                 return resArray;
 
             }
-            //it is a fixed array
+            //it is an array
             else if (value2.structure == ResultValue.fixedArray || value2.structure == ResultValue.unboundedArray)
             {
                 //typecast into result array
@@ -1266,6 +1266,183 @@ public class Parser
                     System.out.println("\t\t...Variable Name: " + variableStr
                             +" Index: " + index + " Value: " + resExpr.value + " SIZE: " + array1.iPopulatedLen);
             }
+            //splice
+            else if (value2.structure == ResultValue.fixedArray && value2.value.equals("Splice"))
+            {
+                int len = 1;
+                //typecast into result array
+                ResultArray array2 = (ResultArray)value2;
+                //iFirst is declared length of first, iSecond is how much to change
+                int iFirst = array1.iDeclaredLen, iSecond = array2.iPopulatedLen;
+
+                //if the first's declared length is less than the amount to populate, truncate the populating amount
+                //only if not an unbounded array, otherwise copy as many as possible
+                if (array1.iDeclaredLen != -1 && iFirst < iSecond)
+                    iSecond = iFirst;
+                //loop from 0 to amount to populate
+                for(int i=0; i < iSecond;i++)
+                {
+                    //switch based on data type
+                    switch(type)
+                    {
+                        case Token.INTEGER:
+                            resExpr = array2.array.get(i);
+                            resExpr.value = Utilities.toInteger(this, resExpr);
+                            resExpr.type = Token.INTEGER;
+                            /*set into array of first*/
+                            //if first array is fixed, simply set
+                            if (array1.iDeclaredLen != -1)
+                                //if first time, set
+                                if (i == 0)
+                                    array1.array.set(index++, resExpr);
+                                //else, add
+                                else
+                                    array1.array.add(index++, resExpr);
+                            //unbounded
+                            else
+                            {
+                                //if null, declare
+                                if (array1.array == null)
+                                    array1.array = new ArrayList<>();
+                                //if the array list corresponding to unbounded array is smaller than index, add null
+                                if (array1.array.size() <= i)
+                                    array1.array.add(i, null);
+                                //set into array
+                                //if first time, set
+                                if (i == 0)
+                                    array1.array.set(index++, resExpr);
+                                    //else, add
+                                else
+                                    array1.array.add(index++, resExpr);
+                            }
+                            break;
+                        case Token.FLOAT:
+                            resExpr = array2.array.get(i);
+                            resExpr.value = Utilities.toFloat(this, resExpr);
+                            resExpr.type = Token.FLOAT;
+                            /*set into array of first*/
+                            //if first array is fixed, simply set
+                            if (array1.iDeclaredLen != -1)
+                                //if first time, set
+                                if (i == 0)
+                                    array1.array.set(index++, resExpr);
+                                //else, add
+                                else
+                                    array1.array.add(index++, resExpr);
+                            //unbounded
+                            else
+                            {
+                                //if null, declare
+                                if (array1.array == null)
+                                    array1.array = new ArrayList<>();
+                                //if the array list corresponding to unbounded array is smaller than index, add null
+                                if (array1.array.size() <= i)
+                                    array1.array.add(i, null);
+                                //set into array
+                                //if first time, set
+                                if (i == 0)
+                                    array1.array.set(index++, resExpr);
+                                //else, add
+                                else
+                                    array1.array.add(index++, resExpr);
+                            }
+                            break;
+                        case Token.BOOLEAN:
+                            resExpr = array2.array.get(i);
+                            resExpr.value = Utilities.toBoolean(this, resExpr);
+                            resExpr.type = Token.BOOLEAN;
+                            /*set into array of first*/
+                            //if first array is fixed, simply set
+                            if (array1.iDeclaredLen != -1)
+                                //if first time, set
+                                if (i == 0)
+                                    array1.array.set(index++, resExpr);
+                                //else, add
+                                else
+                                    array1.array.add(index++, resExpr);
+                            //unbounded
+                            else
+                            {
+                                //if null, declare
+                                if (array1.array == null)
+                                    array1.array = new ArrayList<>();
+                                //if the array list corresponding to unbounded array is smaller than index, add null
+                                if (array1.array.size() <= i)
+                                    array1.array.add(i, null);
+                                //set into array
+                                //if first time, set
+                                if (i == 0)
+                                    array1.array.set(index++, resExpr);
+                                //else, add
+                                else
+                                    array1.array.add(index++, resExpr);
+                            }
+                            break;
+                        case Token.STRING:
+                            resExpr = array2.array.get(i);
+                            resExpr.type = Token.STRING;
+                            /*set into array of first*/
+                            //if first array is fixed, simply set
+                            if (array1.iDeclaredLen != -1)
+                                //if first time, set
+                                if (i == 0)
+                                    array1.array.set(index++, resExpr);
+                                //else, add
+                                else
+                                    array1.array.add(index++, resExpr);
+                            //unbounded
+                            else
+                            {
+                                //if null, declare
+                                if (array1.array == null)
+                                    array1.array = new ArrayList<>();
+                                //if the array list corresponding to unbounded array is smaller than index, add null
+                                if (array1.array.size() <= i)
+                                    array1.array.add(i, null);
+                                //set into array
+                                //if first time, set
+                                if (i == 0)
+                                    array1.array.set(index++, resExpr);
+                                //else, add
+                                else
+                                    array1.array.add(index++, resExpr);
+                            }
+                            break;
+                        default:
+                            error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
+                    }
+                }
+
+                //go through the arraylist to count which ones are populated
+                for(ResultValue res : array1.array)
+                    //if not null, increment length
+                    if(res!=null)
+                        len++;
+                //if next token is not ';', then an error
+                if (!scan.nextToken.tokenStr.equals(";"))
+                    error("ERROR: CAN ONLY HAVE ONE ARGUMENT WHEN USING ARRAY TO ARRAY ASSIGNMENT");
+                /*create ResultArray to return*/
+                //unbound
+                if (array1.iDeclaredLen == -1)
+                    resArray = new ResultArray(variableStr, array1.array, type, ResultValue.unboundedArray, len, array1.iDeclaredLen, len);
+                    //fixed
+                else
+                    resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, len, array1.iDeclaredLen, len);
+
+                //check if debugger is on
+                if(scan.bShowAssign)
+                {
+                    System.out.print("\t\t...Variable Name: " + variableStr + " Values:");
+                    for(ResultValue z : resArray.array)
+                        System.out.print(" " + z.value);
+                    System.out.println();
+                }
+
+                //add into storagemanager
+                storageManager.putEntry(variableStr, resArray);
+                return resArray;
+            }
+            //trying to set index as array and not splice
             else
                 error("ERROR: CANNOT ASSIGN STRUCTURE '%d' INTO AN INDEX", value2.structure);
             //count populated values
@@ -2461,19 +2638,48 @@ public class Parser
                     //Get value of index of the array
                     ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
                     int iIndex = (Integer.parseInt(Utilities.toInteger(this, index)));
+                    //if index is negative
+                    if (iIndex < 0)
+                    {
+                        //check to see if negative subscript is not valid
+                        if (iIndex < firstArrValue.iNegSub * -1) {
+                            error("ERROR: CANNOT ACCESS INDEX '%d', MAX NEGATIVE SUBSCRIPT IS '%d'"
+                                    , iIndex, ((ResultArray) firstArrValue).iNegSub * -1);
+                        }
+                        //subscript is in bounds
+                        else
+                        {
+                            //fixed array
+                            if (firstArrValue.iDeclaredLen != -1)
+                                //add declared length in order to get positive subscript
+                                iIndex += ((ResultArray) firstArrValue).iDeclaredLen;
+                                //unbounded
+                            else
+                                //add populated length to get positive subscript
+                                iIndex += firstArrValue.iPopulatedLen;
+                        }
+                    }
+                    //index is greater than/equal to fixed declared length
                     if (firstArrValue.iDeclaredLen != -1 && iIndex >= firstArrValue.iDeclaredLen)
                         error("ERROR: CANNOT REFERENCE AN INDEX GREATER THAN OR EQUAL TO '%d' FOR ARRAY" +
                                 " '%s'", firstArrValue.iDeclaredLen, firstArrValue.value);
-                    else if (firstArrValue.array.get(iIndex) == null)
+                    //unbounded uninitialized
+                    else if (firstArrValue.iDeclaredLen == -1 && iIndex >= firstArrValue.iPopulatedLen)
                         error("ERROR: INDEX '%d' IS UNINITIALIZED FOR ARRAY" +
                                 " '%s'", iIndex, firstArrValue.value);
+                    //fixed and unbounded uninitialized
+                    else if (firstArrValue.array.get(iIndex) == null) {
+                //        System.out.println("Pop " + firstArrValue.array);
+                        error("ERROR: INDEX '%d' IS UNINITIALIZED FOR ARRAY" +
+                                " '%s'", iIndex, firstArrValue.value);
+                    }
                     firstResValue = firstArrValue.array.get(iIndex);
                 }
                 else
                 {
                     ArrayList<ResultValue> newArray = new ArrayList<>();
                     ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
-
+                    //maybe copy from above?
                     int indexInt = (Integer.parseInt(Utilities.toInteger(this, index)));
                     int index2Int = (Integer.parseInt(Utilities.toInteger(this, index2)));
                     if(index2Int == -1)

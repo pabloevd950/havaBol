@@ -1,11 +1,12 @@
 String first = "tacobell";
 String second = "GOODBYE";
-Int Kris[unbound] = 0,1;
-Int Berto[5] = 2+2, 1;
-Berto = 1;
-print(Berto[0], Berto[1]);
+Int Kris[2] = 0,1;
+Int Berto[unbound] = 2+2, 1, 2;
+Berto[1] = Kris[0 ~ 2];
+print(Berto[0], Berto[1], Berto[2], Berto[3]);
 first[ ~ 4] = "school";
 //first[~ 4] = second[0 ~];
+debug Token off;
 
 print(first);
 
@@ -17,7 +18,7 @@ Int iCM[10] = 10, 20, 30, 40, 50, LENGTH(60+3);
 String sA = "Pike";
 String str = "goodbye";
 
-print(10 in {1,2,10}, "<---- * * * * * ");
+print(10 in { 1,2,10 }, "<---- * * * * * ");
 
 print(iCM[~ 3], " * *");
 
