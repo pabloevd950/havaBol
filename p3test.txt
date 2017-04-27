@@ -4,7 +4,7 @@ if Jade >= Bridget:
     print("Wrong");
 else:
     print("Correct");
-//this doesn't blow it up even though it needs "endif;"
+endif;
 //dateDiff(Jade, "2016-08-09");
 String first = "tacobell";
 String second = "GOODBYE";

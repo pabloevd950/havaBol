@@ -1119,10 +1119,10 @@ public class Utilities
      * @param parser the parser object useful for errors
      * @param date1 The first date/operand
      * @param date2 The second date/operand
-     * @return an int that represents the days between them
+     * @return a result value that contains an int that represents the days between them
      * @throws Exception general exception
      */
-    public static int dateDiff(Parser parser, ResultValue date1, ResultValue date2) throws Exception
+    public static ResultValue dateDiff(Parser parser, ResultValue date1, ResultValue date2) throws Exception
     {
         int iJulian1;
         int iJulian2;
@@ -1138,7 +1138,7 @@ public class Utilities
         iJulian1 = DateToJulian(date1);
         iJulian2 = DateToJulian(date2);
 
-        return iJulian1 - iJulian2;
+        return new ResultValue("" + (iJulian1 - iJulian2), Token.DATE, ResultValue.primitive, ";");
     }
 
     /**
@@ -1152,10 +1152,10 @@ public class Utilities
      * @param parser the parser object useful for errors
      * @param date1 The first date/operand
      * @param date2 The second date/operand
-     * @return an int that represents the years between them
+     * @return a result value that contains an int that represents the years between them
      * @throws Exception general exception
      */
-    public static int dateAge(Parser parser, ResultValue date1, ResultValue date2) throws Exception
+    public static ResultValue dateAge(Parser parser, ResultValue date1, ResultValue date2) throws Exception
     {
         //parse through first getting year, month, and day
         int iYear = Integer.parseInt(date1.value.substring(0, 4));
@@ -1190,7 +1190,7 @@ public class Utilities
         else if (iMonth2 < iMonth)
             iDiff--;
 
-        return iDiff;
+        return new ResultValue("" + iDiff, Token.DATE, ResultValue.primitive, ";");
     }
 
     /**
