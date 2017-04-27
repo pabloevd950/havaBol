@@ -926,7 +926,6 @@ public class Parser
                                 ResultValue newIndexVal = expression(false);
                                 ResultValue oldIndexVal = ((ResultArray) res).array.get(iIndex);
                                 newIndexVal = Utilities.add(this, oldIndexVal, newIndexVal);
-                                System.out.println(scan.currentToken.tokenStr + " About to go into assign index");
                                 resA = assignIndex(variableStr, leftType, iIndex, newIndexVal);
                             }
                             return resA;
@@ -1025,7 +1024,6 @@ public class Parser
                                 ResultValue newIndexVal = expression(false);
                                 ResultValue oldIndexVal = ((ResultArray) res).array.get(iIndex);
                                 newIndexVal = Utilities.sub(this, oldIndexVal, newIndexVal);
-                                System.out.println(scan.currentToken.tokenStr + " About to go into assign index");
                                 resA = assignIndex(variableStr, leftType, iIndex, newIndexVal);
                             }
                             return resA;
@@ -1123,7 +1121,6 @@ public class Parser
                                 ResultValue newIndexVal = expression(false);
                                 ResultValue oldIndexVal = ((ResultArray) res).array.get(iIndex);
                                 newIndexVal = Utilities.mul(this, oldIndexVal, newIndexVal);
-                                System.out.println(scan.currentToken.tokenStr + " About to go into assign index");
                                 resA = assignIndex(variableStr, leftType, iIndex, newIndexVal);
                             }
                             return resA;
@@ -1222,7 +1219,6 @@ public class Parser
                                 ResultValue newIndexVal = expression(false);
                                 ResultValue oldIndexVal = ((ResultArray) res).array.get(iIndex);
                                 newIndexVal = Utilities.div(this, oldIndexVal, newIndexVal);
-                                System.out.println(scan.currentToken.tokenStr + " About to go into assign index");
                                 resA = assignIndex(variableStr, leftType, iIndex, newIndexVal);
                             }
                             return resA;
@@ -1321,7 +1317,6 @@ public class Parser
                                 ResultValue newIndexVal = expression(false);
                                 ResultValue oldIndexVal = ((ResultArray) res).array.get(iIndex);
                                 newIndexVal = Utilities.exp(this, oldIndexVal, newIndexVal);
-                                System.out.println(scan.currentToken.tokenStr + " About to go into assign index");
                                 resA = assignIndex(variableStr, leftType, iIndex, newIndexVal);
                             }
                             return resA;
@@ -2006,19 +2001,31 @@ public class Parser
         ResultValue firstResValue, secondResValue, res;       // Result value for operands and final result
         Boolean bFound;                                       // Boolean to determine if we found left paren
         Boolean bCategory = false;                            // Boolean to check proper infix notation
+
+        //DELETE THIS
+        //System.out.println(scan.currentToken.tokenStr + " Token going into Expression");
         if(scan.nextToken.tokenStr.equals(";"))
             error("ERROR: EXPECTED OPERAND FOR ASSIGNMENT");
 
         //If we are calling from a function like print, or built in skip name.
-        if(scan.currentToken.primClassif == Token.FUNCTION && scan.currentToken.tokenStr.equals("print"))
+        if(scan.currentToken.primClassif == Token.FUNCTION
+                && (scan.currentToken.tokenStr.equals("print") || scan.currentToken.tokenStr.startsWith("date")))
             scan.getNext();
 
         // Advance to start of expression.
-        if(scan.currentToken.primClassif != Token.FUNCTION || scan.currentToken.tokenStr.equals("print"))
+        if(scan.currentToken.primClassif != Token.FUNCTION
+                || scan.currentToken.tokenStr.equals("print")
+                || scan.currentToken.tokenStr.startsWith("date"))
             scan.getNext();
 
         // control token used to check for unary minus, and return at desired token.
         Token prevToken = scan.currentToken;
+
+        //DELETE THIS
+        //System.out.println(scan.currentToken.tokenStr + " Token before  Expression WHILE");
+
+        //DELETE THIS
+        //int count = 0;
 
         // loop through expression
         while(scan.currentToken.primClassif == Token.OPERAND    // check if token is operand
@@ -2027,13 +2034,15 @@ public class Parser
            || "()".contains(scan.currentToken.tokenStr))        // check if its separator
         {
 
+            //DELETE THIS
+            //System.out.println(scan.currentToken.tokenStr + " Token in Expression WHILE  " + count++);
             switch (scan.currentToken.primClassif)
             {
                 // if token is operand
                 case Token.OPERAND:
                     if(bCategory == true)
                         // we encountered an unexpected operand, looking for an operator
-                        error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR OR TERMINATING STRING."
+                        error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR OR TERMINATOR."
                                                             , scan.currentToken.tokenStr);
 
                     // get result value of operand and push to stack
@@ -2146,9 +2155,19 @@ public class Parser
                 case Token.FUNCTION:
                     if(bCategory == true)
                         // we encountered an unexpected operand, looking for an operator
-                        error("ERROR: UNEXPECTED FUNCTION CALL '%s', EXPECTED OPERATOR OR TERMINATOR."
+                        error("ERROR: MISSING SEPARATOR"
                                 , scan.currentToken.tokenStr);
-                    // call function to get result value
+                    // call function to get result value for date functions
+                    if(scan.currentToken.tokenStr.startsWith("date"))
+                    {
+                        ResultValue dateRes = function(true);
+                        //DELETE THIS
+                        //System.out.println(dateRes.value + "WHAT IS RETURNED" + scan.currentToken.tokenStr);
+                        outPutStack.push(dateRes);
+                        bCategory = true;
+                        break;
+                    }
+
                     stack.push(scan.currentToken);
                     if(scan.nextToken.tokenStr.equals("("))
                         scan.getNext();
@@ -2169,6 +2188,11 @@ public class Parser
                             if(infunc && scan.nextToken.tokenStr.equals(";"))
                                 break;
 
+                            //DELETE THIS IF WE REMOVE DATES
+                            //if(infunc && stack.isEmpty())
+                            //    return (ResultValue) outPutStack.pop();
+                                //break;
+
                             // right parenthesis found, set flag false until we find matching left paren
                             bFound = false;
 
@@ -2176,20 +2200,21 @@ public class Parser
                             while (!stack.empty())
                             {// stack is not empty and left paren not found, pop top of stack
                                 poppedOperator = (Token)stack.pop();
+                                //Handle functions in stack. This only works with single parameter funcs
                                 if (poppedOperator.tokenStr.equals("(")
                                  || poppedOperator.primClassif == Token.FUNCTION)
-                                {// left paren found, set flag to true, check for func delimiter, and break
+                                {   // left paren found, set flag to true, check for func delimiter, and break
                                     bFound = true;
                                     //Check for function, and get result value
                                     if(poppedOperator.primClassif == Token.FUNCTION)
                                     {
                                         ResultValue temp = (ResultValue) outPutStack.pop();
                                         outPutStack.push(builtInFuncs(poppedOperator, temp));
-//                                        scan.currentToken.printToken();
                                     }
                                     // not in a function and left paren found, leave while loop
                                     break;
                                 }
+                                //handle unary minus
                                 else if (poppedOperator.tokenStr.equals("u-"))
                                     // we have unary minus, apply it to operand
                                     outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER)
@@ -2209,6 +2234,9 @@ public class Parser
 
                             if ((bFound == false))
                             {
+                                //DELETE IF WE REMOVE DATES
+                                //if(infunc)
+                                //    break;
                                 // left paren was not encountered
                                 error("ERROR: EXPECTED LEFT PARENTHESIS ");
                             }
@@ -2222,7 +2250,7 @@ public class Parser
         }
 
         if(scan.currentToken.subClassif == Token.DECLARE)
-            error("ERROR: EXPECTED TERMINATING STRING FOR EXPRESSION");
+            error("ERROR: MISSING TERMINATOR");
         // this should get the last result value
         while(!stack.empty())
         {
@@ -2253,17 +2281,23 @@ public class Parser
         }
 
         // final value
-        res = (ResultValue) outPutStack.pop();
 
-        if(scan.bShowExpr)
-            // debug Expr on
-            System.out.println("\t\t...Result Value: " + res.value);
+            res = (ResultValue) outPutStack.pop();
 
-        scan.setTo(prevToken);
-        res.terminatingStr = scan.nextToken.tokenStr;
+
+            if (scan.bShowExpr)
+                // debug Expr on
+                System.out.println("\t\t...Result Value: " + res.value);
+
+            scan.setTo(prevToken);
+            res.terminatingStr = scan.nextToken.tokenStr;
+
+        //DELETE THIS
+        //System.out.println(res.value + " Is being ret" + scan.currentToken.tokenStr);
 
         //Return final result value
         return res;
+
     }
 
 
@@ -3171,18 +3205,21 @@ public class Parser
         else if (functionName.tokenStr.equals("dateDiff"))
         {
 
-            // get value of parameter
-            try
-            {
-//                String date2 = expression(false).value;
-                System.out.println("Hey");
-            }
-            catch(Exception e)
-            {
-                error("INCORRECT PARAMETER FOR MAXELEM");
-            }
+
+        }
+        else if (functionName.tokenStr.equals("dateAdj"))
+        {
 
 
+        }
+        else if (functionName.tokenStr.equals("dateAge"))
+        {
+
+
+        }
+        else
+        {
+            error("ERROR: '%s' IS NOT A VALID BUILT IN FUNCTION", functionName.tokenStr);
         }
         return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
     }
@@ -3205,7 +3242,7 @@ public class Parser
          * that I need to fix.
          */
         int type = Token.BUILTIN;
-        Token funcName;
+        String funcName = "";
         ResultValue res;
         String value = "";
 
@@ -3218,10 +3255,11 @@ public class Parser
 
                 // check if we are executing
                 if (!bExec)
-                    skipTo(scan.currentToken.tokenStr, ")");
+                    skipTo(scan.currentToken.tokenStr, ";");
                 // we are executing, determine function
                 else if (scan.currentToken.tokenStr.equals("print"))
                 {// print function
+                    funcName = scan.currentToken.tokenStr;
                     String printLine = "";
                     Token prevToken = null;
                     // begin building the output line created by the print
@@ -3239,26 +3277,29 @@ public class Parser
                         //check to see if end of file, if it is, bad
                         if (scan.currentToken.primClassif == Token.EOF)
                             error("ERROR: MISSING ';'");
+
+                        //Make token at next expression call is terminator
+                        if(scan.currentToken.primClassif != Token.SEPARATOR)
+                            error("ERROR: MISSING TERMINATING STRING");
                     }
 
-//                    // print out the line
+                    // print out the line
                     if(!prevToken.tokenStr.equals(")") && scan.nextToken.primClassif != Token.EOF)
                         error("ERROR: FUNCTION MISSING ClOSING ')'");
 
+                    //System.out.println("cur token is   " + scan.currentToken.tokenStr);
                     System.out.println(printLine);
                 }
                 else if (scan.currentToken.tokenStr.equals("LENGTH"))
                 {// length function
                     res = expression(false);
                     value = res.value;
-                    // set type to an int
                     type = Token.INTEGER;
                 }
                 else if (scan.currentToken.tokenStr.equals("SPACES"))
                 {
                     res = expression(false);
                     value = res.value;
-                    // set type to a boolean
                     type = Token.BOOLEAN;
                 }
                 else if (scan.currentToken.tokenStr.equals("ELEM"))
@@ -3272,21 +3313,69 @@ public class Parser
                     value = expression(false).value;
                     type = Token.INTEGER;
                 }
-                else if (scan.currentToken.tokenStr.equals("dateDiff"))
+                else if (scan.currentToken.tokenStr.equals("dateDiff")
+                        ||scan.currentToken.tokenStr.equals("dateAge")
+                        ||scan.currentToken.tokenStr.equals("dateAdj"))
                 {
-                    value = expression(false).value;
-                    type = Token.INTEGER;
+                    Token dateFuncName = scan.currentToken;
+                    Token prevToken = null;
+                    // expression will return on a ',' or ';', auto add space for a ','
+                        ResultValue firstOp = expression(true);
+                        prevToken = scan.currentToken;
+                        scan.getNext();
+
+                        while ( scan.currentToken.tokenStr.equals(")") )
+                        // print is not terminated by a ';'
+                        //error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
+                            scan.getNext();
+
+
+                        //DELETE THIS
+                        //System.out.println(scan.currentToken.tokenStr + " TOKEN BEFORE WE GET SECOND OP");
+
+                        ResultValue secondOP = expression(true);
+
+                        //DELETE THIS
+                        //System.out.println(scan.currentToken.tokenStr + " TOKEN AFTER WE GET SECOND OP");
+
+                        prevToken = scan.currentToken;
+                        //scan.getNext();
+
+                        while ( scan.currentToken.tokenStr.equals(")") )
+                            // print is not terminated by a ';'
+                            //error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
+                            scan.getNext();
+
+                        switch(dateFuncName.tokenStr)
+                        {
+                            case "dateDiff":
+                                value = Utilities.dateDiff(this, firstOp, secondOP).value;
+                                type = Token.INTEGER;
+                                break;
+                            case "dateAge":
+                                value = Utilities.dateAge(this, firstOp, secondOP).value;
+                                type = Token.INTEGER;
+                                break;
+                            case "dateAdj":
+                                value = Utilities.dateAdj(this, firstOp, Integer.valueOf(secondOP.value)).value;
+                                type = Token.DATE;
+                                break;
+
+                        }
+
+
+                    if(!prevToken.tokenStr.equals(")") && scan.nextToken.primClassif != Token.EOF)
+                        error("ERROR: FUNCTION MISSING ClOSING ')'");
+
+                    //DELETE THIS
+                    //System.out.println(scan.currentToken.tokenStr + " ENDING FUNC" + prevToken.tokenStr);
+
+                    //Set to previous token to make sure we dont skip over anything when we return to expr
+                    scan.setTo(prevToken);
+                    return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
                 }
-                else if (scan.currentToken.tokenStr.equals("dateAdj"))
-                {
-                    value = expression(false).value;
-                    type = Token.INTEGER;
-                }
-                else if (scan.currentToken.tokenStr.equals("dateAge"))
-                {
-                    value = expression(false).value;
-                    type = Token.INTEGER;
-                }
+                else
+                    error("ERROR: '%s' IS NOT A VALID BUILT IN FUNCTION", scan.currentToken.tokenStr);
                 break;
             case Token.USER:
                 // do other shit later
@@ -3296,10 +3385,12 @@ public class Parser
                 error("INTERNAL ERROR: %s NOT A RECOGNIZED FUNCTION"
                         , scan.currentToken.tokenStr);
         }
+        //DELETE THIS
+        //System.out.println(scan.currentToken.tokenStr + " AND NEXT IS " + scan.nextToken.tokenStr);
 
         // make sure we end on a ';'
-        if ( !scan.nextToken.tokenStr.equals(";") && !scan.currentToken.tokenStr.equals(";"))
-            error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
+        //if ( !scan.nextToken.tokenStr.equals(";") && !scan.currentToken.tokenStr.equals(";"))
+        //    error("ERROR: PRINT FUNCTION IS MISSING TERMINATOR ';'");
 
         return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
     }
@@ -3339,8 +3430,13 @@ public class Parser
         ResultValue index, index2 = null;
         // get result value of operand. If its an identifier, get it from the storage manager
         if(operand.subClassif == Token.IDENTIFIER)
+        {
             // if identifier get its result value
             firstResValue = storageManager.getEntry(operand.tokenStr);
+
+            if(firstResValue == null)
+                error("ERROR: VARIABLE '%s' NOT YET DECLARED", operand.tokenStr);
+        }
         else
             // create a new result value object
             firstResValue = new ResultValue(operand.tokenStr, operand.subClassif);
@@ -3380,7 +3476,7 @@ public class Parser
 
             }
             //Check if slice range is valid. Second operand must be larger than first
-            if(index2 != null)
+            if(index2 != null && !index2.value.equals("-1"))
             {
                 if(Integer.valueOf(index.value) > Integer.valueOf(index2.value))
                     error("ERROR: INVALID SLICE RANGE ");
@@ -3394,6 +3490,11 @@ public class Parser
                 {  //Not slice
                     //Get value of index of the array
                     ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
+
+                    //Check if it was in the storage manager before
+                    if(firstArrValue == null)
+                        error("ERROR: VARIABLE '%s' NOT YET DECLARED", operand.tokenStr);
+
                     int iIndex = (Integer.parseInt(Utilities.toInteger(this, index)));
                     //if index is negative
                     if (iIndex < 0)
@@ -3442,6 +3543,10 @@ public class Parser
                     ArrayList<ResultValue> newArray = new ArrayList<>();
                     ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
 
+                    //Check if it is in the storage manager
+                    if(firstArrValue == null)
+                        error("ERROR: VARIABLE '%s' NOT YET DECLARED", operand.tokenStr);
+
                     //maybe copy from above?
                     int indexInt = (Integer.parseInt(Utilities.toInteger(this, index)));
                     int index2Int = (Integer.parseInt(Utilities.toInteger(this, index2)));
@@ -3464,6 +3569,10 @@ public class Parser
                 if(index2 == null)
                 {
                     firstResValue = storageManager.getEntry(name);
+                    //Check if it was declared in storage manager
+                    if(firstResValue == null)
+                        error("ERROR: VARIABLE '%s' NOT YET DECLARED", operand.tokenStr);
+
                     String strVal = firstResValue.value;
                     if (index.value.equals("-1"))
                         index.value = String.valueOf(firstResValue.value.length() - 1);

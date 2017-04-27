@@ -15,11 +15,13 @@ Date recent = "2017-02-01";
 String fruit = "1957-12-04";
 print ("date1 =", recent, "date2 =", fruit, "age =", dateAge(recent, fruit));
 String oldFruit = "1953-12-12";
-print ("date1 =", recent, "date2 =", oldFruit, "age =", dateAge(recent, oldFruit));
+print ("date1 =", recent, "date2 =", oldFruit, "age =", dateAge(recent, oldFruit), 6);
+
+dateDiff(aprilFools, earlier);
+//LENGTH("SEX");
 
 
-
-//date = '2016-12-31';
+// date = '2016-12-31';
 //date = '2016-02-29';      // valid
 //badDate = '2015-02-29';   // invalid
 //badDate = '2016-06-31';   // invalid
