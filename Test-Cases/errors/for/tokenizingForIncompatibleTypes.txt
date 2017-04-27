@@ -1,0 +1,8 @@
+print("tokenizingForIncompatibleTypes.txt");
+print("Tokenizing For Loop will print error about incompatible types");
+
+String text[] = "Hava", "Bol";
+
+for token from text by ".":
+    print(token);
+endfor;

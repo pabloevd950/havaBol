@@ -26,11 +26,11 @@ first[ ~ 4] = "school";
 //first[~ 4] = second[0 ~];
 
 print(first);
-
+LENGTH(5);
 Int x = (5) - (-5);
 Int y = LENGTH(5+5) + 5;
 //print(-(5) * 2 + -(2  - -3));
-LENGTH("SEX");
+LENGTH("MOM");
 Int iCM[10] = 10, 20, 30, 40, 50, LENGTH(60+3);
 String sA = "Pike";
 String str = "goodbye";
@@ -48,6 +48,7 @@ SPACES(" ");
 print("*** MAXELEM ", MAXELEM(iCM));
 MAXELEM(iCM);
 print("*** ELEM ", ELEM(iCM));
+sA = "hi";
 ELEM(iCM);
 
 Int abc = 5;

@@ -28,8 +28,9 @@ public class StorageManager
      */
     public ResultValue getEntry(String key) throws Exception
     {
-
-            ResultValue getKey = sT.get(key);
+            if(!sT.containsKey(key))
+                return null;
+            //ResultValue getKey = sT.get(key);
 
         return sT.get(key);
     }
