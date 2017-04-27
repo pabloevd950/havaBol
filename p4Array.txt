@@ -74,7 +74,6 @@ for i=0 to ELEM(iDM)-1:
     endif;
 endfor;
 print("sorted array");
-//print(ELEM(iDM));
 for i=0 to ELEM(iDM):
     print("\t", iDM[i]);
 endfor;

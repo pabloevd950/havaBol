@@ -642,7 +642,6 @@ public class Parser
             //fill with garbage to be able to assign
             while (resArray.array.size() < declared)
                 resArray.array.add(null);
-
             //add into storage manager
             storageManager.putEntry(variableStr, resArray);
 
@@ -1692,7 +1691,7 @@ public class Parser
         //to be returned
         ResultArray resArray;
         //populated length
-        int iLen = 1;
+        int iLen = 0;
 
         //this is for operands aka variables and constants
         if (scan.nextToken.primClassif == Token.SEPARATOR)
@@ -2195,7 +2194,7 @@ public class Parser
                                     {
                                         ResultValue temp = (ResultValue) outPutStack.pop();
                                         outPutStack.push(builtInFuncs(poppedOperator, temp));
-                                        scan.currentToken.printToken();
+//                                        scan.currentToken.printToken();
                                     }
                                     // not in a function and left paren found, leave while loop
                                     break;
