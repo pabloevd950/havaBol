@@ -64,7 +64,7 @@ public class Utilities
                 }
                 break;
             default:
-                parser.error("ERROR: CANNOT ADD %s TO %s", secondOp.type, firstOp.type);
+                parser.error("ERROR: CANNOT ADD '%s' AND '%s'", firstOp.value, secondOp.value);
         }
         return res;
     }
@@ -121,7 +121,7 @@ public class Utilities
                 }
                 break;
             default:
-                parser.error("ERROR: CANNOT SUBTRACT %s FROM %s", secondOp.type, firstOp.type);
+                parser.error("ERROR: CANNOT SUBTRACT '%s' AND '%s'", firstOp.value, secondOp.value);
         }
         return res;
     }
@@ -178,7 +178,7 @@ public class Utilities
                 }
                 break;
             default:
-                parser.error("ERROR: CANNOT DIVIDE %s WITH %s", secondOp.type, firstOp.type);
+                parser.error("ERROR: CANNOT DIVIDE '%s' BY '%s'", firstOp.value, secondOp.value);
         }
         return res;
     }
@@ -246,7 +246,7 @@ public class Utilities
                 }
                 break;
             default:
-                parser.error("ERROR: CANNOT MULTIPLY %s WITH %s", secondOp.type, firstOp.type);
+                parser.error("ERROR: CANNOT MULTIPLY '%s' WITH '%s'", firstOp.value, secondOp.value);
         }
         return res;
     }
@@ -303,7 +303,7 @@ public class Utilities
                 }
                 break;
             default:
-                parser.error("ERROR: CANNOT RAISE %s TO %s", secondOp.type, firstOp.type);
+                parser.error("ERROR: CANNOT RAISE '%s' TO '%s'", firstOp.value, secondOp.value);
         }
         return res;
     }
@@ -354,11 +354,20 @@ public class Utilities
                     res.value = "F";
                 break;
             case Token.BOOLEAN:
+                parser.error("ERROR: CAN NOT PERFORM '<' COMPARISON ON 'Bool' TYPE");
                 break;
             case Token.DATE:
+                //make sure second is a valid date
+                temp = Utilities.toDate(parser, secondOP);
+                //if equal/greater, true
+                if (firstOP.value.compareTo(temp) < 0)
+                    res.value = "T";
+                    //return false otherwise
+                else
+                    res.value = "F";
                 break;
             default:
-                parser.error("ERROR: UNKNOWN TYPE %s", firstOP.type);
+                parser.error("ERROR: UNKNOWN TYPE '%d' ONLY TYPES 2-6 ARE ALLOWED", firstOP.type);
         }
         return res;
     }
@@ -401,6 +410,9 @@ public class Utilities
                 else
                     res.value = "F";
                 break;
+            case Token.BOOLEAN:
+                parser.error("ERROR: CAN NOT PERFORM '>' COMPARISON ON 'Bool' TYPE");
+                break;
             case Token.STRING:
                 int comResult = firstOP.value.compareTo(secondOp.value);
                 if (comResult > 0)
@@ -408,12 +420,18 @@ public class Utilities
                 else
                     res.value = "F";
                 break;
-            case Token.BOOLEAN:
-                break;
             case Token.DATE:
+                //make sure second is a valid date
+                temp = Utilities.toDate(parser, secondOp);
+                //if greater, true
+                if (firstOP.value.compareTo(temp) > 0)
+                    res.value = "T";
+                //return false otherwise
+                else
+                    res.value = "F";
                 break;
             default:
-                parser.error("ERROR: UNKNOWN TYPE %s", firstOP.type);
+                parser.error("ERROR: UNKNOWN TYPE '%d' ONLY TYPES 2-6 ARE ALLOWED", firstOP.type);
         }
         return res;
     }
@@ -465,9 +483,17 @@ public class Utilities
                     res.value = "F";
                 break;
             case Token.DATE:
+                //make sure second is a valid date
+                temp = Utilities.toDate(parser, secondOp);
+                //if equal, true
+                if (firstOp.value.compareTo(temp) == 0)
+                    res.value = "T";
+                //return false otherwise
+                else
+                    res.value = "F";
                 break;
             default:
-                parser.error("ERROR: UNKNOWN TYPE %s", firstOp.type);
+                parser.error("ERROR: UNKNOWN TYPE '%d' ONLY TYPES 2-6 ARE ALLOWED", firstOp.type);
         }
         return res;
     }
@@ -510,6 +536,9 @@ public class Utilities
                 else
                     res.value = "F";
                 break;
+            case Token.BOOLEAN:
+                parser.error("ERROR: CAN NOT PERFORM '<=' COMPARISON ON 'Bool' TYPE");
+                break;
             case Token.STRING:
                 int comResult = firstOp.value.compareTo(secondOp.value);
                 if (comResult <= 0)
@@ -517,12 +546,18 @@ public class Utilities
                 else
                     res.value = "F";
                 break;
-            case Token.BOOLEAN:
-                break;
             case Token.DATE:
+                //make sure second is a valid date
+                temp = Utilities.toDate(parser, secondOp);
+                //if less/equal, true
+                if (firstOp.value.compareTo(temp) <= 0)
+                    res.value = "T";
+                    //return false otherwise
+                else
+                    res.value = "F";
                 break;
             default:
-                parser.error("ERROR: UNKNOWN TYPE %s", firstOp.type);
+                parser.error("ERROR: UNKNOWN TYPE '%d' ONLY TYPES 2-6 ARE ALLOWED", firstOp.type);
         }
         return res;
     }
@@ -565,6 +600,9 @@ public class Utilities
                 else
                     res.value = "F";
                 break;
+            case Token.BOOLEAN:
+                parser.error("ERROR: CAN NOT PERFORM '>=' COMPARISON ON 'Bool' TYPE");
+                break;
             case Token.STRING:
                 int comResult = firstOp.value.compareTo(secondOp.value);
                 if (comResult >= 0)
@@ -572,12 +610,18 @@ public class Utilities
                 else
                     res.value = "F";
                 break;
-            case Token.BOOLEAN:
-                break;
             case Token.DATE:
+                //make sure second is a valid date
+                temp = Utilities.toDate(parser, secondOp);
+                //if equal/greater, true
+                if (firstOp.value.compareTo(temp) >= 0)
+                    res.value = "T";
+                    //return false otherwise
+                else
+                    res.value = "F";
                 break;
             default:
-                parser.error("ERROR: UNKNOWN TYPE %s", firstOp.type);
+                parser.error("ERROR: UNKNOWN TYPE '%d' ONLY TYPES 2-6 ARE ALLOWED", firstOp.type);
         }
         return res;
     }
@@ -629,9 +673,17 @@ public class Utilities
                     res.value = "F";
                 break;
             case Token.DATE:
+                //make sure second is a valid date
+                temp = Utilities.toDate(parser, secondOp);
+                //if not equal, true
+                if (firstOp.value.compareTo(temp) != 0)
+                    res.value = "T";
+                //return false otherwise
+                else
+                    res.value = "F";
                 break;
             default:
-                parser.error("ERROR: UNKNOWN TYPE %s", firstOp.type);
+                parser.error("ERROR: UNKNOWN TYPE '%d' ONLY TYPES 2-6 ARE ALLOWED", firstOp.type);
         }
         return res;
     }
@@ -686,6 +738,7 @@ public class Utilities
                     }
                 }
                 break;
+            case Token.DATE: //in this case, date is the same as string
             case Token.BOOLEAN: // in this case, bool is the same as string
             case Token.STRING:
                 for (ResultValue element : list.array)
@@ -698,15 +751,11 @@ public class Utilities
                         break;
                     }
                 break;
-            case Token.DATE:
-                break;
             default:
-                parser.error("ERROR: UNKNOWN TYPE %s", item.type);
+                parser.error("ERROR: UNKNOWN TYPE '%d' ONLY TYPES 2-6 ARE ALLOWED", item.type);
         }
         return res;
     }
-
-
 
     /**
      *
@@ -758,6 +807,7 @@ public class Utilities
                     }
                 }
                 break;
+            case Token.DATE:    // in this case, date is the same as string
             case Token.BOOLEAN: // in this case, bool is the same as string
             case Token.STRING:
                 for (ResultValue element : list.array)
@@ -770,10 +820,8 @@ public class Utilities
                         break;
                     }
                 break;
-            case Token.DATE:
-                break;
             default:
-                parser.error("ERROR: UNKNOWN TYPE %s", item.type);
+                parser.error("ERROR: UNKNOWN TYPE '%d' ONLY TYPES 2-6 ARE ALLOWED", item.type);
         }
 
         return res;
@@ -889,7 +937,7 @@ public class Utilities
         else if (value.value.equals("F"))
             return "F";
         else
-            parser.error("ERROR: CANNOT COERCE %s AS BOOL", value.value);
+            parser.error("ERROR: CANNOT COERCE '%s' AS BOOL", value.value);
 
         return null;
     }
@@ -917,7 +965,7 @@ public class Utilities
         {
             // Do nothing
         }
-        parser.error("ERROR: CANNOT COERCE %s AS FLOAT", value.value);
+        parser.error("ERROR: CANNOT COERCE '%s' AS FLOAT", value.value);
 
         return null;
     }
@@ -956,7 +1004,7 @@ public class Utilities
             // Do nothing
         }
 
-        parser.error("ERROR: CANNOT COERCE %s AS INT", value.value);
+        parser.error("ERROR: CANNOT COERCE '%s' AS INT", value.value);
         return null;
     }
 
@@ -972,7 +1020,7 @@ public class Utilities
      */
     public static String toDate(Parser parser, ResultValue value) throws Exception
     {
-        if (value.value.matches("[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]") && validDate(parser, value))
+        if (value.value.matches("^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$") && validDate(parser, value))
             return value.value;
         else
             parser.error("ERROR: CANNOT COERCE %s AS DATE", value.value);
@@ -1109,11 +1157,11 @@ public class Utilities
      */
     public static int dateAge(Parser parser, ResultValue date1, ResultValue date2) throws Exception
     {
-        //parse through getting year, month, and day
+        //parse through first getting year, month, and day
         int iYear = Integer.parseInt(date1.value.substring(0, 4));
         int iMonth = Integer.parseInt(date1.value.substring(5, 7));
         int iDay = Integer.parseInt(date1.value.substring(8));
-        //parse through getting year, month, and day
+        //parse through second getting year, month, and day
         int iYear2 = Integer.parseInt(date2.value.substring(0, 4));
         int iMonth2 = Integer.parseInt(date2.value.substring(5, 7));
         int iDay2 = Integer.parseInt(date2.value.substring(8));
@@ -1135,9 +1183,10 @@ public class Utilities
                 //check if negative
                 if (iDiff < 0)
                     iDiff++;
-                //postive
+                //positive
                 else
                     iDiff--;
+        //months is before, so change
         else if (iMonth2 < iMonth)
             iDiff--;
 
@@ -1217,6 +1266,7 @@ public class Utilities
     public static int DateToJulian(ResultValue date)
     {
         int iCountDays;
+        //parse through to get values
         int iYear = Integer.parseInt(date.value.substring(0, 4));
         int iMonth = Integer.parseInt(date.value.substring(5, 7));
         int iDay = Integer.parseInt(date.value.substring(8));

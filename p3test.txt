@@ -1,6 +1,11 @@
-Date Jade = "2016-01-09";
-print(Jade);
-dateDiff(Jade, "2016-08-09");
+Date Jade = "2016-11-06";
+Date Bridget = "2016-11-12";
+if Jade >= Bridget:
+    print("Wrong");
+else:
+    print("Correct");
+//this doesn't blow it up even though it needs "endif;"
+//dateDiff(Jade, "2016-08-09");
 String first = "tacobell";
 String second = "GOODBYE";
 Int Kris[2] = 0,1;
