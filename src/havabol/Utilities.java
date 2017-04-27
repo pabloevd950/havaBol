@@ -1157,6 +1157,7 @@ public class Utilities
      */
     public static ResultValue dateAge(Parser parser, ResultValue date1, ResultValue date2) throws Exception
     {
+
         //parse through first getting year, month, and day
         int iYear = Integer.parseInt(date1.value.substring(0, 4));
         int iMonth = Integer.parseInt(date1.value.substring(5, 7));
@@ -1176,19 +1177,34 @@ public class Utilities
         if (validDate(parser, date2) != true)
             parser.error("ERROR: '%s' IS AN INVALID DATE FORMAT ", date2.value);
 
-        //check if months are equal
-        if (iMonth2 == iMonth)
-            //check if second day is less than
-            if (iDay2 < iDay)
-                //check if negative
-                if (iDiff < 0)
+        //first date is earlier
+        if (date1.value.compareTo(date2.value) < 0 )
+        {
+            //check if months are equal
+            if (iMonth2 == iMonth)
+                //check if second day is less than
+                if (iDay2 < iDay)
                     iDiff++;
-                //positive
-                else
+            //months is before, so change
+            else if (iMonth2 < iMonth)
+                iDiff++;
+        }
+        //first date is later
+        else if (date1.value.compareTo(date2.value) > 0 )
+        {
+            //check if months are equal
+            if (iMonth2 == iMonth)
+                //check if second day is less than
+                if (iDay2 > iDay)
                     iDiff--;
-        //months is before, so change
-        else if (iMonth2 < iMonth)
-            iDiff--;
+                    //months is before, so change
+                else if (iMonth2 > iMonth)
+                    iDiff--;
+        }
+        //The same
+        else
+            iDiff = 0;
+
 
         return new ResultValue("" + iDiff, Token.DATE, ResultValue.primitive, ";");
     }
