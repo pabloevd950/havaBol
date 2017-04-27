@@ -5,7 +5,7 @@ import java.util.ArrayList;
 /**
  * Created by pablovalero on 3/3/17.
  */
-public class ResultValue
+public class ResultValue implements Cloneable
 {
     // structure constants for ResultValue
     public static final int primitive = 1;
@@ -77,5 +77,15 @@ public class ResultValue
     public ResultValue()
     {
         this(-1, -1);
+    }
+
+    /**
+     * Clones a ResultValue object
+     * @return a clone of object
+     * @throws CloneNotSupportedException
+     */
+    public ResultValue clone() throws CloneNotSupportedException {
+        ResultValue res = (ResultValue) super.clone();
+        return res;
     }
 }

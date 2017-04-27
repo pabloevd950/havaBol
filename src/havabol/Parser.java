@@ -1438,34 +1438,34 @@ public class Parser
                     switch(type)
                     {
                         case Token.INTEGER:
-                            resExpr = value2;
+                            resExpr = value2.clone();
                             resExpr.value = Utilities.toInteger(this, resExpr);
                             resExpr.type = Token.INTEGER;
                             //set into array of first
                             array1.array.set(i, resExpr);
                             break;
                         case Token.FLOAT:
-                            resExpr = value2;
+                            resExpr = value2.clone();
                             resExpr.value = Utilities.toFloat(this, resExpr);
                             resExpr.type = Token.FLOAT;
                             //set into array of first
                             array1.array.set(i, resExpr);
                             break;
                         case Token.BOOLEAN:
-                            resExpr = value2;
+                            resExpr = value2.clone();
                             resExpr.value = Utilities.toBoolean(this, resExpr);
                             resExpr.type = Token.BOOLEAN;
                             //set into array of first
                             array1.array.set(i, resExpr);
                             break;
                         case Token.STRING:
-                            resExpr = value2;
+                            resExpr = value2.clone();
                             resExpr.type = Token.STRING;
                             //set into array of first
                             array1.array.set(i, resExpr);
                             break;
                         case Token.DATE:
-                            resExpr = value2;
+                            resExpr = value2.clone();
                             resExpr.value = Utilities.toDate(this, resExpr);
                             resExpr.type = Token.DATE;
                             //set into array of first
@@ -1518,7 +1518,7 @@ public class Parser
                     switch(type)
                     {
                         case Token.INTEGER:
-                            resExpr = array2.array.get(i);
+                            resExpr = array2.array.get(i).clone();
                             resExpr.value = Utilities.toInteger(this, resExpr);
                             resExpr.type = Token.INTEGER;
                             /*set into array of first*/
@@ -1526,8 +1526,7 @@ public class Parser
                             if (declared != -1)
                                 array1.array.set(i, resExpr);
                             //unbounded
-                            else
-                            {
+                            else {
                                 //if null, declare
                                 if (array1.array == null)
                                     array1.array = new ArrayList<>();
@@ -1539,7 +1538,7 @@ public class Parser
                             }
                             break;
                         case Token.FLOAT:
-                            resExpr = array2.array.get(i);
+                            resExpr = array2.array.get(i).clone();
                             resExpr.value = Utilities.toFloat(this, resExpr);
                             resExpr.type = Token.FLOAT;
                             /*set into array of first*/
@@ -1560,7 +1559,7 @@ public class Parser
                             }
                             break;
                         case Token.BOOLEAN:
-                            resExpr = array2.array.get(i);
+                            resExpr = array2.array.get(i).clone();
                             resExpr.value = Utilities.toBoolean(this, resExpr);
                             resExpr.type = Token.BOOLEAN;
                             /*set into array of first*/
@@ -1581,7 +1580,7 @@ public class Parser
                             }
                             break;
                         case Token.STRING:
-                            resExpr = array2.array.get(i);
+                            resExpr = array2.array.get(i).clone();
                             resExpr.type = Token.STRING;
                             /*set into array of first*/
                             //if first array is fixed, simply set
@@ -1601,7 +1600,7 @@ public class Parser
                             }
                             break;
                         case Token.DATE:
-                            resExpr = array2.array.get(i);
+                            resExpr = array2.array.get(i).clone();
                             resExpr.value = Utilities.toDate(this, resExpr);
                             resExpr.type = Token.DATE;
                             /*set into array of first*/
@@ -1711,34 +1710,34 @@ public class Parser
                 switch(type)
                 {
                     case Token.INTEGER:
-                        resExpr = value2;
+                        resExpr = value2.clone();
                         resExpr.value = Utilities.toInteger(this, resExpr);
                         resExpr.type = Token.INTEGER;
                         //set into array of first
                         array1.array.set(index, resExpr);
                         break;
                     case Token.FLOAT:
-                        resExpr = value2;
+                        resExpr = value2.clone();
                         resExpr.value = Utilities.toFloat(this, resExpr);
                         resExpr.type = Token.FLOAT;
                         //set into array of first
                         array1.array.set(index, resExpr);
                         break;
                     case Token.BOOLEAN:
-                        resExpr = value2;
+                        resExpr = value2.clone();
                         resExpr.value = Utilities.toBoolean(this, resExpr);
                         resExpr.type = Token.BOOLEAN;
                         //set into array of first
                         array1.array.set(index, resExpr);
                         break;
                     case Token.STRING:
-                        resExpr = value2;
+                        resExpr = value2.clone();
                         resExpr.type = Token.STRING;
                         //set into array of first
                         array1.array.set(index, resExpr);
                         break;
                     case Token.DATE:
-                        resExpr = value2;
+                        resExpr = value2.clone();
                         resExpr.value = Utilities.toDate(this, resExpr);
                         resExpr.type = Token.DATE;
                         //set into array of first
@@ -1750,7 +1749,7 @@ public class Parser
                 //check if debugger is on
                 if(scan.bShowAssign)
                     System.out.println("\t\t...Variable Name: " + variableStr
-                            +" Index: " + index + " Value: " + resExpr.value + " SIZE: " + array1.iPopulatedLen);
+                            +" Index: " + index + " Value: " + resExpr.value);
             }
             //splice
             else if (value2.structure == ResultValue.fixedArray && value2.value.equals("Splice"))
@@ -1772,7 +1771,7 @@ public class Parser
                     switch(type)
                     {
                         case Token.INTEGER:
-                            resExpr = array2.array.get(i);
+                            resExpr = array2.array.get(i).clone();
                             resExpr.value = Utilities.toInteger(this, resExpr);
                             resExpr.type = Token.INTEGER;
                             /*set into array of first*/
@@ -1803,7 +1802,7 @@ public class Parser
                             }
                             break;
                         case Token.FLOAT:
-                            resExpr = array2.array.get(i);
+                            resExpr = array2.array.get(i).clone();
                             resExpr.value = Utilities.toFloat(this, resExpr);
                             resExpr.type = Token.FLOAT;
                             /*set into array of first*/
@@ -1834,7 +1833,7 @@ public class Parser
                             }
                             break;
                         case Token.BOOLEAN:
-                            resExpr = array2.array.get(i);
+                            resExpr = array2.array.get(i).clone();
                             resExpr.value = Utilities.toBoolean(this, resExpr);
                             resExpr.type = Token.BOOLEAN;
                             /*set into array of first*/
@@ -1865,7 +1864,7 @@ public class Parser
                             }
                             break;
                         case Token.STRING:
-                            resExpr = array2.array.get(i);
+                            resExpr = array2.array.get(i).clone();
                             resExpr.type = Token.STRING;
                             /*set into array of first*/
                             //if first array is fixed, simply set
@@ -1895,7 +1894,7 @@ public class Parser
                             }
                             break;
                         case Token.DATE:
-                            resExpr = array2.array.get(i);
+                            resExpr = array2.array.get(i).clone();
                             resExpr.value = Utilities.toDate(this, resExpr);
                             resExpr.type = Token.DATE;
                             /*set into array of first*/
@@ -2754,6 +2753,7 @@ public class Parser
 
                         for (ResultValue elem : arrayList)
                         {
+//                            System.out.println("INfor value: " + elem.value);
                             if (elem == null)
                                 continue;
 
@@ -3125,7 +3125,7 @@ public class Parser
 
                 if (array == null)
                     error("ERROR: UNDECLARED ARRAY '%s' PASSED TO ELEM()", scan.currentToken.tokenStr);
-                else if (array.structure != ResultValue.fixedArray)
+                else if (array.structure < ResultValue.fixedArray)
                     error("ERROR: ELEM CAN ONLY OPERATE ON ARRAYS, PASSED '%s'", scan.currentToken.tokenStr);
 
                 value = "" + array.iPopulatedLen;
@@ -3415,7 +3415,7 @@ public class Parser
                         error("ERROR: CANNOT REFERENCE AN INDEX GREATER THAN OR EQUAL TO '%d' FOR ARRAY" +
                                 " '%s'", firstArrValue.iDeclaredLen, firstArrValue.value);
                     //unbounded uninitialized
-                    else if (firstArrValue.iDeclaredLen == -1 && iIndex >= firstArrValue.iPopulatedLen)
+                    else if (firstArrValue.iDeclaredLen == -1 && firstArrValue.array.get(iIndex) == null)
                         error("ERROR: INDEX '%d' IS UNINITIALIZED FOR ARRAY" +
                                 " '%s'", iIndex, firstArrValue.value);
                     //fixed and unbounded uninitialized
