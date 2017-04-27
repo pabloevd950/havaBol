@@ -1223,7 +1223,7 @@ public class Utilities
         //create calender
         Calendar calendar = new GregorianCalendar(iYear,iMonth-1,iDay);
         //add days
-        calendar.add(Calendar.MONTH, days);
+        calendar.add(Calendar.DAY_OF_MONTH, days);
 
         return new ResultValue(sdf.format(calendar.getTime()), Token.DATE, ResultValue.primitive, ";");
     }
