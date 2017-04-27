@@ -1383,6 +1383,7 @@ public class Parser
             case Token.DATE:
                 resExpr.value = Utilities.toDate(this, resExpr);
                 resExpr.type = Token.DATE;
+//                System.out.println(Utilities.dateAge(this, resExpr, new ResultValue("2017-04-27", Token.DATE, ResultValue.primitive, ";")).value);
                 break;
             default:
                 error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);

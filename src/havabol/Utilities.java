@@ -1186,20 +1186,21 @@ public class Utilities
                 if (iDay2 < iDay)
                     iDiff++;
             //months is before, so change
-            else if (iMonth2 < iMonth)
+            if (iMonth2 < iMonth)
                 iDiff++;
         }
         //first date is later
         else if (date1.value.compareTo(date2.value) > 0 )
         {
+            System.out.println("Greater 1: " + iMonth + " 2: " + iMonth2);
             //check if months are equal
             if (iMonth2 == iMonth)
                 //check if second day is less than
                 if (iDay2 > iDay)
                     iDiff--;
-                    //months is before, so change
-                else if (iMonth2 > iMonth)
-                    iDiff--;
+            //months is before, so change
+            if (iMonth2 > iMonth)
+                iDiff--;
         }
         //The same
         else
