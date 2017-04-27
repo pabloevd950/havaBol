@@ -49,9 +49,3 @@ else:
 endif;
 
 print("\nyes");
-
-Int one[1];
-Int two[1] = 1;
-one = two;
-print(one[0], one[1]);
-

@@ -1386,10 +1386,6 @@ public class Parser
         if(scan.bShowAssign)
             System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
 
-        //check for ';', should have been handled by expression already
-        if (!scan.nextToken.tokenStr.equals(";"))
-            error("ERROR: MISSING ';'");
-
         return resExpr;
     }
 
