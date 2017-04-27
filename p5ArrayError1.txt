@@ -1,0 +1,6 @@
+print("p5ArrayError1.txt");
+print("Try to declare an array of length that was not defined, this also handles if wrong keyword for unbound is used");
+if 1==2:
+    Int notdefined = 10;
+endif;
+Int x[notdefined];

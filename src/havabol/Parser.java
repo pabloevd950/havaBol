@@ -316,6 +316,9 @@ public class Parser
                         else
                             error("ERROR:UNEXPECTED SYMBOL %s, EXPECTED EITHER ';' OR '='", scan.nextToken.tokenStr);
                     }
+                    if (scan.nextToken.subClassif == Token.IDENTIFIER)
+                        if (storageManager.getEntry(scan.nextToken.tokenStr) == null)
+                            error("ERROR: '%s' IS NOT DEFINED", scan.nextToken.tokenStr);
                     //do expression to find declared length of fixed array
                     int length = Integer.parseInt(Utilities.toInteger(this, expression(false)));
 
@@ -554,14 +557,19 @@ public class Parser
         ArrayList<ResultValue> expressionVals = new ArrayList<>();
         //will act as iPopulated
         int iAmt = 1;
+        int count = 1;
         Token equal = scan.currentToken;
 
         if(bExec)
         {
             // loop using expression, until ';' is found
-            while (!resExpr.terminatingStr.equals(";") && !scan.currentToken.tokenStr.equals(";")) {
+            while (!resExpr.terminatingStr.equals(";") && !scan.nextToken.tokenStr.equals(";"))
+            {
+                if (scan.nextToken.primClassif == Token.EOF)
+                    System.out.println("Fuck me");
                 // evaluate expression to receive values for array list
                 resExpr = expression(false);
+//                System.out.println(resExpr.value);
                 //if the thing to be used to assign is an array
                 if (resExpr.structure == ResultValue.fixedArray || resExpr.structure == ResultValue.unboundedArray)
                 {
@@ -616,8 +624,12 @@ public class Parser
 
                 }
             }
+            scan.currentToken.printToken();
+            scan.nextToken.printToken();
             // missing terminator
-            if (!scan.currentToken.tokenStr.equals(";"))
+            if (!scan.currentToken.tokenStr.equals(";") && scan.currentToken.primClassif != Token.OPERAND)
+                error("ERROR: EXPECTED ';', BUT FOUND '%s'", scan.currentToken.tokenStr);
+            if (scan.currentToken.primClassif == Token.OPERAND && !scan.nextToken.tokenStr.equals(";") )
                 error("ERROR: EXPECTED ';', BUT FOUND '%s'", scan.currentToken.tokenStr);
             //change declare size if original length was not given i.e arr[] = 1, 2, 3;
             if (declared != -1 && expressionVals.size() > declared)
@@ -2576,10 +2588,8 @@ public class Parser
                 }
 
                 // make sure we ended on a 'endwhile' token
-                if (!resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";")) {
-                    System.out.println("TERMINATE: " +resCond.terminatingStr);
+                if (!resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";"))
                     error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
-                }
 
                 // reset while loop token
                 scan.setTo(whileToken);
@@ -2753,7 +2763,6 @@ public class Parser
 
                         for (ResultValue elem : arrayList)
                         {
-//                            System.out.println("INfor value: " + elem.value);
                             if (elem == null)
                                 continue;
 

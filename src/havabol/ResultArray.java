@@ -5,7 +5,7 @@ import java.util.ArrayList;
 /**
  * Created by cyr471 on 4/10/17.
  */
-public class ResultArray extends ResultValue
+public class ResultArray extends ResultValue implements Cloneable
 {
     ArrayList<ResultValue> array;
     int iPopulatedLen=0, iDeclaredLen=-1, iNegSub=0, type;
@@ -37,5 +37,10 @@ public class ResultArray extends ResultValue
         this.array = array;
         this.type = type;
 
+    }
+
+    public ResultArray clone() throws CloneNotSupportedException {
+        ResultArray res = (ResultArray) super.clone();
+        return res;
     }
 }
