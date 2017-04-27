@@ -1,6 +1,14 @@
-Date Jade = "2016-11-06";
+Int z = 5;
+z += 1;
+z -= 1;
+print(z);
+while z != 1:
+    z -= 1;
+    print(z);
+endwhile;
+Date Pablo = "1995-05-06";
 Date Bridget = "2016-11-12";
-if Jade >= Bridget:
+if Pablo >= Bridget:
     print("Wrong");
 else:
     print("Correct");
@@ -47,3 +55,10 @@ print(abc);
 Int z = 5;
 print(x, y, "hi", 1 < -(-5), iCM[1+LENGTH("4")] + 20 # "hi", "**", LENGTH("sex" # "hi") > 4  , y + -5, LENGTH("sex"), iCM[5]);
 Int z = 5;
+z += 1;
+z -= 1;
+print(z);
+while z != 1:
+    z -= 1;
+    print(z);
+endwhile;

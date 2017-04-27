@@ -27,7 +27,6 @@ public class HavaBol
         // Create the SymbolTable and storage manager
         SymbolTable symbolTable = new SymbolTable();
         StorageManager storageManager = new StorageManager();
-
         try
         {
             // create scanner and parser objects

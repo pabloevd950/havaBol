@@ -838,15 +838,6 @@ public class Parser
                     skipTo(scan.currentToken.tokenStr, ";");
                 break;
             // see parsing part 2
-            /**
-             * PABLO
-             * YOURE
-             * NOT
-             * HANDLING
-             * ARRAYS
-             * AND
-             * SHIT
-             */
             case "+=":
                 //execute
                 if (bExec)
@@ -860,6 +851,7 @@ public class Parser
                             if (bIndex == false)
                             {
                                 ResultValue resPlus = Utilities.add(this, res, expression(false));
+
                                 res1 = assign(variableStr, resPlus, leftType);
 
                                 // TEMP
@@ -1383,7 +1375,6 @@ public class Parser
             case Token.DATE:
                 resExpr.value = Utilities.toDate(this, resExpr);
                 resExpr.type = Token.DATE;
-//                System.out.println(Utilities.dateAge(this, resExpr, new ResultValue("2017-04-27", Token.DATE, ResultValue.primitive, ";")).value);
                 break;
             default:
                 error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
@@ -1394,6 +1385,10 @@ public class Parser
         // check for debug on
         if(scan.bShowAssign)
             System.out.println("\t\t...Variable Name: " + variableStr + " Value: " + resExpr.value);
+
+        //check for ';', should have been handled by expression already
+        if (!scan.nextToken.tokenStr.equals(";"))
+            error("ERROR: MISSING ';'");
 
         return resExpr;
     }
@@ -2586,8 +2581,10 @@ public class Parser
                 }
 
                 // make sure we ended on a 'endwhile' token
-                if (! resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";"))
+                if (!resCond.terminatingStr.equals("endwhile") || !scan.nextToken.tokenStr.equals(";")) {
+                    System.out.println("TERMINATE: " +resCond.terminatingStr);
                     error("ERROR: EXPECTED 'endwhile;' FOR 'while' EXPRESSION");
+                }
 
                 // reset while loop token
                 scan.setTo(whileToken);

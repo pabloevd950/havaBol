@@ -63,7 +63,7 @@ public class ResultValue
      */
     public ResultValue(String value, int type)
     {
-        this(value, type, primitive, "");
+        this(value, type, primitive, ";");
 //        this.value = value;
 //        this.type = type;
     }
