@@ -30,7 +30,7 @@ print(first);
 Int x = (5) - (-5);
 Int y = LENGTH(5+5) + 5;
 //print(-(5) * 2 + -(2  - -3));
-LENGTH("SEX");
+LENGTH("MOM");
 Int iCM[10] = 10, 20, 30, 40, 50, LENGTH(60+3);
 String sA = "Pike";
 String str = "goodbye";

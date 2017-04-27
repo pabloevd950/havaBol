@@ -2847,7 +2847,13 @@ public class Parser
                         error("ERROR: EXPECTED VARIABLE BUT FOUND %s", scan.nextToken.tokenStr);
 
                     // save string value to iter on
-                    string = expression(false).value;
+                    resCond = expression(false);
+
+                    // make sure that our value can coerce to a string
+                    if (resCond.structure != ResultValue.primitive)
+                        error("ERROR: INCOMPATIBLE TYPE FOR 'FOR TOKENIZER'");
+
+                    string = resCond.value;
 
                     if ( !scan.getNext().equals("by") )
                         // make sure we have our delimiter
