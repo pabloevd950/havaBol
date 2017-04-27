@@ -2016,9 +2016,9 @@ public class Parser
         ResultValue firstResValue, secondResValue, res;       // Result value for operands and final result
         Boolean bFound;                                       // Boolean to determine if we found left paren
         Boolean bCategory = false;                            // Boolean to check proper infix notation
-
         if(scan.nextToken.tokenStr.equals(";"))
-            error("ERROR: EXPRECTED OPERAND FOR ASSIGNMENT");
+            error("ERROR: EXPECTED OPERAND FOR ASSIGNMENT");
+
         //If we are calling from a function like print, or built in skip name.
         if(scan.currentToken.primClassif == Token.FUNCTION && scan.currentToken.tokenStr.equals("print"))
             scan.getNext();
@@ -2043,7 +2043,7 @@ public class Parser
                 case Token.OPERAND:
                     if(bCategory == true)
                         // we encountered an unexpected operand, looking for an operator
-                        error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR."
+                        error("ERROR: UNEXPECTED OPERAND '%s', EXPECTED OPERATOR OR TERMINATING STRING."
                                                             , scan.currentToken.tokenStr);
 
                     // get result value of operand and push to stack
@@ -2077,10 +2077,6 @@ public class Parser
                                 ResultArray tempList = new ResultArray(temp,type);
                                 outPutStack.push(tempList);
                                 scan.getNext();
-                            }
-                            else
-                            {
-
                             }
                             break;
                         case "notin":
@@ -2164,7 +2160,10 @@ public class Parser
                                 , scan.currentToken.tokenStr);
                     // call function to get result value
                     stack.push(scan.currentToken);
-                    scan.getNext();
+                    if(scan.nextToken.tokenStr.equals("("))
+                        scan.getNext();
+                    else
+                        error("ERROR: FUNCTION '%s' REQUIRES OPENING '(' ", scan.currentToken.tokenStr);
                     break;
 
                 // handle separators
@@ -2196,6 +2195,7 @@ public class Parser
                                     {
                                         ResultValue temp = (ResultValue) outPutStack.pop();
                                         outPutStack.push(builtInFuncs(poppedOperator, temp));
+                                        scan.currentToken.printToken();
                                     }
                                     // not in a function and left paren found, leave while loop
                                     break;
@@ -2218,8 +2218,10 @@ public class Parser
                             }
 
                             if ((bFound == false))
+                            {
                                 // left paren was not encountered
-                                error("ERROR: EXPECTED LEFT PARENTHESIS");
+                                error("ERROR: EXPECTED LEFT PARENTHESIS ");
+                            }
 
                             break;
                     }
@@ -2229,6 +2231,8 @@ public class Parser
             scan.getNext();
         }
 
+        if(scan.currentToken.subClassif == Token.DECLARE)
+            error("ERROR: EXPECTED TERMINATING STRING FOR EXPRESSION");
         // this should get the last result value
         while(!stack.empty())
         {
@@ -2246,19 +2250,18 @@ public class Parser
                                                                     , poppedOperator.tokenStr));
             else
             {   // evaluate normally
-              //The error shows up here because of the catch. But it is in IN in utitites.
-                try
-                {
-                    ResultValue resvalue = (ResultValue) outPutStack.pop();
-                    ResultValue res2value = (ResultValue) outPutStack.pop();
-                    outPutStack.push(evaluate(res2value, resvalue, poppedOperator.tokenStr));
-                }
-                catch (Exception e)
-                {
-                    error("ERROR: INCORRECT PARAMETERS");
-                }
+                //Catch missing clsoing paren for func call
+                if(poppedOperator.primClassif == Token.FUNCTION)
+                    error("ERROR: FUNCTION '%s' MISSING CLOSING ')'", poppedOperator.tokenStr);
+                ResultValue resvalue = (ResultValue) outPutStack.pop();
+                //Check for missing operand.
+                if(outPutStack.isEmpty())
+                    error("ERROR: EXPECTED OPERAND");
+                ResultValue res2value = (ResultValue) outPutStack.pop();
+                outPutStack.push(evaluate(res2value, resvalue, poppedOperator.tokenStr));
             }
         }
+
         // final value
         res = (ResultValue) outPutStack.pop();
 
@@ -3346,8 +3349,12 @@ public class Parser
         //Array and string handling
         if(scan.nextToken.tokenStr.equals("["))
         {   //Dealing with an array or string
+            //Check if it is actually array or string
+            if(firstResValue.structure == ResultValue.primitive  && firstResValue.type!= Token.STRING)
+            {
+                error("ERROR: THIS TYPE CANNOT BE INDEXED");
+            }
             //Get object from storage manager
-            int first, second;
             ResultValue arrayOrStr = storageManager.getEntry(scan.currentToken.tokenStr);
             if(arrayOrStr == null)
                 error("ERROR: '%s' WAS NEVER INITIALIZED", scan.currentToken.tokenStr);
@@ -3366,7 +3373,18 @@ public class Parser
                 if(scan.nextToken.tokenStr.equals("]"))
                     index2 = new ResultValue("-1", 1);
                 else
+                {
                     index2 = expression(false);
+                    if(Integer.valueOf(index2.value) < 0)
+                        error("ERROR: SLICE PARAMATER CANNOT BE LESS THAT -1");
+                }
+
+            }
+            //Check if slice range is valid. Second operand must be larger than first
+            if(index2 != null)
+            {
+                if(Integer.valueOf(index.value) > Integer.valueOf(index2.value))
+                    error("ERROR: INVALID SLICE RANGE ");
             }
 
             scan.getNext();
@@ -3374,7 +3392,7 @@ public class Parser
             if(arrayOrStr.structure > ResultValue.primitive)
             {
                 if (index2 == null)
-                {
+                {  //Not slice
                     //Get value of index of the array
                     ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
                     int iIndex = (Integer.parseInt(Utilities.toInteger(this, index)));
@@ -3416,9 +3434,15 @@ public class Parser
                     firstResValue = firstArrValue.array.get(iIndex);
                 }
                 else
-                {
+                {   //Slice
+
+                    //Check to see if slice value is positive
+                    if(Integer.valueOf(index.value) < 0)
+                        error("ERROR: SLICE INDEX CANNOT BE NEGATIVE");
+
                     ArrayList<ResultValue> newArray = new ArrayList<>();
                     ResultArray firstArrValue = (ResultArray) storageManager.getEntry(name);
+
                     //maybe copy from above?
                     int indexInt = (Integer.parseInt(Utilities.toInteger(this, index)));
                     int index2Int = (Integer.parseInt(Utilities.toInteger(this, index2)));
@@ -3442,12 +3466,30 @@ public class Parser
                 {
                     firstResValue = storageManager.getEntry(name);
                     String strVal = firstResValue.value;
-                    if (index.value.equals("-1")) index.value = String.valueOf(firstResValue.value.length() - 1);
+                    if (index.value.equals("-1"))
+                        index.value = String.valueOf(firstResValue.value.length() - 1);
+                    else if(Integer.valueOf(index.value) < 0)
+                    {
+                        //check to see if negative subscript is not valid
+                        if ( Integer.valueOf(index.value) < (strVal.length() * -1))
+                            error("ERROR: CANNOT ACCESS INDEX '%d', MAX NEGATIVE SUBSCRIPT IS '%d'"
+                                    , Integer.valueOf(index.value), strVal.length() * -1);
+                        //subscript is in bounds
+                        else
+                        {
+                            index.value = String.valueOf(strVal.length() + Integer.valueOf(index.value));
+                        }
+                    }
+                    if(strVal.length() -1 < Integer.valueOf(index.value))
+                        error("ERROR: INDEX '%d' , OUT OF BOUNDS FOR STRING '%s'"
+                                , Integer.valueOf(index.value), strVal );
                     char newChar = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, index))));
                     firstResValue = new ResultValue(String.valueOf(newChar), 1);
                 }
                 else
                 {
+                    if(Integer.valueOf(index.value) < 0)
+                        error("ERROR: SLICE INDEX CANNOT BE NEGATIVE");
                     firstResValue = storageManager.getEntry(name);
                     String strVal = firstResValue.value;
                     if (index2.value.equals("-1")) index2.value = String.valueOf(firstResValue.value.length());
