@@ -1,5 +1,6 @@
 Date Jade = "2016-01-09";
 print(Jade);
+dateDiff(Jade, "2016-08-09");
 String first = "tacobell";
 String second = "GOODBYE";
 Int Kris[2] = 0,1;

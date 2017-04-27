@@ -79,6 +79,9 @@ public class SymbolTable
         ht.put("SPACES", new STFunction("SPACES", Token.FUNCTION, Token.INTEGER, Token.BUILTIN, VAR_ARGS, parmArgs));
         ht.put("ELEM", new STFunction("ELEM", Token.FUNCTION, Token.INTEGER, Token.BUILTIN, VAR_ARGS, parmArgs));
         ht.put("MAXELEM", new STFunction("MAXELEM", Token.FUNCTION, Token.INTEGER, Token.BUILTIN, VAR_ARGS, parmArgs));
+        ht.put("dateDiff", new STFunction("dateDiff", Token.FUNCTION, Token.INTEGER, Token.BUILTIN, VAR_ARGS, parmArgs));
+        ht.put("dateAdj", new STFunction("dateAdj", Token.FUNCTION, Token.INTEGER, Token.BUILTIN, VAR_ARGS, parmArgs));
+        ht.put("dateAge", new STFunction("dateAge", Token.FUNCTION, Token.INTEGER, Token.BUILTIN, VAR_ARGS, parmArgs));
         ht.put("and", new STEntry("and", Token.OPERATOR));
         ht.put("or", new STEntry("or", Token.OPERATOR));
         ht.put("not", new STEntry("not", Token.OPERATOR));

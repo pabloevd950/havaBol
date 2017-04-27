@@ -1384,7 +1384,6 @@ public class Parser
             case Token.DATE:
                 resExpr.value = Utilities.toDate(this, resExpr);
                 resExpr.type = Token.DATE;
-                System.out.println(Utilities.DateToJulian(resExpr));
                 break;
             default:
                 error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
@@ -3167,6 +3166,22 @@ public class Parser
 
 
         }
+        else if (functionName.tokenStr.equals("dateDiff"))
+        {
+
+            // get value of parameter
+            try
+            {
+//                String date2 = expression(false).value;
+                System.out.println("Hey");
+            }
+            catch(Exception e)
+            {
+                error("INCORRECT PARAMETER FOR MAXELEM");
+            }
+
+
+        }
         return new ResultValue(value, type, ResultValue.primitive, scan.currentToken.tokenStr);
     }
 
@@ -3251,6 +3266,21 @@ public class Parser
                     value = res.value;
                 }
                 else if (scan.currentToken.tokenStr.equals("MAXELEM"))
+                {
+                    value = expression(false).value;
+                    type = Token.INTEGER;
+                }
+                else if (scan.currentToken.tokenStr.equals("dateDiff"))
+                {
+                    value = expression(false).value;
+                    type = Token.INTEGER;
+                }
+                else if (scan.currentToken.tokenStr.equals("dateAdj"))
+                {
+                    value = expression(false).value;
+                    type = Token.INTEGER;
+                }
+                else if (scan.currentToken.tokenStr.equals("dateAge"))
                 {
                     value = expression(false).value;
                     type = Token.INTEGER;

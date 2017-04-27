@@ -2,6 +2,9 @@ package havabol;
 
 
 import java.lang.reflect.Array;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 /* Utilities class that will handle all basic operations for the havabol programming language.
  * This class will deal with ResultValue objects and return every value as a string representation.
@@ -1106,8 +1109,16 @@ public class Utilities
      */
     public static int dateAge(Parser parser, ResultValue date1, ResultValue date2) throws Exception
     {
-        int iJulian1;
-        int iJulian2;
+        //parse through getting year, month, and day
+        int iYear = Integer.parseInt(date1.value.substring(0, 4));
+        int iMonth = Integer.parseInt(date1.value.substring(5, 7));
+        int iDay = Integer.parseInt(date1.value.substring(8));
+        //parse through getting year, month, and day
+        int iYear2 = Integer.parseInt(date2.value.substring(0, 4));
+        int iMonth2 = Integer.parseInt(date2.value.substring(5, 7));
+        int iDay2 = Integer.parseInt(date2.value.substring(8));
+        //return value
+        int iDiff = iYear - iYear2;
 
         //validate date
         if (validDate(parser, date1) != true)
@@ -1117,10 +1128,20 @@ public class Utilities
         if (validDate(parser, date2) != true)
             parser.error("ERROR: '%s' IS AN INVALID DATE FORMAT ", date2.value);
 
-        iJulian1 = DateToJulian(date1);
-        iJulian2 = DateToJulian(date2);
+        //check if months are equal
+        if (iMonth2 == iMonth)
+            //check if second day is less than
+            if (iDay2 < iDay)
+                //check if negative
+                if (iDiff < 0)
+                    iDiff++;
+                //postive
+                else
+                    iDiff--;
+        else if (iMonth2 < iMonth)
+            iDiff--;
 
-        return iJulian1 - iJulian2/365;
+        return iDiff;
     }
 
     /**
@@ -1132,23 +1153,30 @@ public class Utilities
      * for 0000-03-01. Using March 1st eliminates some leap day issues.
      * 3. Return the difference in Date format
      * @param parser the parser object useful for errors
-     * @param date1 The first date/operand
+     * @param date The first date/operand
      * @param days The amount of dates to adjust
      * @return an int that represents the days between them
      * @throws Exception general exception
      */
-    public static int dateAdj(Parser parser, ResultValue date1, int days) throws Exception
+    public static ResultValue dateAdj(Parser parser, ResultValue date, int days) throws Exception
     {
-        int iJulian1;
-
         //validate date
-        if (validDate(parser, date1) != true)
-            parser.error("ERROR: '%s' IS AN INVALID DATE FORMAT ", date1.value);
+        if (validDate(parser, date) != true)
+            parser.error("ERROR: '%s' IS AN INVALID DATE FORMAT ", date.value);
 
+        //parse through getting year, month, and day
+        int iYear = Integer.parseInt(date.value.substring(0, 4));
+        int iMonth = Integer.parseInt(date.value.substring(5, 7));
+        int iDay = Integer.parseInt(date.value.substring(8));
 
-        iJulian1 = DateToJulian(date1);
+        //define format
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        //create calender
+        Calendar calendar = new GregorianCalendar(iYear,iMonth-1,iDay);
+        //add days
+        calendar.add(Calendar.MONTH, days);
 
-        return iJulian1 - days;
+        return new ResultValue(sdf.format(calendar.getTime()), Token.DATE, ResultValue.primitive, ";");
     }
 
     /**
