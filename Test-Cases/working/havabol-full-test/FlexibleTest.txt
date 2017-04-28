@@ -1,7 +1,7 @@
 //Hello, welcome to a comprehensive, functional test of HavaBol
 //If you would like to see how anything else works, simply change the conditional
 //print("Uh oh");
-print("FixedArraysWithIfs.txt");
+print("FlexibleTest.txt");
 Int x = 10;
 if x == 10:
     Int array1[] = 10,20,30*2, 40/4, 50.0, "60";
