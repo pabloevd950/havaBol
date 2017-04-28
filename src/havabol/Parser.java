@@ -2118,7 +2118,7 @@ public class Parser
                             break;
                         case "not":
                             if(scan.nextToken.primClassif == Token.OPERAND
-                                    || scan.nextToken.equals("(")
+                                    || scan.nextToken.tokenStr.equals("(")
                                     || scan.nextToken.primClassif == Token.FUNCTION)
                                 stack.push(scan.currentToken);
                             break;
