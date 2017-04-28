@@ -2045,6 +2045,8 @@ public class Parser
            || scan.currentToken.primClassif == Token.FUNCTION   // check for functions
            || "()".contains(scan.currentToken.tokenStr))        // check if its separator
         {
+            if(scan.currentToken.primClassif == Token.EOF)
+                error("ERROR: MISSING SEPARATOR");
 
             //DELETE THIS
             //System.out.println(scan.currentToken.tokenStr + " Token in Expression WHILE  " + count++);
@@ -2262,7 +2264,7 @@ public class Parser
         }
 
         if(scan.currentToken.subClassif == Token.DECLARE)
-            error("ERROR: MISSING TERMINATOR");
+            error("ERROR: MISSING SEPARATOR");
         // this should get the last result value
         while(!stack.empty())
         {
@@ -3289,7 +3291,7 @@ public class Parser
 
                         //Make token at next expression call is terminator
                         if(scan.currentToken.primClassif != Token.SEPARATOR)
-                            error("ERROR: MISSING TERMINATING STRING");
+                            error("ERROR: MISSING SEPARATOR");
                     }
 
                     // print out the line
