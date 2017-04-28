@@ -1704,10 +1704,9 @@ public class Parser
         int iLen = 0;
 
         //this is for operands aka variables and constants
-        if (scan.nextToken.primClassif == Token.SEPARATOR)
-        {
+        if (scan.nextToken.primClassif == Token.SEPARATOR) {
             //this is the array that we need to act on
-            ResultArray array1 = (ResultArray)storageManager.getEntry(variableStr);
+            ResultArray array1 = (ResultArray) storageManager.getEntry(variableStr);
             //this is the value that we need to use to assign to index
             //if it is a variable, it should return its value, else will return value of expression
             ResultValue value2 = indexVal; //expression(false);
@@ -1715,19 +1714,17 @@ public class Parser
             if (!scan.nextToken.tokenStr.equals(";"))
                 error("ERROR: MISSING ';' TERMINATOR");
 
-            if ( array1 == null)
+            if (array1 == null)
                 // make sure item has been defined
                 error("ERROR: VARIABLE '%s' IS NOT DEFINED IN THE SCOPE", variableStr);
-            if ( value2 == null)
+            if (value2 == null)
                 // make sure item has been defined
                 error("ERROR: OPERAND '%s' IS NOT DEFINED IN THE SCOPE", scan.nextToken.tokenStr);
 
             //if it's a variable
-            if (value2.structure == ResultValue.primitive)
-            {
+            if (value2.structure == ResultValue.primitive) {
                 //switch based on the array data type
-                switch(type)
-                {
+                switch (type) {
                     case Token.INTEGER:
                         resExpr = value2.clone();
                         resExpr.value = Utilities.toInteger(this, resExpr);
@@ -1766,16 +1763,15 @@ public class Parser
                         error("ERROR: ASSIGN TYPE '%s' IS NOT A RECOGNIZED TYPE", variableStr);
                 }
                 //check if debugger is on
-                if(scan.bShowAssign)
+                if (scan.bShowAssign)
                     System.out.println("\t\t...Variable Name: " + variableStr
-                            +" Index: " + index + " Value: " + resExpr.value);
+                            + " Index: " + index + " Value: " + resExpr.value);
             }
             //splice
-            else if (value2.structure == ResultValue.fixedArray && value2.value.equals("Splice"))
-            {
+            else if (value2.structure == ResultValue.fixedArray && value2.value.equals("Splice")) {
                 int len = 1;
                 //typecast into result array
-                ResultArray array2 = (ResultArray)value2;
+                ResultArray array2 = (ResultArray) value2;
                 //iFirst is declared length of first, iSecond is how much to change
                 int iFirst = array1.iDeclaredLen, iSecond = array2.iPopulatedLen;
 
@@ -1784,11 +1780,9 @@ public class Parser
                 if (array1.iDeclaredLen != -1 && iFirst < iSecond)
                     iSecond = iFirst;
                 //loop from 0 to amount to populate
-                for(int i=0; i < iSecond;i++)
-                {
+                for (int i = 0; i < iSecond; i++) {
                     //switch based on data type
-                    switch(type)
-                    {
+                    switch (type) {
                         case Token.INTEGER:
                             resExpr = array2.array.get(i).clone();
                             resExpr.value = Utilities.toInteger(this, resExpr);
@@ -1799,12 +1793,11 @@ public class Parser
                                 //if first time, set
                                 if (i == 0)
                                     array1.array.set(index++, resExpr);
-                                //else, add
+                                    //else, add
                                 else
                                     array1.array.add(index++, resExpr);
-                            //unbounded
-                            else
-                            {
+                                //unbounded
+                            else {
                                 //if null, declare
                                 if (array1.array == null)
                                     array1.array = new ArrayList<>();
@@ -1830,12 +1823,11 @@ public class Parser
                                 //if first time, set
                                 if (i == 0)
                                     array1.array.set(index++, resExpr);
-                                //else, add
+                                    //else, add
                                 else
                                     array1.array.add(index++, resExpr);
-                            //unbounded
-                            else
-                            {
+                                //unbounded
+                            else {
                                 //if null, declare
                                 if (array1.array == null)
                                     array1.array = new ArrayList<>();
@@ -1846,7 +1838,7 @@ public class Parser
                                 //if first time, set
                                 if (i == 0)
                                     array1.array.set(index++, resExpr);
-                                //else, add
+                                    //else, add
                                 else
                                     array1.array.add(index++, resExpr);
                             }
@@ -1861,12 +1853,11 @@ public class Parser
                                 //if first time, set
                                 if (i == 0)
                                     array1.array.set(index++, resExpr);
-                                //else, add
+                                    //else, add
                                 else
                                     array1.array.add(index++, resExpr);
-                            //unbounded
-                            else
-                            {
+                                //unbounded
+                            else {
                                 //if null, declare
                                 if (array1.array == null)
                                     array1.array = new ArrayList<>();
@@ -1877,7 +1868,7 @@ public class Parser
                                 //if first time, set
                                 if (i == 0)
                                     array1.array.set(index++, resExpr);
-                                //else, add
+                                    //else, add
                                 else
                                     array1.array.add(index++, resExpr);
                             }
@@ -1891,12 +1882,11 @@ public class Parser
                                 //if first time, set
                                 if (i == 0)
                                     array1.array.set(index++, resExpr);
-                                //else, add
+                                    //else, add
                                 else
                                     array1.array.add(index++, resExpr);
-                            //unbounded
-                            else
-                            {
+                                //unbounded
+                            else {
                                 //if null, declare
                                 if (array1.array == null)
                                     array1.array = new ArrayList<>();
@@ -1907,7 +1897,7 @@ public class Parser
                                 //if first time, set
                                 if (i == 0)
                                     array1.array.set(index++, resExpr);
-                                //else, add
+                                    //else, add
                                 else
                                     array1.array.add(index++, resExpr);
                             }
@@ -1926,8 +1916,7 @@ public class Parser
                                 else
                                     array1.array.add(index++, resExpr);
                                 //unbounded
-                            else
-                            {
+                            else {
                                 //if null, declare
                                 if (array1.array == null)
                                     array1.array = new ArrayList<>();
@@ -1949,9 +1938,9 @@ public class Parser
                 }
 
                 //go through the arraylist to count which ones are populated
-                for(ResultValue res : array1.array)
+                for (ResultValue res : array1.array)
                     //if not null, increment length
-                    if(res!=null)
+                    if (res != null)
                         len++;
                 //if next token is not ';', then an error
                 if (!scan.nextToken.tokenStr.equals(";"))
@@ -1965,10 +1954,9 @@ public class Parser
                     resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, len, array1.iDeclaredLen, len);
 
                 //check if debugger is on
-                if(scan.bShowAssign)
-                {
+                if (scan.bShowAssign) {
                     System.out.print("\t\t...Variable Name: " + variableStr + " Values:");
-                    for(ResultValue z : resArray.array)
+                    for (ResultValue z : resArray.array)
                         System.out.print(" " + z.value);
                     System.out.println();
                 }
@@ -1978,30 +1966,33 @@ public class Parser
                 return resArray;
             }
             //trying to set index as array and not splice
-            else
+            else {
+                System.out.println("Val: " + value2.value);
                 error("ERROR: CANNOT ASSIGN STRUCTURE '%d' INTO AN INDEX", value2.structure);
+            }
             //count populated values
-            for(ResultValue res : array1.array)
+            for (ResultValue res : array1.array)
                 //increment length if not null
-                if(res != null)
+                if (res != null)
                     iLen++;
             /*create ResultArray to return*/
             //unbound
             if (array1.iDeclaredLen == -1)
                 resArray = new ResultArray(variableStr, array1.array, type, ResultValue.unboundedArray, iLen
                         , array1.iDeclaredLen, (array1.iDeclaredLen + 1));
-            //fixed
+                //fixed
             else
                 resArray = new ResultArray(variableStr, array1.array, type, ResultValue.fixedArray, iLen
-                        , array1.iDeclaredLen, (array1.iDeclaredLen+1));
+                        , array1.iDeclaredLen, (array1.iDeclaredLen + 1));
             //add into storagemanager
             storageManager.putEntry(variableStr, resArray);
 
             return resArray;
 
-        }
-        else
+        } else {
+            scan.nextToken.printToken();
             error("ERROR: CANNOT ASSIGN '%s' INTO INDEX", scan.nextToken.tokenStr);
+        }
 
         return null;
     }
@@ -2722,19 +2713,19 @@ public class Parser
                                 , ResultValue.primitive, "to"));
 
                     // create int control variable
-                    cv = Integer.parseInt(Utilities.toInteger(this, assignStmt(true)));
+                    cv = Integer.parseInt(assignStmt(true).value);
 
                     // make sure we have the required end variable for our counting for loop
                     if ( !scan.getNext().equals("to") )
                         error("ERROR: EXPECTED END VARIABLE BUT FOUND %s", scan.currentToken.tokenStr);
 
                     // create end variable
-                    ev = Integer.parseInt(Utilities.toInteger(this, expression(false)));
+                    ev = Integer.parseInt(expression(false).value);
 
                     // check if we have an increment variable, default to 1
                     if ( scan.getNext().equals("by"))
                     {
-                        iv = Integer.parseInt(Utilities.toInteger(this, expression(false)));
+                        iv = Integer.parseInt(expression(false).value);
 
                         // advance token to the expected ':'
                         scan.getNext();
@@ -3095,16 +3086,12 @@ public class Parser
             // did we end on default
             if (scan.currentToken.tokenStr.equals("default"))
             {// ended on default, if we haven't already executed, execute otherwise ignore
-                // check for ':'
-                if ( !scan.getNext().equals(":") )
-                    error("ERROR: MISSING SEPARATOR");
-
-                if (exec)
+                if (bExec)
                  // already executed, ignore
-                    resCond = statements(false, "endselect when default");
+                    resCond = statements(false, "endselect");
                 else
                 {// no match found, execute
-                    resCond = statements(true, "endselect when default");
+                    resCond = statements(true, "endselect");
 
                     // did we end on a break or continue?
                     if (resCond.terminatingStr.equals("break")

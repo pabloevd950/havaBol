@@ -80,13 +80,12 @@ for i=0 to ELEM(iDM):
 endfor;
 
 // Assign a value to the entire array
-//print("Scalar assignment to an array");
-//String strM[unbound];
-//strM = "oh yes";
-//if I do for oneStr in strM by ' ':, it yells at me
-//for oneStr in strM:
-//    print("\t", oneStr);
-//endfor;
+print("Scalar assignment to an array");
+String strM;
+strM = "oh yes";
+for oneStr in strM:
+    print("\t", oneStr);
+endfor;
 // Copy the array
 Int iCopyAM[5];
 iCopyAM = iDM;  // copy the values to the array stop when we have filled it.

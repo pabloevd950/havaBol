@@ -1,0 +1,100 @@
+//Hello, welcome to a comprehensive, functional test of HavaBol
+//If you would like to see how anything else works, simply change the conditional
+//print("Uh oh");
+print("FixedArraysWithIfs.txt");
+Int x = 10;
+if x == 10:
+    Int array1[] = 10,20,30*2, 40/4, 50.0, "60";
+endif;
+print("Array1: ", array1[0], array1[1], array1[2]);
+
+for i = 0 to 10 by 2:
+    x -= 1;
+endfor;
+
+print(x);
+
+if x != 10:
+    for elem in array1:
+        while array1[2] != 10:
+            select "Stop":
+                when "Wrong":
+                    if x == 1:
+                        print("No clue.");
+                    else:
+                        print("x in select", x);
+                    endif;
+                when "Stop":
+                    print("Stop it.");
+                    array1[2] = 10;
+                default:
+                    print("Here lie the default");
+            endselect;
+        endwhile;
+    endfor;
+endif;
+
+if SPACES(" "):
+    String array2[unbound] = "T", x, array1[1]^2#3;
+    print("Array2: ", array2[0], array2[1], array2[2]);
+    array2 = array1;
+    print("Array2 after array assignment:");
+    for item in array2:
+        print("\t", item);
+    endfor;
+    Float array5[] = 2.1 + "3", 2 + 3.1, 2.0 + 3.1;
+    for val in array5:
+        print("\t", val);
+    endfor;
+    array2[3] = array5[~2];
+    print("Array2 after slice assignment:");
+    for value in array2:
+        print("\t", value);
+    endfor;
+else:
+    Bool array3 = "T", F, 12 > "3";
+    print("Array3: ", array3[0], array3[1], array3[2]);
+    array3 = T;
+    print("Array3 after scalar assignment: ", array3[0], array3[1], array3[2]);
+endif;
+print("YOU CANNOT LEAVE UNTIL THE LENGTH IS CHANGED!!");
+while LENGTH(array1[0]) == 2:
+    print("Let's do it twice... ;)");
+    if array5[0] == array1[1]:
+        print("Shouldn't do this");
+    else:
+        break;
+    array1[0] = "Not one";
+    endif;
+endwhile;
+
+if LENGTH(array1[0]) == 2:
+    print("WHAT?! HOW?! :(");
+else:
+    print("yeah, I thought so. :P");
+endif;
+for token from "How many times do you think I could do this?" by " ":
+    print(token);
+    if array1[1] == 20:
+        array1[1] = 69;
+        continue;
+    else:
+        break;
+    endif;
+    print("YOU CANT SKIP ME!");
+endfor;
+String alpha[unbound] = "A", "B", "C";
+for char in alpha:
+    if char in {"A", "B", "C"}:
+        if char notin {"X", "Y", "Z"}:
+            print("Correct");
+        endif;
+    endif;
+endfor;
+String grader = "Nice";
+if not grader == "Mean":
+    print("We're gonna get an A!");
+endif;
+print("//Okay, \"done\".\n\tThat's \'about\' everything.//");
+//I'm sure I could have done more.
+//Maybe.

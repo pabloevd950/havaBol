@@ -118,7 +118,7 @@ public class Scanner
 
                 //check for comments
                 if(sourceLineM.get(iSourceLineNr).contains("//")
-                                            && !sourceLineM.get(iSourceLineNr).matches("['\"]//['\"]"))
+                                            && !sourceLineM.get(iSourceLineNr).matches(".*['\"].*//.*['\"].*"))
                 {
                     int index = sourceLineM.get(iSourceLineNr).indexOf("//");
                     if(index == 0)
