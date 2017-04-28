@@ -1,0 +1,7 @@
+print("stringToInt.txt");
+String str = "10";
+Int int = str;
+print(int);
+str = "Bye";
+int = x;
+print(y);

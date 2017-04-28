@@ -1,0 +1,25 @@
+print("assign&coersion.txt");
+
+//Initialize variables
+String str = "bye";
+Int y = 5;
+
+//Print current values
+print("Initial str =", str);
+print("Initial y =", y);
+
+//Set string = to int
+str = y;
+
+print("After 'str = y', str =", str);
+
+y = y # "hi";
+
+print("after 'y = y # hi' y =", y);
+
+y = "BYE";
+
+print("after 'y = BYE', y =", y);
+
+print("y is now", y);
+print("Printing str", str);
