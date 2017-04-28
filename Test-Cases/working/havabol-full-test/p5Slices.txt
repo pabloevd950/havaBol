@@ -3,7 +3,6 @@ Int x[unbound] = 1;
 String wordsArray[10] = "Botfly", "Butterfly", "Belittle", "Moth", "Bee", "Ladybug", "Catship", "Silkworm", "Seahorse";
 
 print("Elements in array words");
-
 //Print out array
 for element in wordsArray:
     print("\t",element);
@@ -40,14 +39,14 @@ print("\nPut these together and get \n\t"
 
 
 
-String str = "HelloGoodbye";
+String greetingStr = "HelloGoodbye";
 String numbers = "01234567891011121314151617181920";
 Int iCM[10] = 10, 20, 30, 40, 50, 60;
 
-String str2 = str[5~9];
+String greetingStr2 = greetingStr[5~9];
 
-print("\nString str =",str);
-print("Printing str[5~9], from str =",str2);
+print("\nString greetingStr =",greetingStr);
+print("Printing greetingStr[5~9]: ",greetingStr2);
 
 Int i = 0;
 
