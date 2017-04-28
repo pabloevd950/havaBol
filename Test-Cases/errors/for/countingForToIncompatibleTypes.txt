@@ -1,0 +1,6 @@
+print("countingForToIncompatibleTypes.txt");
+print("Counting For Loop with will print error about incompatible types");
+
+for i = 0 to "trump" by 3:
+    print(i);
+endfor;

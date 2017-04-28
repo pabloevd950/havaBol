@@ -1,0 +1,7 @@
+print("countingForCVRedeclared.txt");
+print("Counting For Loop with will print error about redeclaring an Int as a String");
+
+for i = 0 to 10 by 3:
+    String i = "trump";
+    print(i);
+endfor;

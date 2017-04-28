@@ -2700,19 +2700,19 @@ public class Parser
                                 , ResultValue.primitive, "to"));
 
                     // create int control variable
-                    cv = Integer.parseInt(assignStmt(true).value);
+                    cv = Integer.parseInt(Utilities.toInteger(this, assignStmt(true)));
 
                     // make sure we have the required end variable for our counting for loop
                     if ( !scan.getNext().equals("to") )
                         error("ERROR: EXPECTED END VARIABLE BUT FOUND %s", scan.currentToken.tokenStr);
 
                     // create end variable
-                    ev = Integer.parseInt(expression(false).value);
+                    ev = Integer.parseInt(Utilities.toInteger(this, expression(false)));
 
                     // check if we have an increment variable, default to 1
                     if ( scan.getNext().equals("by"))
                     {
-                        iv = Integer.parseInt(expression(false).value);
+                        iv = Integer.parseInt(Utilities.toInteger(this, expression(false)));
 
                         // advance token to the expected ':'
                         scan.getNext();
@@ -3072,7 +3072,7 @@ public class Parser
             // did we end on default
             if (scan.currentToken.tokenStr.equals("default"))
             {// ended on default, if we haven't already executed, execute otherwise ignore
-                if (bExec)
+                if (exec)
                  // already executed, ignore
                     resCond = statements(false, "endselect");
                 else

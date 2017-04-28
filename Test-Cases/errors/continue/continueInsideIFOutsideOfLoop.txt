@@ -1,0 +1,6 @@
+print("continueInsideIFOutsideOfLoop");
+print("Continue will be encountered outside of a loop and cause an error");
+
+if T:
+    continue;
+endif;

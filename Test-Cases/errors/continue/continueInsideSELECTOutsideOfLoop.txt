@@ -1,0 +1,11 @@
+print("continueInsideSELECTOutsideOfLoop");
+print("Continue will be encountered outside of a statement and cause an error");
+
+select "trump":
+    when "berto", "kris", "pablo":
+        print("wrong");
+    when "trump":
+        continue;
+    default:
+        print("wrong");
+endselect;

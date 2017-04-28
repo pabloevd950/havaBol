@@ -1,0 +1,6 @@
+print("countingForCVIncompatibleTypes.txt");
+print("Counting For Loop with will print error about incompatible types");
+
+for i = "trump" to 10 by 3:
+    print(i);
+endfor;

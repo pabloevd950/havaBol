@@ -1,0 +1,6 @@
+print("breakInsideIFOutsideOfLoop");
+print("Break will be encountered outside of a statement and cause an error");
+
+if T:
+    break;
+endif;

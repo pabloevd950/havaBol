@@ -1,0 +1,4 @@
+print("continueOutsideOfStatement");
+print("Continue will be encountered outside of a statement and cause an error");
+
+break;
