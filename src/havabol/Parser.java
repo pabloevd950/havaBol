@@ -227,6 +227,7 @@ public class Parser
             error("ERROR: '%s' IS ALREADY DEFINED", scan.currentToken.tokenStr);
 
 
+
         if (bExec)
         {// we are executing, not ignoring
             // save token to skip to in arrays for assignment
