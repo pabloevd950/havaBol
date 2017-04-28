@@ -1,0 +1,2 @@
+print("ArrayWithoutLeftBracket.txt");
+Int x] = 1;

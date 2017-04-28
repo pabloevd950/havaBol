@@ -1,0 +1,4 @@
+print("ArrayWithUnCoerceableSize.txt");
+print("This tests not only coerceable length, but also identifiers");
+Bool length = "12" > 3+12#0;
+Int arr[length] = 10, 20, 30;

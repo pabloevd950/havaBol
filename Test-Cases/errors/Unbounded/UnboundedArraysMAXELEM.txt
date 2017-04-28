@@ -1,0 +1,3 @@
+print("UnboundedArraysMAXELEM.txt");
+Int nobounds[unbound] = 10, 20, 30;
+Int x = MAXELEM(nobounds);

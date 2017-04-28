@@ -1,0 +1,3 @@
+print("UnboundedScalar.txt");
+Int nobounds[unbound] = 10, 20, 30;
+nobounds = 5;

@@ -1,6 +1,7 @@
 // arrays, element assignment, for loops
 // do simple variables still work?
 print("p4Array.txt");
+print("Handles arrays without length and only value list, array declarations, ELEM(), MAXELEM() and and for loops");
 Int iSimp = 50;
 print ("iSimp=", iSimp);
 

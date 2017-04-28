@@ -1,0 +1,4 @@
+print("UnboundArrayWithUnCoerceableValues.txt");
+print("This tests not only coerceable indices, but also identifiers");
+Int index = "12" + 3+12#0;
+Bool arr[4] = T, index, F;

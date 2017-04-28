@@ -1,0 +1,2 @@
+print("ArrayWithoutIdentifier.txt");
+Int [5] = 10;

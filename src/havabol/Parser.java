@@ -266,7 +266,7 @@ public class Parser
                         error("ERROR:UNEXPECTED SYMBOL %s, EXPECTED EITHER ']' OR '='", scan.nextToken.tokenStr);
                 }
                 // size is declared or unbound
-                else
+                else if (scan.nextToken.primClassif != Token.OPERATOR)
                 {
                     //it is an unbounded array
                     if(scan.nextToken.tokenStr.equals("unbound"))
@@ -277,7 +277,8 @@ public class Parser
                         // advance token to 'unbound'
                         scan.getNext();
                         // advance token to ']'
-                        scan.getNext();
+                        if (!scan.getNext().equals("]"))
+                            error("ERROR: UNMATCHED '['");
                         /* check what next token is*/
                         //unbounded array is declared, without valuelist
                         if (scan.nextToken.tokenStr.equals(";"))
@@ -319,9 +320,16 @@ public class Parser
                     if (scan.nextToken.subClassif == Token.IDENTIFIER)
                         if (storageManager.getEntry(scan.nextToken.tokenStr) == null)
                             error("ERROR: '%s' IS NOT DEFINED", scan.nextToken.tokenStr);
+
+                    //save off left bracket
+                    Token left = scan.currentToken;
+                    //check for ']', which will catch if there isn't one
+                    skipTo("[", "]");
+                    //reset position
+                    scan.setTo(left);
+
                     //do expression to find declared length of fixed array
                     int length = Integer.parseInt(Utilities.toInteger(this, expression(false)));
-
                     //check to see if length is reasonable
                     if (length < 0)
                         error("ERROR: ARRAY SIZE HAVE TO BE POSITIVE");
@@ -368,10 +376,16 @@ public class Parser
                     else
                         error("ERROR: EXPECTED EITHER ';' OR '=', UNEXPECTED TOKEN '%s'", scan.currentToken.tokenStr);
                 }
+                //incorrect length given
+                else
+                    error("ERROR: '%s' IS AN INVALID LENGTH", scan.nextToken.tokenStr);
             }
             // it is not an array
             else
             {
+                //unmatched right bracket
+                if (scan.nextToken.tokenStr.equals("]"))
+                    error("ERROR: UNMATCHED ']'");
                 //put varaible name into symboltable
                 symbolTable.putSymbol(variableStr, new STIdentifier(variableStr
                         , scan.currentToken.primClassif, dclType
@@ -557,7 +571,6 @@ public class Parser
         ArrayList<ResultValue> expressionVals = new ArrayList<>();
         //will act as iPopulated
         int iAmt = 1;
-        int count = 1;
         Token equal = scan.currentToken;
 
         if(bExec)
@@ -565,8 +578,6 @@ public class Parser
             // loop using expression, until ';' is found
             while (!resExpr.terminatingStr.equals(";") && !scan.nextToken.tokenStr.equals(";"))
             {
-                if (scan.nextToken.primClassif == Token.EOF)
-                    System.out.println("Fuck me");
                 // evaluate expression to receive values for array list
                 resExpr = expression(false);
 //                System.out.println(resExpr.value);
@@ -589,7 +600,7 @@ public class Parser
                 //increment amount populated and check to see if greater than declare when value list not given
                 if (declared != -1 && iAmt - 1 > declared && declared > 0)
                     error("ERROR: CANNOT DECLARE MORE THAN '%d' INTO ARRAY '%s'", declared, variableStr);
-                switch (resExpr.type) {// determine the type of value to assign to ResultValue to add to array
+                switch (type) {// determine the type of value to assign to ResultValue to add to array
                     case Token.INTEGER:
                         resExpr.value = Utilities.toInteger(this, resExpr);
                         resExpr.type = Token.INTEGER;
@@ -624,8 +635,6 @@ public class Parser
 
                 }
             }
-            scan.currentToken.printToken();
-            scan.nextToken.printToken();
             // missing terminator
             if (!scan.currentToken.tokenStr.equals(";") && scan.currentToken.primClassif != Token.OPERAND)
                 error("ERROR: EXPECTED ';', BUT FOUND '%s'", scan.currentToken.tokenStr);

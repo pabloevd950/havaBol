@@ -1,0 +1,3 @@
+print("FixedArrayInsideArray.txt");
+Int bounds[10] = 10, 20, 30;
+Int FMSUF[bounds];

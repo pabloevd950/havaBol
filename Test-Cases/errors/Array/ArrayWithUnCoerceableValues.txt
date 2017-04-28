@@ -1,0 +1,4 @@
+print("ArrayWithUnCoerceableValues.txt");
+print("This tests not only coerceable indices, but also identifiers");
+Bool index = "12" > 3+12#0;
+Int arr[4] = 10, index, 30;

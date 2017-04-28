@@ -1,0 +1,2 @@
+print("UnboundArrayWithoutRightBracket.txt");
+String x[10 = 1;
