@@ -2117,7 +2117,9 @@ public class Parser
                             }
                             break;
                         case "not":
-                            if(scan.nextToken.primClassif == Token.OPERAND || scan.nextToken.equals("("))
+                            if(scan.nextToken.primClassif == Token.OPERAND
+                                    || scan.nextToken.equals("(")
+                                    || scan.nextToken.primClassif == Token.FUNCTION)
                                 stack.push(scan.currentToken);
                             break;
                         // check for unary minus
@@ -2251,7 +2253,7 @@ public class Parser
                                             , (ResultValue) outPutStack.pop(), "*"));
                                 else if (poppedOperator.tokenStr.equals("not"))
                                     outPutStack.push(evaluate(null, (ResultValue) outPutStack.pop()
-                                            , poppedOperator.tokenStr));
+                                            , "not"));
 
                                 else
                                 {// not a left paren, work with stack
@@ -2314,7 +2316,6 @@ public class Parser
         }
 
         // final value
-
             res = (ResultValue) outPutStack.pop();
 
 
@@ -3627,7 +3628,7 @@ public class Parser
                         error("ERROR: INDEX '%d' , OUT OF BOUNDS FOR STRING '%s'"
                                 , Integer.valueOf(index.value), strVal );
                     char newChar = strVal.charAt((Integer.parseInt(Utilities.toInteger(this, index))));
-                    firstResValue = new ResultValue(String.valueOf(newChar), 1);
+                    firstResValue = new ResultValue(String.valueOf(newChar), Token.STRING);
                 }
                 else
                 {

@@ -1,0 +1,3 @@
+print("assign&coersion.txt");
+
+print(not (T));
