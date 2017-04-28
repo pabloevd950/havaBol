@@ -2159,6 +2159,10 @@ public class Parser
                                         // we have unary minus so we only need one operand
                                         res = (evaluate(new ResultValue("-1", Token.INTEGER)
                                                 , firstResValue, "*"));
+                                    else if (poppedOperator.tokenStr.equals("not"))
+                                        res = (evaluate(null, (ResultValue) outPutStack.pop()
+                                                , poppedOperator.tokenStr));
+
                                     else
                                     {
                                         secondResValue = (ResultValue) outPutStack.pop();
@@ -2245,6 +2249,9 @@ public class Parser
                                     // we have unary minus, apply it to operand
                                     outPutStack.push(evaluate(new ResultValue("-1", Token.INTEGER)
                                             , (ResultValue) outPutStack.pop(), "*"));
+                                else if (poppedOperator.tokenStr.equals("not"))
+                                    outPutStack.push(evaluate(null, (ResultValue) outPutStack.pop()
+                                            , poppedOperator.tokenStr));
 
                                 else
                                 {// not a left paren, work with stack
