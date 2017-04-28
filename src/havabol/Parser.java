@@ -3640,7 +3640,7 @@ public class Parser
 
                     strVal = strVal.substring((Integer.parseInt(Utilities.toInteger(this, index)))
                             , (Integer.parseInt(Utilities.toInteger(this, index2))));
-                    firstResValue = new ResultValue(strVal, 1);
+                    firstResValue = new ResultValue(strVal, Token.STRING);
                 }
             }
         }
