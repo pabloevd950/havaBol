@@ -1,8 +1,10 @@
 print("tokenizingForNoColon.txt");
 print("Tokenizing For Loop will print error about missing separator");
 
-String text = "Hava.Bol";
+String text;
+text = "Hava Bol";
 
-for token from text by "."
+print("for");
+for token from text by ' ':
     print(token);
 endfor;

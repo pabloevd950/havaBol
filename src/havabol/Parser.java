@@ -2788,7 +2788,8 @@ public class Parser
 
                     // make sure we end on an ':'
                     if ( !scan.getNext().equals(":"))
-                        error("ERROR: EXPECTED ':' AFTER FOR LOOP VARIABLES");
+                        error("ERROR: EXPECTED ':' AFTER FOR LOOP VARIABLES\n\t" +
+                                    "FOUND '%s'", scan.currentToken.tokenStr);
 
                     // make sure we have an appropriate iterable object (array or string)
                     if ( resCond.structure == ResultValue.fixedArray
