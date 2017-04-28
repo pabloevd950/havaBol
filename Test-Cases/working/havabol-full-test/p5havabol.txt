@@ -1,0 +1,236 @@
+Int y = 1;
+Int x = 0;
+
+for i = 0 to 3 by 1:
+    print(i);
+    if i == 1:
+        if 1 < 2:
+            print("continue");
+            break;
+        else:
+            print("wrong");
+        endif;
+        print("wrong");
+    endif;
+    print("end of outer if");
+endfor;
+
+
+//break;
+
+
+
+
+
+
+
+
+for i = 0 to 3 by 1:
+    print(i);
+
+    if i == 0:
+        print("inner if, i =", i);
+
+        if i < 2:
+            continue;
+        else:
+            print("inner if wrong");
+        endif;
+
+    endif;
+
+    print("done with outer if");
+endfor;
+
+print("****start");
+String right = "BERTO";
+if 1 == 1:
+    for i = 0 to 3 by 1:
+        print("top of for, beginning of select");
+        select "BERTO":
+            when right:
+                print("RIGHT");
+                if T:
+                    print("if right");
+                else:
+                    print("if wrong");
+                endif;
+        endselect;
+
+        print("end of select, beginning of next select");
+        select "Kris":
+            when "Berto", "Pablo":
+                print("second select wrong");
+            when "Kris":
+                print("Now we gonna break outta the for");
+                break;
+            default:
+                print("second switch default wrong");
+
+                while 1 == 1:
+                    select "Pablo":
+                        default:
+                            print("switch inside of default wrong");
+                    endselect;
+                endwhile;
+
+                for i in "YES":
+                    print(i);
+                endfor;
+
+
+        endselect;
+    endfor;
+    print("end of for");
+endif;
+
+print("****done");
+
+Int array[3] = 10, 20, 30;
+while 1==1:
+    for i=1 to 2://i= blows up
+        break;
+        print("for");
+    endfor;
+    print("Out of for");
+    break;
+    print("fuck");
+    if T:
+        break;
+    endif;
+    print("");
+endwhile;
+print("endwhile");
+
+Int se = 0;
+while se==0:
+    if 1==1:
+        print("break here");
+        break;
+        se +=1;
+    else:
+        print("wrong");
+    endif;
+    //break;
+    print("wrong break statement");
+endwhile;
+
+if 1==1:
+    print("if right");
+    if 2==2:
+        print("inner if right");
+    else:
+        print("inner while wrong");
+    endif;
+
+    print("done with inner if");
+endif;
+
+
+
+
+if 1==1:
+select "kris":
+    when "kris", "berto":
+        print("kris", "done");
+
+        select 1+1:
+            when 2+3, 4+4:
+                print("wrong");
+            when 4/2, 3, 5:
+                print("right");
+            default:
+                print("default wrong");
+            endselect;
+    when "pablo":
+        print("WRONG");
+    default:
+        print("default wrong");
+endselect;
+else:
+    print("YAY");
+endif;
+
+print("done");
+
+
+
+
+if array[0] < array[1]:
+    print("ARRAY RIGHT");
+else:
+    print("ARRAY WRONG");
+endif;
+
+String cat = "STRING";
+cat = "STRING" # "CAT";
+print(cat#"END");
+
+Bool kris = "1" + "2" > 4 + 5;
+print("kris"# kris);
+
+for arr in array:
+    print(arr);
+    for i = 0 to 10 by 1:
+        print(i);
+    endfor;
+    print("end");
+endfor;
+
+print(ELEM(array), LENGTH("sex") + 1);
+
+Int elem = ELEM(array);
+print(elem);
+Int i;
+Int j = LENGTH("sex") + LENGTH("sex");
+print("j =", LENGTH("sex"), LENGTH("sex") + 1, "end", LENGTH(5+5));
+Bool b = SPACES("sex");
+print(b, SPACES("    "));
+
+print("for");
+String fuck = 5.0 + 5;
+for k = 0 to LENGTH(2.0+5):
+    print(k);
+endfor;
+print("endfor");
+
+if 1 == 2:
+    String pablo = "is a fuck";
+    print("one" + pablo);
+else:
+    print("two");
+endif;
+
+i = 1;
+for i = 0 to 4:
+    print(i);
+
+    if 2 == 1:
+        if 1 == 2:
+            print("wrong");
+        else:
+            print("bridget");
+        endif;
+    else:
+        if 3 == 3:
+            print("right");
+        else:
+            print("wrong");
+        endif;
+        print("if true");
+    endif;
+
+    while i == 2:
+        print("inner while right");
+        i = i + 1;
+    endwhile;
+
+    i = i + 1;
+
+
+    if 1 == 1:
+        print("RIGHT");
+    endif;
+endfor;
+
+Int last = 1;
