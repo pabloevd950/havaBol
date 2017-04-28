@@ -1,0 +1,9 @@
+print("selectMissingColon.txt");
+print("print an error select missing colon");
+
+select "TRUMP"
+    when "T":
+        print("Not Trump");
+    default:
+        print("right");
+endselect;

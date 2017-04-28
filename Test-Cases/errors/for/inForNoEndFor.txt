@@ -1,0 +1,5 @@
+print("inForNoEndFor.txt");
+print("In For Loop will print error about missing separator");
+
+for char in "FUCHIT":
+    print(char);

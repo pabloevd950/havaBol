@@ -1,0 +1,5 @@
+print("ifMissing-endif.txt");
+print("Missing endif error shall occur");
+
+if T:
+    print("and....");

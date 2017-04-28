@@ -1,0 +1,6 @@
+print("whileMissingColon.txt");
+print("Missing separator error shall occur");
+
+while T
+    print("yes");
+endwhile;

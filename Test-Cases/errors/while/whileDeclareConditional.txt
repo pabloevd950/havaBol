@@ -1,0 +1,6 @@
+print("whileDeclareConditional.txt");
+print("error shall occur for encountering a non-expression");
+
+while Int i == 0:
+    print("and....");
+endwhile;

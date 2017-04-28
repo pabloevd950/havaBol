@@ -1,0 +1,11 @@
+print("selectWhenAfterDefault.txt");
+print("print an error for when after default");
+
+select "TRUMP":
+    when "T":
+        print("Not Trump");
+    default:
+        print("right and then...");
+    when "F":
+        print("WRONG");
+endselect;

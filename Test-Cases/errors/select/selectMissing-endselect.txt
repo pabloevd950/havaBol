@@ -1,0 +1,8 @@
+print("selectMissingColon.txt");
+print("print an error select missing endselect");
+
+select "TRUMP":
+    when "T":
+        print("Not Trump");
+    default:
+        print("right");

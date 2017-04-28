@@ -1,0 +1,6 @@
+print("ifMissingColon.txt");
+print("Missing separator error shall occur");
+
+if T
+    print("yes");
+endif;

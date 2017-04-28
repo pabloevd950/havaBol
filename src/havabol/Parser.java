@@ -3074,12 +3074,16 @@ public class Parser
             // did we end on default
             if (scan.currentToken.tokenStr.equals("default"))
             {// ended on default, if we haven't already executed, execute otherwise ignore
+                // check for ':'
+                if ( !scan.getNext().equals(":") )
+                    error("ERROR: MISSING SEPARATOR");
+
                 if (exec)
                  // already executed, ignore
-                    resCond = statements(false, "endselect");
+                    resCond = statements(false, "endselect when default");
                 else
                 {// no match found, execute
-                    resCond = statements(true, "endselect");
+                    resCond = statements(true, "endselect when default");
 
                     // did we end on a break or continue?
                     if (resCond.terminatingStr.equals("break")

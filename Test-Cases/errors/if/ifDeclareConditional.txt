@@ -1,0 +1,6 @@
+print("ifDeclareConditional.txt");
+print("error shall occur for encountering a non-expression");
+
+if Int i == 0:
+    print("and....");
+endif;

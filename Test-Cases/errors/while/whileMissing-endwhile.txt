@@ -1,0 +1,5 @@
+print("whileMissing-endwhile.txt");
+print("Missing endif error shall occur");
+
+while T:
+    print("and....");
