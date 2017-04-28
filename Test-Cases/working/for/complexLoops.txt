@@ -1,0 +1,120 @@
+print("complexLoops.txt");
+print("This will show the use of loops integrating with lots of stuff in HavaBol\n");
+
+String verse1[] = "It's", "Shaping", "Up", "To", "Be", "A", "Wonderful", "Holiday!";
+String verse2 = "Not Your Normal Average Everyday.";
+String verse3[] = "Sounds", "Like", "Someone", "Filled", "My", "Old", "Coral", "Tree.";
+String verse4 = "SpongeBob.AGHPatrick.AGHWhy'dAGHYouAGHDoAGHThisAGHToAGHMe?";
+String verse5to8[unbound] = "The World Seems Like It's In Love Early.", "Go Away Before I Harm You Bodily!"
+                         , "This Christmas Seems Like The Very First Christmas To Me!"
+                         , "There'll Be Shopping Decorating And Plenty O' Snow!";
+String verse9 = "Hey....Patrick....Who's.......That...Under..The.Mistle Toe?";
+String verse10to11[]
+    =
+"What?.Who.Me?.Would.You.Look.At.The.Time.I.Should.Go!\nThis.Christmas.Seems.Like.The.Very.First.Christmas.To.Me!";
+
+
+String song[10] = "", "", "", "", "", "", "", "", "", "";
+Bool bFlag = F;
+Bool innerFlag = T;
+Int index = 0;
+String new = "";
+String line = "";
+
+// now we will loop through the first verse using a for in loop
+for token in verse1:
+    song[0] = song[0] # token # " ";
+
+    if bFlag == T:
+        continue;
+    endif;
+
+    // while we loop through the first verse, loop through the second
+    while not SPACES(verse2):
+        for i = 0 to LENGTH(verse2):
+            song[1] = song[1] # verse2[i];
+
+            if verse2[i] in { " " }:
+                break;
+            endif;
+        endfor;
+
+        if i >= LENGTH(verse2):
+            verse2 = "";
+            continue;
+        endif;
+
+        verse2 = verse2[i+1~];
+    endwhile;
+
+    // start the third verse
+    for i = 0 to ELEM(verse3):
+        song[2] = song[2] # verse3[i] # " ";
+
+        if not innerFlag == T:
+            continue;
+        endif;
+
+        for token from verse4 by "AGH":
+            song[3] = song[3] # token # " ";
+        endfor;
+
+        index = 0;
+        for j = 4 to 8:
+            for token from verse5to8[index] by " ":
+                song[j] = song[j] # token # " ";
+            endfor;
+            index += 1;
+        endfor;
+
+        innerFlag = F;
+    endfor;
+
+    for token from verse9 by ".":
+        song[8] = song[8] # token # " ";
+    endfor;
+
+    for char in song[8]:
+        select char:
+            when " ":
+                if not new[LENGTH(new)-1] notin { " " }:
+                    continue;
+                else:
+                    new = new # char;
+                endif;
+            default:
+                new = new # char;
+        endselect;
+    endfor;
+
+    song[8] = new;
+
+    i = 0;
+    new = "";
+    while i < MAXELEM(verse10to11):
+        if i >= ELEM(verse10to11):
+            break;
+        endif;
+
+        line = verse10to11[i];
+        for j = 0 to LENGTH(verse10to11[i]) by 1:
+            select line[j]:
+                when ".":
+                    new = new # " ";
+                default:
+                    new = new # line[j];
+            endselect;
+        endfor;
+
+        i += 1;
+    endwhile;
+
+    song[9] = new;
+    bFlag = T;
+endfor;
+
+
+// print out the song
+for verse in song:
+    print(verse);
+endfor;

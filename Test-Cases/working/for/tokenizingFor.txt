@@ -1,0 +1,8 @@
+print("tokenizingFor.txt");
+print("basic test of a 'for' loop with tokenizer capabilities\n");
+
+String text = "This is a test string that I will use in order to prove to you that my stuff works";
+
+for token from text by " ":
+    print(token);
+endfor;

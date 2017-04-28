@@ -2800,7 +2800,7 @@ public class Parser
                     // make sure we end on an ':'
                     if ( !scan.getNext().equals(":"))
                         error("ERROR: EXPECTED ':' AFTER FOR LOOP VARIABLES\n\t" +
-                                    "FOUND '%s'", scan.currentToken.tokenStr);
+                                   "FOUND '%s'", scan.currentToken.tokenStr);
 
                     // make sure we have an appropriate iterable object (array or string)
                     if ( resCond.structure == ResultValue.fixedArray
@@ -2901,9 +2901,11 @@ public class Parser
                     String string, delimiter;
                     String stringM[];
 
-                    if (storageManager.getEntry(stringCV) != null)
-                        // make sure string cv has not been already defined
-                        error("ERROR: VARIABLE '%s' IS ALREADY DEFINED IN THE SCOPE", stringCV);
+                    // check if we need to implicitly declare variable
+                    if (storageManager.getEntry(stringCV) == null)
+                        // didn't exist so we implicitly declare
+                        storageManager.putEntry(stringCV, new ResultValue("", Token.INTEGER
+                                , ResultValue.primitive, "to"));
 
                     // advance to 'from' token
                     scan.getNext();

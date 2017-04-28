@@ -5,6 +5,6 @@ String text;
 text = "Hava Bol";
 
 print("for");
-for token from text by ' ':
+for token from text by ' '
     print(token);
 endfor;
