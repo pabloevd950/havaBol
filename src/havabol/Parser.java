@@ -226,8 +226,6 @@ public class Parser
         if (storageManager.getEntry(scan.currentToken.tokenStr) != null)
             error("ERROR: '%s' IS ALREADY DEFINED", scan.currentToken.tokenStr);
 
-
-
         if (bExec)
         {// we are executing, not ignoring
             // save token to skip to in arrays for assignment
