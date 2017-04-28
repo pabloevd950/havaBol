@@ -1,6 +1,0 @@
-print("assign&coersion.txt");
-//debug Token on;
-Bool x = (not (T));
-print("x =", x);
-print(not (T));
-print(- (5));

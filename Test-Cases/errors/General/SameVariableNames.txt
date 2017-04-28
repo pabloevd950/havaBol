@@ -1,0 +1,7 @@
+print("SameVariableNames.txt");
+Int x = 10;
+if x == 10:
+    Int array1[] = 10,20,30;
+else:
+    Int array1[2] = 10,20;
+endif;

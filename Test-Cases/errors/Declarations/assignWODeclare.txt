@@ -1,0 +1,2 @@
+print("assignWODeclare.txt");
+x = 5;
