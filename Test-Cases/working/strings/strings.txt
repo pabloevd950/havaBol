@@ -1,0 +1,28 @@
+Int arr[] = 1,2,3;
+
+
+Int arr2[5] = 2;
+
+String x = "[ ";
+
+for elem in arr:
+    print(elem);
+    x = x#elem#" ";
+endfor;
+x = x#" ]";
+print(x);
+arr=arr2;
+
+print(arr[2]);
+
+for i = 0 to 5:
+    Int j;
+    print("yes");
+endfor;
+
+
+
+select "kris":
+    default:
+        print("ugh");
+endselect;
